@@ -16,17 +16,14 @@ brainfuck str inp = map chr $ interpret (("", str'), (zeros, zeros)) inp'
     inp'  = map ord $ inp ++ "\NUL"
     zeros = iterate id 0
 
-inc, dec :: Int -> Int
-dec i = i - 1
-inc i = i + 1
-
-type Memory = ([Int], [Int])
+type Cell   = Int
+type Memory = ([Cell], [Cell])
 type Code   = (String, String)
 type State  = (Code, Memory)
 
 -- interpretIO
 
-interpret :: State -> [Int] -> [Int]
+interpret :: State -> [Cell] -> [Cell]
 interpret ((_, []), _) _     = []
 interpret state@(str, m) inp = trace (show (mapBoth (takeWhile ( /= 0)) m)) $
   case str of

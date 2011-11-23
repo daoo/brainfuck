@@ -1,5 +1,9 @@
 module Ext where
 
+inc, dec :: (Num a) => a -> a
+dec i = i - 1
+inc i = i + 1
+
 -- Move first element of second array to the beginning of first array
 shiftL :: ([a], [a]) -> ([a], [a])
 shiftL (as, b:bs) = (b:as, bs)
