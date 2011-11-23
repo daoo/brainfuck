@@ -1,11 +1,11 @@
 module Main where
 
 import System
-import System.IO
 import System.Directory
 
 import Interpreter
 
+main :: IO ()
 main = do
   argv <- getArgs
   let args = concat argv
