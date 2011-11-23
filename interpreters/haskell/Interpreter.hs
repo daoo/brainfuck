@@ -12,23 +12,29 @@ inc, dec :: Int -> Int
 dec i = i - 1
 inc i = i + 1
 
-interpret' :: (String, String) -> ([Int], [Int]) -> [Int] -> [Int]
-interpret'   (_, [])   _          _               = []
-interpret' s@(_,'>':_) m          inp             = interpret' (shiftL s) (shiftL m) inp
-interpret' s@(_,'<':_) m          inp             = interpret' (shiftL s) (shiftR m) inp
-interpret' s@(_,'+':_) m          inp             = interpret' (shiftL s) (modify inc m) inp
-interpret' s@(_,'-':_) m          inp             = interpret' (shiftL s) (modify dec m) inp
-interpret' s@(_,'.':_) m@(_, x:_) inp             = x : interpret' (shiftL s) m inp
-interpret' s@(_,',':_) m          []              = error "Not enough input."
-interpret' s@(_,',':_) m          (i:is)          = interpret' (shiftL s) (modify (const i) m) is
-interpret' s@(_,'[':_) m          inp             = interpret' (shiftL s) m inp
-interpret' s@(_,']':_) m@(_, x:_) inp | x == 0    = interpret' (shiftL s) m inp
-                                      | otherwise = interpret' (goBackTo '[' s) m inp
-interpret' s           m          inp             = interpret' (shiftL s) m inp
+type Memory = ([Int], [Int])
+
+interpret' :: (String, String) -> Memory -> [Int] -> [Int]
+interpret' (_, []) _ _ = []
+interpret' s m inp     =
+  case s of
+    (_,'>':_) -> interpret' (shiftL s) (shiftL m) inp
+    (_,'<':_) -> interpret' (shiftL s) (shiftR m) inp
+    (_,'+':_) -> interpret' (shiftL s) (modify inc m) inp
+    (_,'-':_) -> interpret' (shiftL s) (modify dec m) inp
+    (_,'.':_) -> current m : interpret' (shiftL s) m inp
+    (_,',':_) -> interpret' (shiftL s) (modify (const $ head inp) m) (tail inp)
+    (_,'[':_) -> interpret' (shiftL s) m inp
+    (_,']':_) | current m == 0 -> interpret' (shiftL s) m inp
+              | otherwise      -> interpret' (goBackTo '[' s) m inp
 
 -- Goes back through the tuple list until specified element is found
 goBackTo :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
 goBackTo e l = until (\(a:_, _) -> a == e) shiftR l
+
+current :: (a, [b]) -> b
+current (_, x:_) = x
+current _        = error "empty list"
 
 -- Apply f to the first element of the second array
 modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
