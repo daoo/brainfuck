@@ -25,6 +25,9 @@ bfReverse = ">,[>,]<[.<]"
 bfASCIIValues :: String
 bfASCIIValues = "++++[>++++++++<-],[[>+.-<-]>.<,]"
 
+bfSquares :: String
+bfSquares = "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
+
 propReverse :: String -> Bool
 propReverse s = brainfuck bfReverse s' == reverse s'
   where s' = filter (/= '\NUL') s

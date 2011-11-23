@@ -1,6 +1,7 @@
 module Interpreter (brainfuck) where
 
 import Debug.Trace
+
 import Data.Char
 
 import Ext
@@ -27,11 +28,14 @@ type State  = (Code, Memory)
 
 interpret :: State -> [Int] -> [Int]
 interpret ((_, []), _) _     = []
-interpret state@(str, m) inp = --trace (show (mapBoth (takeWhile ( /= 0)) m)) $
+interpret state@(str, m) inp = trace (show (mapBoth (takeWhile ( /= 0)) m)) $
   case str of
     (_,'.':_) -> current m : interpret (shiftL str, m) inp
-    (_,',':_) -> interpret (shiftL str, modify (const $ head inp) m) $ tail inp
-    _         -> interpret (nonIO state) inp
+    (_,',':_) -> case inp of
+                   -- When we're out of input, just leave the memory alone
+                   []     -> interpret state inp
+                   (x:xs) -> interpret (shiftL str, modify (const x) m) xs
+    _ -> interpret (nonIO state) inp
 
 nonIO (s, m) =
   case s of
