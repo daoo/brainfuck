@@ -3,16 +3,16 @@ module Memory where
 import Data.Char
 import Data.Word
 
+type Cell   = Word8
+type Memory = ([Cell], [Cell])
+type Code   = (String, String)
+type State  = (Code, Memory)
+
 chrCell :: Cell -> Char
 chrCell = chr . fromIntegral
 
 ordCell :: Char -> Cell
 ordCell = fromIntegral . ord
-
-type Cell   = Word8
-type Memory = ([Cell], [Cell])
-type Code   = (String, String)
-type State  = (Code, Memory)
 
 brainfuckChars :: [Char]
 brainfuckChars = "-+<>[].,"

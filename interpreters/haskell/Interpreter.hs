@@ -31,7 +31,7 @@ interpretIO state@(str, m) =
 
 interpret :: State -> [Cell] -> [Cell]
 interpret ((_, []), _) _     = []
-interpret state@(str, m) inp = -- trace (show (mapBoth (takeWhile ( /= 0)) m)) $
+interpret state@(str, m) inp = --trace (show (mapBoth (takeWhile ( /= 0)) m)) $
   case str of
     (_,'.':_) -> current m : interpret (shiftL str, m) inp
     (_,',':_) -> case inp of

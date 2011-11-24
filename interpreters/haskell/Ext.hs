@@ -26,16 +26,10 @@ mapHead f (x:xs) = f x : xs
 
 -- Goes back through the tuple list until specified element is found
 goBackTo :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
-goBackTo e = until f shiftR
-  where
-    f (_, [])    = False
-    f (_, (a:_)) = a == e
+goBackTo e = until ((== e) . head . fst) shiftR
 
 skipPast :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
-skipPast e = until f shiftL
-  where
-    f (_, [])    = False
-    f (_, (a:_)) = a == e
+skipPast e = until ((== e) . head . fst) shiftL
 
 current :: (a, [b]) -> b
 current (_, x:_) = x
