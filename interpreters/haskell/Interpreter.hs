@@ -6,9 +6,11 @@ import Data.Word
 import Data.Char
 
 import Ext
+import Memory
 
-brainfuckChars :: [Char]
-brainfuckChars = "-+<>[].,"
+-- Notes for this implementation:
+-- The memory is infinite in both directions
+-- Can easily support any numeric data type
 
 brainfuck :: String -> String -> String
 brainfuck str inp = map (chr . fromIntegral) $ interpret (newState str) inp'
@@ -18,23 +20,6 @@ brainfuck str inp = map (chr . fromIntegral) $ interpret (newState str) inp'
 
 brainfuckIO :: String -> IO ()
 brainfuckIO str = interpretIO (newState str)
-
-newState :: String -> State
-newState str = (("", str'), (zeros, zeros)) 
-  where
-    str' = filter (flip elem brainfuckChars) str
-    zeros = iterate id 0
-
-type Cell   = Word8
-type Memory = ([Cell], [Cell])
-type Code   = (String, String)
-type State  = (Code, Memory)
-
-chrCell :: Cell -> Char
-chrCell = chr . fromIntegral
-
-ordCell :: Char -> Cell
-ordCell = fromIntegral . ord
 
 interpretIO :: State -> IO ()
 interpretIO ((_, []), _)   = return ()
@@ -68,19 +53,4 @@ nonIO (s, m) =
     (_,']':_) -> if current m == 0
                    then (shiftL s, m)
                    else (goBackTo '[' s, m)
-
--- Goes back through the tuple list until specified element is found
-goBackTo :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
-goBackTo e = until ((== e) . head . fst) shiftR
-
-skipPast :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
-skipPast e = until ((== e) . head . fst) shiftL
-
-current :: (a, [b]) -> b
-current (_, x:_) = x
-current _        = error "empty list"
-
--- Apply f to the first element of the second array
-modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
-modify = mapSnd . mapHead
 

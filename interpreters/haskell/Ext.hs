@@ -23,3 +23,25 @@ mapSnd f (a, b) = (a, f b)
 mapHead :: (a -> a) -> [a] -> [a]
 mapHead _ []     = []
 mapHead f (x:xs) = f x : xs
+
+-- Goes back through the tuple list until specified element is found
+goBackTo :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
+goBackTo e = until f shiftR
+  where
+    f (_, [])    = False
+    f (_, (a:_)) = a == e
+
+skipPast :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
+skipPast e = until f shiftL
+  where
+    f (_, [])    = False
+    f (_, (a:_)) = a == e
+
+current :: (a, [b]) -> b
+current (_, x:_) = x
+current _        = error "empty list"
+
+-- Apply f to the first element of the second array
+modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
+modify = mapSnd . mapHead
+
