@@ -1,4 +1,4 @@
-module Ext where
+module Brainfuck.Interpreter.Ext where
 
 inc, dec :: (Num a) => a -> a
 dec i = i - 1

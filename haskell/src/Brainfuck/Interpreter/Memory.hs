@@ -1,12 +1,12 @@
-module Memory where
+module Brainfuck.Interpreter.Memory where
 
 import Data.Char
 import Data.Word
 
 type Cell   = Word8
 type Memory = ([Cell], [Cell])
-type Code   = (String, String)
-type State  = (Code, Memory)
+type Input  = [Cell]
+type Output = [Cell]
 
 chrCell :: Cell -> Char
 chrCell = chr . fromIntegral
@@ -17,8 +17,7 @@ ordCell = fromIntegral . ord
 brainfuckChars :: [Char]
 brainfuckChars = "-+<>[].,"
 
-newState :: String -> State
-newState str = (("", str'), (zeros, zeros)) 
+newMemory :: Memory
+newMemory = (zeros, zeros)
   where
-    str' = filter (flip elem brainfuckChars) str
     zeros = iterate id 0

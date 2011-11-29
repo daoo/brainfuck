@@ -16,7 +16,7 @@ brainfuck :: String -> String -> String
 brainfuck str inp = map (chr . fromIntegral) $ interpret (newState str) inp'
   where
     str' = filter (flip elem brainfuckChars) str
-    inp' = map ordCell $ inp ++ "\NUL"
+    inp' = map ordCell inp
 
 brainfuckIO :: String -> IO ()
 brainfuckIO str = interpretIO (newState str)
