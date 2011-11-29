@@ -22,8 +22,9 @@ module Brainfuck.Parser.Parser where
 %%
 
 Expr ::             { Expr }
-     : Token        { Sequence $1 NOP }
-     | Token Expr   { Sequence $1 $2 }
+     : Token        { Token $1 }
+     | Expr Expr    { Sequence $1 $2 }
+     | Expr         { NoLoop $1 }
      | '[' Expr ']' { Loop $2 }
 
 Token ::    { Token }
@@ -34,9 +35,10 @@ Token : '+' { Plus }
       | '.' { Output }
       | ',' { Input }
 {
-data Expr = Sequence Token Expr
+data Expr = Sequence Expr Expr
+          | NoLoop Expr
           | Loop Expr
-          | NOP
+          | Token Token
   deriving Show
 
 data Token = Plus | Minus | Next | Previous | Input | Output

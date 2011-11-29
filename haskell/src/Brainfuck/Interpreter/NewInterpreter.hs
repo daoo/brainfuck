@@ -4,15 +4,14 @@ import Brainfuck.Interpreter.Memory
 import Brainfuck.Interpreter.Ext
 import Brainfuck.Parser.Parser
 
-eval :: (Input, Memory) -> Expr -> Output
-eval _ NOP = []
-eval s@(inp, mem) (Sequence tok exp) =
+asdf str = eval (parse str) ([], [], newMemory)
+
+eval (Sequence tok exp) s@(inp, out, mem) =
   case tok of
-    Output -> current mem : eval (tail inp, mem) exp
-    Input  -> eval (tail inp, modify (const $ head inp) mem) exp
-    _      -> eval (inp, tokenPure mem tok) exp
-eval s@(_, mem) (Loop exp) | current mem == 0 = []
-                           | otherwise        = eval s exp
+    Output -> eval exp (tail inp, current mem : out, mem)
+    Input  -> eval exp (tail inp, out, modify (const $ head inp) mem)
+    _      -> eval exp (inp, out, tokenPure mem tok)
+eval (Loop exp) mem = until (\(_, _, mem) -> current mem == 0) (eval exp) mem
 
 tokenPure :: Memory -> Token -> Memory
 tokenPure mem tok =
