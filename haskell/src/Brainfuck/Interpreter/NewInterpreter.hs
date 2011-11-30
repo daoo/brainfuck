@@ -1,20 +1,23 @@
-module Brainfuck.Interpreter.NewInterpreter where
+module Brainfuck.Interpreter.Interpreter where
 
 import Brainfuck.Interpreter.Memory
 import Brainfuck.Interpreter.Ext
 import Brainfuck.Parser.Parser
 
-asdf str = eval (parse str) ([], [], newMemory)
+run :: [Expr] -> State -> State
+run exps state = foldr evalExpr state exps
 
-eval (Sequence tok exp) s@(inp, out, mem) =
-  case tok of
-    Output -> eval exp (tail inp, current mem : out, mem)
-    Input  -> eval exp (tail inp, out, modify (const $ head inp) mem)
-    _      -> eval exp (inp, out, tokenPure mem tok)
-eval (Loop exp) mem = until (\(_, _, mem) -> current mem == 0) (eval exp) mem
+evalExpr :: Expr -> State -> State
+evalExpr (Token tok) s = evalToken tok s
+evalExpr (Loop exp) s  = until ((== 0) . current . thrd) (run exp) s
 
-tokenPure :: Memory -> Token -> Memory
-tokenPure mem tok =
+evalToken :: Token -> State -> State
+evalToken Output (inp, out, mem) = (inp, current mem : out, mem)
+evalToken Input (inp, out, mem)  = (tail inp, out, modify (const $ head inp) mem)
+evalToken tok (inp, out, mem)    = (inp, out, tokenPure tok mem)
+
+tokenPure :: Token -> Memory -> Memory
+tokenPure tok mem =
   case tok of
     Next     -> shiftL mem
     Previous -> shiftR mem

@@ -7,6 +7,7 @@ type Cell   = Word8
 type Memory = ([Cell], [Cell])
 type Input  = [Cell]
 type Output = [Cell]
+type State  = (Input, Output, Memory)
 
 chrCell :: Cell -> Char
 chrCell = chr . fromIntegral
@@ -21,3 +22,6 @@ newMemory :: Memory
 newMemory = (zeros, zeros)
   where
     zeros = iterate id 0
+
+newState :: State
+newState = ([], [], newMemory)

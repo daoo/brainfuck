@@ -21,11 +21,11 @@ module Brainfuck.Parser.Parser where
   ']' { ']' }
 %%
 
-Expr ::             { Expr }
-     : Token        { Token $1 }
-     | Expr Expr    { Sequence $1 $2 }
-     | Expr         { NoLoop $1 }
-     | '[' Expr ']' { Loop $2 }
+Expr ::                  { [Expr] }
+     : Token             { [Token $1] }
+     | Token Expr        { Token $1 : $2 }
+     | '[' Expr ']'      { [Loop $2] }
+     | '[' Expr ']' Expr { Loop $2 : $4 }
 
 Token ::    { Token }
 Token : '+' { Plus }
@@ -35,18 +35,18 @@ Token : '+' { Plus }
       | '.' { Output }
       | ',' { Input }
 {
-data Expr = Sequence Expr Expr
-          | NoLoop Expr
-          | Loop Expr
-          | Token Token
-  deriving Show
-
 data Token = Plus | Minus | Next | Previous | Input | Output
   deriving Show
 
-parseError :: [Char] -> a
-parseError _ = error "Parse error"
+data Expr = Loop [Expr]
+          | Token Token
+  deriving Show
 
-parse :: String -> Expr
+parseError :: [Char] -> a
+parseError str = error $ "Parse error at \"" ++ str ++ "\""
+
+parse :: String -> [Expr]
 parse = parser
 }
+
+-- vim: set ft=happy :

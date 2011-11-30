@@ -39,3 +39,6 @@ current _        = error "empty list"
 modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
 modify = mapSnd . mapHead
 
+thrd :: (a, b, c) -> c
+thrd (_, _, c) = c
+
