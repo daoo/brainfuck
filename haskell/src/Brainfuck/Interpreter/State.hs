@@ -1,13 +1,17 @@
-module Brainfuck.Interpreter.Memory where
+module Brainfuck.Interpreter.State where
 
 import Data.Char
+import Data.Sequence
 import Data.Word
 
 type Cell   = Word8
 type Memory = ([Cell], [Cell])
-type Input  = [Cell]
-type Output = [Cell]
-type State  = (Input, Output, Memory)
+
+data State = State {
+  input :: [Cell],
+  output :: Seq Cell,
+  memory :: Memory
+} deriving Show
 
 chrCell :: Cell -> Char
 chrCell = chr . fromIntegral
@@ -23,5 +27,6 @@ newMemory = (zeros, zeros)
   where
     zeros = iterate id 0
 
-newState :: State
-newState = ([], [], newMemory)
+newState :: String -> State
+newState inp = State (map ordCell inp) empty newMemory
+

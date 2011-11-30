@@ -1,4 +1,4 @@
-module Brainfuck.Interpreter.Ext where
+module Brainfuck.Ext where
 
 inc, dec :: (Num a) => a -> a
 dec i = i - 1
@@ -17,6 +17,9 @@ shiftR x          = x
 mapBoth :: (a -> b) -> (a, a) -> (b, b)
 mapBoth f (a, b) = (f a, f b)
 
+mapFst :: (a -> b) -> (a, c) -> (b, c)
+mapFst f (a, b) = (f a, b)
+
 mapSnd :: (a -> b) -> (c, a) -> (c, b)
 mapSnd f (a, b) = (a, f b)
 
@@ -24,21 +27,14 @@ mapHead :: (a -> a) -> [a] -> [a]
 mapHead _ []     = []
 mapHead f (x:xs) = f x : xs
 
--- Goes back through the tuple list until specified element is found
-goBackTo :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
-goBackTo e = until ((== e) . head . fst) shiftR
-
-skipPast :: (Eq a) => a -> ([a], [a]) -> ([a], [a])
-skipPast e = until ((== e) . head . fst) shiftL
-
-current :: (a, [b]) -> b
-current (_, x:_) = x
+current :: ([a], b) -> a
+current (x:_, _) = x
 current _        = error "empty list"
 
 -- Apply f to the first element of the second array
 modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
-modify = mapSnd . mapHead
+modify = mapFst . mapHead
 
-thrd :: (a, b, c) -> c
-thrd (_, _, c) = c
-
+times :: (a -> a) -> a -> Int -> a
+times f a 0 = a
+times f a i = times f (f a) (i - 1)

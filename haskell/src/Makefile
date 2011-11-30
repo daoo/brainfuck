@@ -19,7 +19,7 @@ GHC_WARNINGS := -fno-warn-unused-do-bind \
 		-fwarn-unused-matches \
 		-fwarn-wrong-do-bind
 
-all: Parser.o Brainfuck/CommandLine/Main.hs
+all: Parser.o Brainfuck/CommandLine/Brainfuck.hs
 	ghc -o $(BUILD_DIR)/brainfuck $(OUTDIRS) \
             -Wall $(GHC_WARNINGS) \
 	    --make Brainfuck/CommandLine/Brainfuck.hs

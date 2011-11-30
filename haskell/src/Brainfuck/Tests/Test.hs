@@ -4,7 +4,8 @@ import Data.Char
 
 import Test.QuickCheck
 
-import Interpreter
+import Brainfuck.CommandLine.Run
+import Brainfuck.Interpreter.Interpreter
 
 bfInterpreter = ">>>+[[-]>>[-]++>+>+++++++[<++++>>++<-]++>>+>+>+++++[>++>++++++<<-]+>>>,<++[[>[->>]<[>>]<<-]<[<]<+>>[>]>[<+>-[[<+>-]>]<[[[-]<]++<-[<+++++++++>[<->-]>>]>>]]<<]<]<[[<]>[[>]>>[>>]+[<<]<[<]<+>>-]>[>]+[->>]<<<<[[<<]<[<]+<<[+>+<<-[>-->+<<-[>+<[>>+<<-]]]>[<+>-]<]++>>-->[>]>>[>>]]<<[>>+<[[<]<]>[[<<]<[<]+[-<+>>-[<<+>++>-[<->[<<+>>-]]]<[>+<-]>]>[>]>]>[>>]>>]<<[>>+>>+>>]<<[->>>>>>>>]<<[>.>>>>>>>]<<[>->>>>>]<<[>,>>>]<<[>+>]<<[+<<]<]"
 
@@ -24,16 +25,17 @@ bf30000 = "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<
 bfObscure = "[]++++++++++[>>+>+>++++++[<<+<+++>>>-]<<<<-]\n\"A*$\";?@![#>>+<<]>[>>]<<<<[>++<[-]]>.>."
 
 -- QuickCheck properties
-propReverse :: String -> Bool
-propReverse s = brainfuck bfReverse s' == reverse s'
-  where s' = filter (/= '\NUL') s
-
-propASCIIValues :: NonEmptyList Char -> Bool
-propASCIIValues (NonEmpty s) = out == " " || values == map ord s'
+propReverse :: String -> Property
+propReverse s = notElem '\NUL' s ==> out == reverse s
   where
-    s' = filter (/= '\NUL') s
-    out = brainfuck bfASCIIValues s'
+    s' = s ++ "\NUL" -- bfReverse stops on 0
+    out = brainfuck bfReverse s'
 
+propASCIIValues :: NonEmptyList Char -> Property
+propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
+  where
+    s'     = s ++ "\NUL" -- bfASCIIValues stops on 0
+    out    = brainfuck bfASCIIValues s'
     values = map length $ words out
 
 testIO :: Bool
@@ -45,4 +47,5 @@ testIO = length l == 2 && l !! 0 == l !! 1
 --testSize :: Bool
 testSize = out
   where
-    out     = brainfuck bf30000 ""
+    out = brainfuck bf30000 ""
+

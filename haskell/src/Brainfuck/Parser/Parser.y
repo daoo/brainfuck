@@ -4,6 +4,8 @@
 --
 
 module Brainfuck.Parser.Parser where
+
+import Brainfuck.Parser.Brainfuck
 }
 
 %name parser
@@ -21,31 +23,24 @@ module Brainfuck.Parser.Parser where
   ']' { ']' }
 %%
 
-Expr ::                  { [Expr] }
-     : Token             { [Token $1] }
-     | Token Expr        { Token $1 : $2 }
-     | '[' Expr ']'      { [Loop $2] }
-     | '[' Expr ']' Expr { Loop $2 : $4 }
+Expr ::                  { [Brainfuck] }
+     : Token             { [BFToken $1] }
+     | Token Expr        { BFToken $1 : $2 }
+     | '[' Expr ']'      { [BFLoop $2] }
+     | '[' Expr ']' Expr { BFLoop $2 : $4 }
 
 Token ::    { Token }
 Token : '+' { Plus }
       | '-' { Minus }
-      | '>' { Next }
-      | '<' { Previous }
+      | '>' { ShiftRight }
+      | '<' { ShiftLeft }
       | '.' { Output }
       | ',' { Input }
 {
-data Token = Plus | Minus | Next | Previous | Input | Output
-  deriving Show
-
-data Expr = Loop [Expr]
-          | Token Token
-  deriving Show
-
 parseError :: [Char] -> a
 parseError str = error $ "Parse error at \"" ++ str ++ "\""
 
-parse :: String -> [Expr]
+parse :: String -> [Brainfuck]
 parse = parser
 }
 

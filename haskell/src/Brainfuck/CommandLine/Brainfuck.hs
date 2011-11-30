@@ -3,7 +3,7 @@ module Main where
 import System
 import System.Directory
 
-import Interpreter
+import Brainfuck.CommandLine.Run
 
 main :: IO ()
 main = do
@@ -15,4 +15,4 @@ main = do
     False -> return args
     
   inp <- getContents
-  putStr $ interpret str inp
+  putStr $ brainfuck str inp
