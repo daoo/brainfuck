@@ -41,7 +41,8 @@ parseError :: [Char] -> a
 parseError str = error $ "Parse error at \"" ++ str ++ "\""
 
 parse :: String -> [Brainfuck]
-parse = parser
+parse "" = []
+parse str = parser str
 }
 
 -- vim: set ft=happy :

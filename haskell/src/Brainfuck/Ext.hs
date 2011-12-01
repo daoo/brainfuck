@@ -1,9 +1,5 @@
 module Brainfuck.Ext where
 
-inc, dec :: (Num a) => a -> a
-dec i = i - 1
-inc i = i + 1
-
 -- Move first element of second array to the beginning of first array
 shiftL :: ([a], [a]) -> ([a], [a])
 shiftL (as, b:bs) = (b:as, bs)
@@ -28,13 +24,13 @@ mapHead _ []     = []
 mapHead f (x:xs) = f x : xs
 
 current :: ([a], b) -> a
-current (x:_, _) = x
-current _        = error "empty list"
+current = head . fst
 
 -- Apply f to the first element of the second array
 modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
 modify = mapFst . mapHead
 
 times :: (a -> a) -> a -> Int -> a
-times f a 0 = a
-times f a i = times f (f a) (i - 1)
+times f a i | i < 0 = error "Negative number"
+            | i == 0 = a
+            | otherwise = times f (f a) (i - 1)

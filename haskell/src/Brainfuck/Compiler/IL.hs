@@ -26,12 +26,12 @@ compile ((BFToken Output):bs) = PutChar : compile bs
 compile ((BFToken Input):bs) = GetChar : compile bs
 
 shifts :: [Brainfuck] -> (Int, [Brainfuck])
-shifts (BFToken ShiftRight:bs) = mapFst inc $ shifts bs
-shifts (BFToken ShiftLeft:bs)  = mapFst dec $ shifts bs
+shifts (BFToken ShiftRight:bs) = mapFst (+1) $ shifts bs
+shifts (BFToken ShiftLeft:bs)  = mapFst (subtract 1) $ shifts bs
 shifts bs                      = (0, bs)
 
 pokes :: [Brainfuck] -> (Int, [Brainfuck])
-pokes (BFToken Plus:bs)  = mapFst inc $ pokes bs
-pokes (BFToken Minus:bs) = mapFst dec $ pokes bs
+pokes (BFToken Plus:bs)  = mapFst (+1) $ pokes bs
+pokes (BFToken Minus:bs) = mapFst (subtract 1) $ pokes bs
 pokes bs                 = (0, bs)
 

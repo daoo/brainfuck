@@ -1,51 +1,30 @@
-module Test where
-
-import Data.Char
+module Brainfuck.Tests.Test where
 
 import Test.QuickCheck
 
-import Brainfuck.CommandLine.Run
-import Brainfuck.Interpreter.Interpreter
+import Brainfuck.Ext
 
-bfInterpreter = ">>>+[[-]>>[-]++>+>+++++++[<++++>>++<-]++>>+>+>+++++[>++>++++++<<-]+>>>,<++[[>[->>]<[>>]<<-]<[<]<+>>[>]>[<+>-[[<+>-]>]<[[[-]<]++<-[<+++++++++>[<->-]>>]>>]]<<]<]<[[<]>[[>]>>[>>]+[<<]<[<]<+>>-]>[>]+[->>]<<<<[[<<]<[<]+<<[+>+<<-[>-->+<<-[>+<[>>+<<-]]]>[<+>-]<]++>>-->[>]>>[>>]]<<[>>+<[[<]<]>[[<<]<[<]+[-<+>>-[<<+>++>-[<->[<<+>>-]]]<[>+<-]>]>[>]>]>[>>]>>]<<[>>+>>+>>]<<[->>>>>>>>]<<[>.>>>>>>>]<<[>->>>>>]<<[>,>>>]<<[>+>]<<[+<<]<]"
-
-bfHello = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
-bfPrintBrainFuck = ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
-
-bfRot13 = "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
-bfReverse = ">,[>,]<[.<]"
- 
--- Outputs in unary (with bangs (!))
-bfASCIIValues = "++++[>++++++++<-],[[>+.-<-]>.<,]"
-bfSquares = "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
-
--- Tests
-bfIO = ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
-bf30000 = "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
-bfObscure = "[]++++++++++[>>+>+>++++++[<<+<+++>>>-]<<<<-]\n\"A*$\";?@![#>>+<<]>[>>]<<<<[>++<[-]]>.>."
-
--- QuickCheck properties
-propReverse :: String -> Property
-propReverse s = notElem '\NUL' s ==> out == reverse s
+propShiftLength :: ([a], [a]) -> (NonNegative Int) -> (NonNegative Int) -> Bool
+propShiftLength x (NonNegative l) (NonNegative r) = f x1 == f x2
   where
-    s' = s ++ "\NUL" -- bfReverse stops on 0
-    out = brainfuck bfReverse s'
+    -- Hack to save time :/
+    l' = l `mod` 1000
+    r' = r `mod` 1000
 
-propASCIIValues :: NonEmptyList Char -> Property
-propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
-  where
-    s'     = s ++ "\NUL" -- bfASCIIValues stops on 0
-    out    = brainfuck bfASCIIValues s'
-    values = map length $ words out
+    x1 = times shiftL x l'
+    x2 = times shiftR x r'
 
-testIO :: Bool
-testIO = length l == 2 && l !! 0 == l !! 1
-  where
-    l       = lines out
-    out     = brainfuck bfIO "\n\EOT"
+    f (a, b) = length a + length b
 
---testSize :: Bool
-testSize = out
+
+propShiftToEmpty :: ([a], [a]) -> Bool
+propShiftToEmpty x@(a, b) = null ae && null be && length af == lx && length bf == lx
   where
-    out = brainfuck bf30000 ""
+    la = length a
+    lb = length b
+
+    lx = la + lb
+
+    (ae, bf) = times shiftR x la
+    (af, be) = times shiftL x lb
 
