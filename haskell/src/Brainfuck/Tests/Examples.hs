@@ -13,9 +13,10 @@ import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
 import Brainfuck.Parser.Brainfuck
 
-bfInterpreter = ">>>+[[-]>>[-]++>+>+++++++[<++++>>++<-]++>>+>+>+++++[>++>++++++<<-]+>>>,<++[[>[->>]<[>>]<<-]<[<]<+>>[>]>[<+>-[[<+>-]>]<[[[-]<]++<-[<+++++++++>[<->-]>>]>>]]<<]<]<[[<]>[[>]>>[>>]+[<<]<[<]<+>>-]>[>]+[->>]<<<<[[<<]<[<]+<<[+>+<<-[>-->+<<-[>+<[>>+<<-]]]>[<+>-]<]++>>-->[>]>>[>>]]<<[>>+<[[<]<]>[[<<]<[<]+[-<+>>-[<<+>++>-[<->[<<+>>-]]]<[>+<-]>]>[>]>]>[>>]>>]<<[>>+>>+>>]<<[->>>>>>>>]<<[>.>>>>>>>]<<[>->>>>>]<<[>,>>>]<<[>+>]<<[+<<]<]"
+-- Prints "Hello World!\n"
+bfHello = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
 
-bfHello          = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
+-- Prints "brainfuck\n"
 bfPrintBrainFuck = ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
 
 bfRot13 = "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
@@ -23,21 +24,14 @@ bfReverse = ">,[>,]<[.<]"
  
 -- Outputs in unary (with bangs (!))
 bfASCIIValues = "++++[>++++++++<-],[[>+.-<-]>.<,]"
+
+-- Prints the squars (as ASCII numbers)
 bfSquares = "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
 
--- Tests
-bfIO = ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
+-- Goes to the 30000th cell
 bf30000 = "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
-bfObscure = "[]++++++++++[>>+>+>++++++[<<+<+++>>>-]<<<<-]\n\"A*$\";?@![#>>+<<]>[>>]<<<<[>++<[-]]>.>."
 
---propSquares :: Bool
-propSquares = 
-  where
-    squares = map (2^) [0..]
-
-    out = brainfuck bfSquares ""
-    out' = map (read) $ lines out
--- QuickCheck properties
+-- {{{ QuickCheck properties
 propReverse :: String -> Property
 propReverse s = notElem '\NUL' s ==> out == reverse s
   where
@@ -50,12 +44,23 @@ propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
     s'     = s ++ "\NUL" -- bfASCIIValues stops on 0
     out    = brainfuck bfASCIIValues s'
     values = map length $ words out
+-- }}}
+
+-- {{{ Tests
+testSquares :: Bool
+testSquares = and $ zipWith (==) squares out'
+  where
+    squares = map (^2) [0..100]
+
+    out = brainfuck bfSquares ""
+    out' = map (read) $ lines out
 
 testIO :: Bool
 testIO = length l == 2 && l !! 0 == l !! 1
   where
     l       = lines out
     out     = brainfuck bfIO "\n\EOT"
+    bfIO    = ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
 
 --testSize :: Bool
 testSize = out
@@ -65,7 +70,7 @@ testSize = out
 programs :: Bool
 programs = and $ map f bf
   where
-    state   = newState ""
+    state = newState ""
 
     f (p, o) = (toList $ output $ run p' state) == o
       where
@@ -75,3 +80,11 @@ programs = and $ map f bf
          , ("++++++++++[>+++++++<-]>++.", [72])
          , ("+++++[>>+++++<<-]>>.", [25]) ]
 
+asd =
+  [ ("+++++[>+++++[>+++++<-]<-]>>.", [125])
+  , ("++++++++++[>+++++++<-]>++.", [72])
+  , ("+++++[>>+++++<<-]>>.", [25])
+  , (bfHello, []) ]
+-- }}}
+
+-- vim: set fdm=marker :

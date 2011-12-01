@@ -12,18 +12,19 @@ data IL = Loop [IL]
   deriving Show
 
 compile :: [Brainfuck] -> [IL]
-compile []                  = []
-compile ((BFLoop l):bs)     = Loop (compile l) : compile bs
-compile ((BFToken Plus):bs) = Poke (1 + i) : compile bs'
-  where (i, bs') = pokes bs
-compile ((BFToken Minus):bs) = Poke (i - 1) : compile bs'
-  where (i, bs') = pokes bs
-compile ((BFToken ShiftRight):bs) = Shift (1 + i) : compile bs'
-  where (i, bs') = shifts bs
-compile ((BFToken ShiftLeft):bs) = Shift (i - 1) : compile bs'
-  where (i, bs') = shifts bs
-compile ((BFToken Output):bs) = PutChar : compile bs
-compile ((BFToken Input):bs) = GetChar : compile bs
+compile []                 = []
+compile ((BFLoop []):bs)   = compile bs
+compile ((BFLoop l):bs)    = Loop (compile l) : compile bs
+compile ((BFToken tok):bs) = case tok of
+  Plus       -> Poke (1 + p) : compile bsp
+  Minus      -> Poke (p - 1) : compile bsp
+  ShiftRight -> Shift (1 + s) : compile bss
+  ShiftLeft  -> Shift (s - 1) : compile bss
+  Output     -> PutChar : compile bs
+  Input      -> GetChar : compile bs
+  where
+    (p, bsp) = pokes bs
+    (s, bss) = shifts bs
 
 shifts :: [Brainfuck] -> (Int, [Brainfuck])
 shifts (BFToken ShiftRight:bs) = mapFst (+1) $ shifts bs
