@@ -19,8 +19,7 @@ evalOp op (State inp out mem)      = State inp out (opPure op mem)
 opPure :: IL -> Memory -> Memory
 opPure tok mem =
   case tok of
-    Shift i | i > 0     -> times shiftR mem i
-            | i < 0     -> times shiftL mem $ abs i
-            | otherwise -> mem
-    Poke i              -> modify (+ fromIntegral i) mem
-    _                   -> error "Unsupported operation"
+    RightShifts i -> times shiftR mem i
+    LeftShifts i  -> times shiftL mem i
+    Poke i        -> modify (+ fromIntegral i) mem
+    _             -> error "Unsupported operation"

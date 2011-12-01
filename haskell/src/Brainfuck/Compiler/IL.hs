@@ -6,25 +6,30 @@ import Brainfuck.Ext
 
 data IL = Loop [IL]
         | Poke Int
-        | Shift Int
+        | RightShifts Int
+        | LeftShifts Int
         | PutChar
         | GetChar
   deriving Show
 
 compile :: [Brainfuck] -> [IL]
-compile []                 = []
-compile ((BFLoop []):bs)   = compile bs
-compile ((BFLoop l):bs)    = Loop (compile l) : compile bs
-compile ((BFToken tok):bs) = case tok of
-  Plus       -> Poke (1 + p) : compile bsp
-  Minus      -> Poke (p - 1) : compile bsp
-  ShiftRight -> Shift (1 + s) : compile bss
-  ShiftLeft  -> Shift (s - 1) : compile bss
+compile []                    = []
+compile ((BFLoop []):bs)      = compile bs
+compile ((BFLoop l):bs)       = Loop (compile l) : compile bs
+compile il@((BFToken tok):bs) = case tok of
+  Plus       -> Poke p : compile bsp
+  Minus      -> Poke p : compile bsp
+  ShiftRight -> shift : compile bss
+  ShiftLeft  -> shift : compile bss
   Output     -> PutChar : compile bs
   Input      -> GetChar : compile bs
   where
-    (p, bsp) = pokes bs
-    (s, bss) = shifts bs
+    shift = if s < 0
+              then LeftShifts (abs s)
+              else RightShifts s
+
+    (p, bsp) = pokes il
+    (s, bss) = shifts il
 
 shifts :: [Brainfuck] -> (Int, [Brainfuck])
 shifts (BFToken ShiftRight:bs) = mapFst (+1) $ shifts bs
