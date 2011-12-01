@@ -16,7 +16,7 @@ compile :: [Brainfuck] -> [IL]
 compile []                    = []
 compile ((BFLoop []):bs)      = compile bs
 compile ((BFLoop l):bs)       = Loop (compile l) : compile bs
-compile il@((BFToken tok):bs) = case tok of
+compile bf@((BFToken tok):bs) = case tok of
   Plus       -> Poke p : compile bsp
   Minus      -> Poke p : compile bsp
   ShiftRight -> shift : compile bss
@@ -28,8 +28,8 @@ compile il@((BFToken tok):bs) = case tok of
               then LeftShifts (abs s)
               else RightShifts s
 
-    (p, bsp) = pokes il
-    (s, bss) = shifts il
+    (p, bsp) = pokes bf
+    (s, bss) = shifts bf
 
 shifts :: [Brainfuck] -> (Int, [Brainfuck])
 shifts (BFToken ShiftRight:bs) = mapFst (+1) $ shifts bs
