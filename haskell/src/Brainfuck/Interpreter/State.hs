@@ -4,29 +4,23 @@ import Data.Char
 import Data.Sequence
 import Data.Word
 
-type Cell   = Word8
-type Memory = ([Cell], [Cell])
-
-data State = State {
-  input :: [Cell],
-  output :: Seq Cell,
-  memory :: Memory
+data State a = State {
+  input :: [a],
+  output :: Seq a,
+  memory :: ([a], [a])
 } deriving Show
 
-chrCell :: Cell -> Char
-chrCell = chr . fromIntegral
+chrIntegral :: (Integral a) => a -> Char
+chrIntegral = chr . fromIntegral
 
-ordCell :: Char -> Cell
-ordCell = fromIntegral . ord
+ordIntegral :: (Integral a) => Char -> a
+ordIntegral = fromIntegral . ord
 
-brainfuckChars :: [Char]
-brainfuckChars = "-+<>[].,"
-
-newMemory :: Memory
+newMemory :: (Integral a) => ([a], [a])
 newMemory = (zeros, zeros)
   where
     zeros = iterate id 0
 
-newState :: String -> State
-newState inp = State (map ordCell inp) empty newMemory
+newState :: (Integral a) => String -> State a
+newState inp = State (map ordIntegral inp) empty newMemory
 
