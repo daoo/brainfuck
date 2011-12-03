@@ -3,17 +3,39 @@ module Brainfuck.Compiler.C (showC) where
 import Brainfuck.Compiler.IL
 
 showC :: [IL] -> String
-showC = program . toC
+showC = program 30000 . toC 1
 
-includes     = unlines ["#include <stdio.h>", "#include <stdlib.h>"]
-main code    = unlines ["int main() {", code, "return 0;", "}"]
-program code = unlines [includes, main code]
+program mem code =
+  unlines [ "#include <stdio.h>"
+          , "#include <stdlib.h>"
+          , ""
+          , "int main() {"
+          , indent 1 ++ "char mem[" ++ show mem ++ "];"
+          , indent 1 ++ "char *ptr = mem;"
+          , ""
+          , code
+          , "  return 0;"
+          , "}" ]
 
-toC :: [IL] -> String
-toC []                  = []
-toC (Loop l:bs)         = concat ["while (*ptr) { ", toC l, "} ", toC bs]
-toC (Poke i:bs)         = concat ["*ptr += ", show i, "; ", toC bs]
-toC (RightShifts i:bs)  = concat ["ptr += ", show i, "; ", toC bs]
-toC (LeftShifts i:bs)   = concat ["ptr -= ", show i, "; ", toC bs]
-toC (PutChar:bs)        = "putchar(*ptr); " ++ toC bs
-toC (GetChar:bs)        = "*ptr = getchar(); " ++ toC bs
+indent i = take (2 * i) $ repeat ' '
+
+toC :: Int -> [IL] -> String
+toC = helper
+  where
+    helper _ []          = []
+    helper i (Loop l:xs) = concat [ indent i
+                                  , "while (*ptr) {\n"
+                                  , helper (i + 1) l
+                                  , indent i
+                                  , "}\n"
+                                  , helper i xs]
+    helper i (x:xs)      = concat [ indent i
+                                  , line x
+                                  , "\n"
+                                  , helper i xs]
+
+    line (Poke i)        = concat ["*ptr += ", show i, ";"]
+    line (RightShifts i) = concat ["ptr += ", show i, ";"]
+    line (LeftShifts i)  = concat ["ptr -= ", show i, ";"]
+    line (PutChar)       = "putchar(*ptr);"
+    line (GetChar)       = "*ptr = getchar();"

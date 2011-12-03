@@ -5,11 +5,11 @@ import Brainfuck.Parser.Brainfuck
 import Brainfuck.Ext
 
 data IL = Loop [IL]
-        | Poke Int
+        | Poke Int Int
         | RightShifts Int
         | LeftShifts Int
-        | PutChar
-        | GetChar
+        | PutChar Int
+        | GetChar Int
   deriving Show
 
 compile :: [Brainfuck] -> [IL]
