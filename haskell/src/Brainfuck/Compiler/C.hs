@@ -36,9 +36,9 @@ toC = helper
                                   , "\n"
                                   , helper i xs ]
 
-    line (Poke i)        = concat [ "*ptr += ", show i, ";" ]
+    line (Poke p i)      = concat [ "*(ptr + ", show p, ") += ", show i, ";" ]
     line (RightShifts i) = concat [ "ptr += ", show i, ";" ]
     line (LeftShifts i)  = concat [ "ptr -= ", show i, ";" ]
-    line PutChar         = "putchar(*ptr);"
-    line GetChar         = "*ptr = getchar();"
+    line (PutChar p)     = concat [ "putchar(*(ptr + ", show p, "));" ]
+    line (GetChar p)     = concat [ "*(ptr + ", show p, ") = getchar();" ]
     line _               = error "error"

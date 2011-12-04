@@ -5,11 +5,11 @@ import Brainfuck.Parser.Brainfuck
 import Brainfuck.Ext
 
 data IL = Loop [IL]
-        | Poke Int
+        | Poke Int Int
         | RightShifts Int
         | LeftShifts Int
-        | PutChar
-        | GetChar
+        | PutChar Int
+        | GetChar Int
   deriving Show
 
 compile :: [Brainfuck] -> [IL]
@@ -17,12 +17,12 @@ compile []                    = []
 compile ((BFLoop []):bs)      = compile bs
 compile ((BFLoop l):bs)       = Loop (compile l) : compile bs
 compile bf@((BFToken tok):bs) = case tok of
-  Plus       -> Poke p : compile bsp
-  Minus      -> Poke p : compile bsp
+  Plus       -> Poke 0 p : compile bsp
+  Minus      -> Poke 0 p : compile bsp
   ShiftRight -> shift : compile bss
   ShiftLeft  -> shift : compile bss
-  Output     -> PutChar : compile bs
-  Input      -> GetChar : compile bs
+  Output     -> PutChar 0 : compile bs
+  Input      -> GetChar 0 : compile bs
   where
     shift = if s < 0
               then LeftShifts (abs s)
