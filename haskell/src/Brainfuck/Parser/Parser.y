@@ -24,10 +24,10 @@ import Brainfuck.Parser.Brainfuck
 %%
 
 Expr ::                  { [Brainfuck] }
-     : Token             { [BFToken $1] }
-     | Token Expr        { BFToken $1 : $2 }
-     | '[' Expr ']'      { [BFLoop $2] }
-     | '[' Expr ']' Expr { BFLoop $2 : $4 }
+     : Token             { [Token $1] }
+     | Token Expr        { Token $1 : $2 }
+     | '[' Expr ']'      { [Loop $2] }
+     | '[' Expr ']' Expr { Loop $2 : $4 }
 
 Token ::    { Token }
 Token : '+' { Plus }

@@ -3,7 +3,7 @@ module Brainfuck.Compiler.C (showC) where
 import Brainfuck.Compiler.IL
 
 showC :: [IL] -> String
-showC = program 30000 . toC 1
+showC = program 30001 . toC 1
 
 program :: Int -> String -> String
 program mem code =
@@ -36,9 +36,9 @@ toC = helper
                                   , "\n"
                                   , helper i xs ]
 
-    line (Poke p i)      = concat [ "*(ptr + ", show p, ") += ", show i, ";" ]
-    line (RightShifts i) = concat [ "ptr += ", show i, ";" ]
-    line (LeftShifts i)  = concat [ "ptr -= ", show i, ";" ]
-    line (PutChar p)     = concat [ "putchar(*(ptr + ", show p, "));" ]
-    line (GetChar p)     = concat [ "*(ptr + ", show p, ") = getchar();" ]
-    line _               = error "error"
+    line (Poke p i)              = concat [ "*(ptr + ", show p, ") += ", show i, ";" ]
+    line (Shift (ShiftLeft i))   = concat [ "ptr += ", show i, ";" ]
+    line (Shift (ShiftRight i))  = concat [ "ptr -= ", show i, ";" ]
+    line (PutChar p)             = concat [ "putchar(*(ptr + ", show p, "));" ]
+    line (GetChar p)             = concat [ "*(ptr + ", show p, ") = getchar();" ]
+    line _                       = error "error"

@@ -3,8 +3,8 @@ module Brainfuck.Parser.Brainfuck where
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq
 
-data Brainfuck = BFLoop [Brainfuck]
-               | BFToken Token
+data Brainfuck = Loop [Brainfuck]
+               | Token Token
   deriving Eq
 
 instance Show Token where
@@ -16,6 +16,6 @@ instance Show Token where
   show Output     = "."
 
 instance Show Brainfuck where
-  show (BFLoop bf) = concat ["[", concatMap show bf, "]"]
-  show (BFToken t) = show t
+  show (Loop bf) = concat ["[", concatMap show bf, "]"]
+  show (Token t) = show t
 

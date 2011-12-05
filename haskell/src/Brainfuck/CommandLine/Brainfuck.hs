@@ -6,8 +6,9 @@ import System
 import System.Directory
 
 import Brainfuck.CommandLine.Run
-import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.C
+import Brainfuck.Compiler.IL
+import Brainfuck.Compiler.Optimizer
 import Brainfuck.Parser.Parser
 
 main :: IO ()
