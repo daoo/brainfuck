@@ -36,7 +36,7 @@ compile bf@((B.Token tok):bs) = case tok of
 shifts :: [B.Brainfuck] -> (Int, [B.Brainfuck])
 shifts (B.Token B.ShiftRight:bs) = mapFst (+1) $ shifts bs
 shifts (B.Token B.ShiftLeft:bs)  = mapFst (subtract 1) $ shifts bs
-shifts bs                      = (0, bs)
+shifts bs                        = (0, bs)
 
 pokes :: [B.Brainfuck] -> (Int, [B.Brainfuck])
 pokes (B.Token B.Plus:bs)  = mapFst (+1) $ pokes bs
