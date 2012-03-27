@@ -38,4 +38,4 @@ instance Arbitrary Brainfuck where
   arbitrary = Token `fmap` arbitrary
 
 propParser :: [Brainfuck] -> Bool
-propParser bf = bf == (parse $ show bf)
+propParser bf = bf == parse (show bf)

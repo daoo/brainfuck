@@ -40,9 +40,9 @@ compile bf@(B.Token tok:bs) = case tok of
 decompile :: [IL] -> [B.Brainfuck]
 decompile []            = []
 decompile (Loop l : il) = B.Loop (decompile l) : decompile il
-decompile (tok : il)    = token tok ++ decompile il
+decompile (tok : il)    = token ++ decompile il
   where
-    token tok = case tok of
+    token = case tok of
       Poke d i  -> ws d (mp i)
       Shift s   -> ms (shiftCount s)
       PutChar d -> ws d [B.Token B.Output]
