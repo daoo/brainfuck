@@ -21,7 +21,7 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-sources = $(wildcard src/**/*.hs)
+sources = $(shell find src/ -type f -name '*.hs')
 flags   = -isrc:$(outdir) -o $(outdir)/$(exename) -odir $(outdir) -hidir $(outdir)
 
 build: parser

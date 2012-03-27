@@ -3,16 +3,13 @@ module Brainfuck.Compiler.Analyzer where
 import Brainfuck.Compiler.IL
 
 memoryRequired :: [IL] -> Maybe Int
-memoryRequired []                                = Just 0
-memoryRequired (Loop l:xs) | memoryShifts l == 0 = memoryRequired xs
-                           | otherwise           = Nothing
-memoryRequired (LeftShifts i:xs)                 = memoryRequired xs >>= (Just . subtract i)
-memoryRequired (RightShifts i:xs)                = memoryRequired xs >>= (Just . (+i))
-memoryRequired (_:xs)                            = memoryRequired xs
+memoryRequired = undefined
 
 memoryShifts :: [IL] -> Int
-memoryShifts []                 = 0
-memoryShifts (Loop l:xs)        = memoryShifts l + memoryShifts xs
-memoryShifts (RightShifts i:xs) = i + memoryShifts xs
-memoryShifts (LeftShifts i:xs)  = (-i) + memoryShifts xs
-memoryShifts (_:xs)             = memoryShifts xs
+memoryShifts = sum . map f
+  where
+    f il = case il of
+      Loop l  -> memoryShifts l
+      Shift s -> shiftCount s
+      _       -> 0
+

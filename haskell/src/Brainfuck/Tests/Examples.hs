@@ -2,33 +2,38 @@ module Brainfuck.Tests.Example where
 
 import Data.Char
 import Data.Foldable (toList)
-import Data.Sequence (index)
+import Data.Word
 
 import Test.QuickCheck hiding (output)
 
-import Brainfuck.CommandLine.Run
+import Brainfuck.Run
 import Brainfuck.Compiler.IL
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
-import Brainfuck.Parser.Brainfuck
 
 -- Prints "Hello World!\n"
+bfHello :: String
 bfHello = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
 
 -- Prints "brainfuck\n"
+bfPrintBrainFuck :: String
 bfPrintBrainFuck = ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
 
+bfRot13, bfReverse :: String
 bfRot13   = "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
 bfReverse = ">,[>,]<[.<]"
  
 -- Outputs in unary (with bangs (!))
+bfASCIIValues :: String
 bfASCIIValues = "++++[>++++++++<-],[[>+.-<-]>.<,]"
 
 -- Prints the squars (as ASCII numbers)
+bfSquares :: String
 bfSquares = "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
 
 -- Goes to the 30000th cell
+bf30000 :: String
 bf30000 = "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
 
 -- {{{ QuickCheck properties
@@ -48,12 +53,13 @@ propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
 
 -- {{{ Tests
 testSquares :: Bool
-testSquares = and $ zipWith (==) squares out'
+testSquares = and $ zipWith (==) squares out
   where
+    squares :: [Integer]
     squares = map (^2) [0..100]
 
-    out = brainfuck bfSquares ""
-    out' = map read $ lines out
+    out :: [Integer]
+    out = map read $ lines $ brainfuck bfSquares ""
 
 testIO :: Bool
 testIO = length l == 2 && let [a, b] = l in a == b
@@ -72,19 +78,15 @@ programs = all f bf
   where
     state = newState ""
 
-    f (p, o) = toList (output $ run p' state) == o
+    f (p, o) = toList (output $ run state p') == o
       where
         p' = compile $ parse p
 
+    bf :: [(String, [Word8])]
     bf = [ ("+++++[>+++++[>+++++<-]<-]>>.", [125])
          , ("++++++++++[>+++++++<-]>++.", [72])
-         , ("+++++[>>+++++<<-]>>.", [25]) ]
-
-asd =
-  [ ("+++++[>+++++[>+++++<-]<-]>>.", [125])
-  , ("++++++++++[>+++++++<-]>++.", [72])
-  , ("+++++[>>+++++<<-]>>.", [25])
-  , (bfHello, []) ]
+         , ("+++++[>>+++++<<-]>>.", [25])
+         , (bfHello, []) ]
 -- }}}
 
 -- vim: set fdm=marker :

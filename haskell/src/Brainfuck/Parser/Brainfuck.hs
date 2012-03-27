@@ -7,15 +7,20 @@ data Brainfuck = Loop [Brainfuck]
                | Token Token
   deriving Eq
 
+toChar :: Token -> Char
+toChar Plus       = '+'
+toChar Minus      = '-'
+toChar ShiftLeft  = '<'
+toChar ShiftRight = '>'
+toChar Input      = ','
+toChar Output     = '.'
+
 instance Show Token where
-  show Plus       = "+"
-  show Minus      = "-"
-  show ShiftLeft  = "<"
-  show ShiftRight = ">"
-  show Input      = ","
-  show Output     = "."
+  show t = [toChar t]
 
 instance Show Brainfuck where
   show (Loop bf) = concat ["[", concatMap show bf, "]"]
   show (Token t) = show t
+
+  showList bf = (++) (concatMap show bf)
 

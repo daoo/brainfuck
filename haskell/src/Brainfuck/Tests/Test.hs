@@ -2,7 +2,10 @@ module Brainfuck.Tests.Test where
 
 import Test.QuickCheck
 
+import Brainfuck.Compiler.IL (compile, decompile)
 import Brainfuck.Ext
+import Brainfuck.Parser.Brainfuck
+import Brainfuck.Parser.Parser
 
 propShiftLength :: ([a], [a]) -> NonNegative Int -> NonNegative Int -> Bool
 propShiftLength x (NonNegative l) (NonNegative r) = f x1 == f x2
@@ -28,3 +31,11 @@ propShiftToEmpty x@(a, b) = null ae && null be && length af == lx && length bf =
     (ae, bf) = times shiftR x la
     (af, be) = times shiftL x lb
 
+instance Arbitrary Token where
+  arbitrary = oneof $ map return [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
+
+instance Arbitrary Brainfuck where
+  arbitrary = Token `fmap` arbitrary
+
+propParser :: [Brainfuck] -> Bool
+propParser bf = bf == (parse $ show bf)

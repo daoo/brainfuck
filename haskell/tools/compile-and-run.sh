@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 
-name=$(basename $1)
+bf="build/brainfuck"
 
-cfile="/tmp/$name.c"
-ofile="/tmp/$name"
+if [[ ! -x "$bf" ]]; then
+  echo "brainfuck compiler not found"
+elif [[ ! -f "$1" ]]; then
+  echo "usage: compile-and-run brainfuck.bf"
+else
+  name=$(basename $1)
 
-$HOME/code/brainfuck/haskell/build/brainfuck -c "$1" > $cfile
+  cfile="/tmp/$name.c"
+  ofile="/tmp/$name"
 
-gcc -O3 -o "$ofile" "$cfile"
+  $bf -c "$1" > "$cfile"
 
-exec "$ofile"
+  gcc -O3 -o "$ofile" "$cfile"
 
+  exec "$ofile"
+fi
