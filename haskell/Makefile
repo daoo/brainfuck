@@ -1,3 +1,6 @@
+outdir  = build
+exename = brainfuck
+
 warnings = -Wall \
 	   -fno-warn-unused-do-bind \
 	   -fwarn-duplicate-exports \
@@ -18,20 +21,22 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-flags = -isrc:build -o build/brainfuck -odir build -hidir build/
+sources = $(wildcard src/**/*.hs)
+flags   = -isrc:$(outdir) -o $(outdir)/$(exename) -odir $(outdir) -hidir $(outdir)
 
 build: parser
 	ghc --make $(warnings) $(flags) src/Main.hs
 
 ghci: parser
-	ghc --interactive $(warnings) $(flags) src/Main.hs
+	ghc --interactive $(warnings) $(flags) $(sources)
 
 parser: src/Brainfuck/Parser/Parser.y
-	happy src/Brainfuck/Parser/Parser.y -o build/Brainfuck/Parser/Parser.hs
+	@mkdir -p $(outdir)/Brainfuck/Parser/
+	happy src/Brainfuck/Parser/Parser.y -o $(outdir)/Brainfuck/Parser/Parser.hs
 
 clean:
-	rm -r build/
-	mkdir -p build/Brainfuck/Parser/
+	rm -r $(outdir)/
+	mkdir -p $(outdir)/Brainfuck/Parser/
 
 hlint:
-	$(HOME)/.cabal/bin/hlint . -c -p src
+	hlint . -c -p src
