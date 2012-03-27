@@ -22,21 +22,22 @@ warnings = -Wall \
 	   -fwarn-wrong-do-bind \
 
 sources = $(shell find src/ -type f -name '*.hs')
-flags   = -isrc:$(outdir) -o $(outdir)/$(exename) -odir $(outdir) -hidir $(outdir)
+flags   = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 
 build: parser
-	ghc --make $(warnings) $(flags) src/Main.hs
+	ghc --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
 
 ghci: parser
-	ghc --interactive $(warnings) $(flags) $(sources)
+	ghci $(warnings) $(flags) $(sources)
 
 parser: src/Brainfuck/Parser/Parser.y
-	@mkdir -p $(outdir)/Brainfuck/Parser/
 	happy src/Brainfuck/Parser/Parser.y -o $(outdir)/Brainfuck/Parser/Parser.hs
 
 clean:
-	rm -r $(outdir)/
+	rm -r $(outdir)/*
 	mkdir -p $(outdir)/Brainfuck/Parser/
 
 hlint:
 	hlint . -c -p src
+
+.PHONY: clean
