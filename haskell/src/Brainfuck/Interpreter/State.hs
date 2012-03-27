@@ -2,7 +2,6 @@ module Brainfuck.Interpreter.State where
 
 import Data.Char
 import Data.Sequence
-import Data.Word
 
 data State a = State {
   input :: [a],

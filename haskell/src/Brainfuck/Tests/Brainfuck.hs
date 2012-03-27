@@ -11,4 +11,4 @@ instance Arbitrary Brainfuck where
   arbitrary = oneof $ map (return . BFToken) [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
 
 propParser :: [Brainfuck] -> Bool
-propParser bf = bf == (parse $ concatMap show bf)
+propParser bf = bf == parse (concatMap show bf)

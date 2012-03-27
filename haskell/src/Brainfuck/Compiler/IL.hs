@@ -15,10 +15,10 @@ data IL = Loop [IL]
   deriving Show
 
 compile :: [B.Brainfuck] -> [IL]
-compile []                    = []
-compile ((B.Loop []):bs)      = compile bs
-compile ((B.Loop l):bs)       = Loop (compile l) : compile bs
-compile bf@((B.Token tok):bs) = case tok of
+compile []                  = []
+compile (B.Loop []:bs)      = compile bs
+compile (B.Loop l:bs)       = Loop (compile l) : compile bs
+compile bf@(B.Token tok:bs) = case tok of
   B.Plus       -> Poke 0 p : compile bsp
   B.Minus      -> Poke 0 p : compile bsp
   B.ShiftRight -> shift : compile bss

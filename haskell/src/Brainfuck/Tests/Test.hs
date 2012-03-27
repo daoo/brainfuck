@@ -4,7 +4,7 @@ import Test.QuickCheck
 
 import Brainfuck.Ext
 
-propShiftLength :: ([a], [a]) -> (NonNegative Int) -> (NonNegative Int) -> Bool
+propShiftLength :: ([a], [a]) -> NonNegative Int -> NonNegative Int -> Bool
 propShiftLength x (NonNegative l) (NonNegative r) = f x1 == f x2
   where
     -- Hack to save time :/

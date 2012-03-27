@@ -19,7 +19,7 @@ program mem code =
           , "}" ]
 
 indent :: Int -> String
-indent i = take (2 * i) $ repeat ' '
+indent i = replicate (2 * i) ' '
 
 toC :: Int -> [IL] -> String
 toC = helper

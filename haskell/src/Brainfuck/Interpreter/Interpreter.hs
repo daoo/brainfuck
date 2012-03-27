@@ -6,15 +6,14 @@ import Brainfuck.Ext
 import Brainfuck.Interpreter.State
 import Brainfuck.Compiler.IL
 
-run :: (Integral a) => [IL] -> State a -> State a
-run [] state       = state
-run (op:ops) state = run ops $ evalOp op state
+run :: (Integral a) => State a -> [IL] -> State a
+run = foldl evalOp
 
-evalOp :: (Integral a) => IL -> State a -> State a
-evalOp (Loop ops) state                = until ((== 0) . current . memory) (run ops) state
-evalOp (PutChar 0) (State inp out mem) = State inp (out |> current mem) mem
-evalOp (GetChar 0) (State inp out mem) = State (tail inp) out (modify (const $ head inp) mem)
-evalOp op (State inp out mem)          = State inp out (opPure op mem)
+evalOp :: (Integral a) => State a -> IL -> State a
+evalOp state (Loop ops)                = until ((== 0) . current . memory) (`run` ops) state
+evalOp (State inp out mem) (PutChar 0) = State inp (out |> current mem) mem
+evalOp (State inp out mem) (GetChar 0) = State (tail inp) out (modify (const $ head inp) mem)
+evalOp (State inp out mem) op          = State inp out (opPure op mem)
 
 opPure :: (Integral a) => IL -> ([a], [a]) -> ([a], [a])
 opPure tok mem =

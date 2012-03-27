@@ -3,7 +3,6 @@ module Brainfuck.Compiler.Optimizations where
 import Brainfuck.Compiler.IL
 
 mergeSame :: IL -> IL -> [IL]
-mergeSame (Shift s1) (Shift s2)                = undefined
 mergeSame (Poke p1 i1) (Poke p2 i2) | p1 == p2 = [Poke p1 (i1 + i2)]
 mergeSame il1 il2                              = [il1, il2]
 

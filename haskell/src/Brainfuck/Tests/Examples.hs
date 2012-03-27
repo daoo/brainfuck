@@ -53,10 +53,10 @@ testSquares = and $ zipWith (==) squares out'
     squares = map (^2) [0..100]
 
     out = brainfuck bfSquares ""
-    out' = map (read) $ lines out
+    out' = map read $ lines out
 
 testIO :: Bool
-testIO = length l == 2 && l !! 0 == l !! 1
+testIO = length l == 2 && let [a, b] = l in a == b
   where
     l       = lines out
     out     = brainfuck bfIO "\n\EOT"
@@ -68,11 +68,11 @@ testSize = out
     out = brainfuck bf30000 ""
 
 programs :: Bool
-programs = and $ map f bf
+programs = all f bf
   where
     state = newState ""
 
-    f (p, o) = (toList $ output $ run p' state) == o
+    f (p, o) = toList (output $ run p' state) == o
       where
         p' = compile $ parse p
 

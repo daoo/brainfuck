@@ -1,15 +1,27 @@
 module Main where
 
+import Data.Foldable (toList)
 import Data.List
+import Data.Word
 
-import System
+import System.Environment
 import System.Directory
 
-import Brainfuck.CommandLine.Run
 import Brainfuck.Compiler.C
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimizer
+import Brainfuck.Interpreter.Interpreter
+import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
+
+brainfuck :: String -> String -> String
+brainfuck str inp = map chrIntegral $ brainfuck1 str inp
+
+brainfuck1 :: String -> String -> [Word8]
+brainfuck1 str inp = toList out
+  where
+    il            = compile $ parse str
+    State _ out _ = run (newState inp) il
 
 main :: IO ()
 main = do
@@ -26,12 +38,12 @@ main = do
       putStr $ brainfuck bf inp
 
   where
-    getBF :: String -> IO (String)
+    getBF :: String -> IO String
     getBF str = do
       isfile <- doesFileExist str
-      case isfile of
-        True  -> readFile str
-        False -> return str
+      if isfile
+        then readFile str
+        else return str
 
     internal :: String -> [IL]
     internal = optimize . compile . parse

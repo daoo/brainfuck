@@ -18,17 +18,20 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-flags = -isrc -o build/brainfuck -odir build -hidir build/
+flags = -isrc:build -o build/brainfuck -odir build -hidir build/
 
-all:
+build: parser
 	ghc --make $(warnings) $(flags) src/Main.hs
 
-ghci:
+ghci: parser
 	ghc --interactive $(warnings) $(flags) src/Main.hs
+
+parser: src/Brainfuck/Parser/Parser.y
+	happy src/Brainfuck/Parser/Parser.y -o build/Brainfuck/Parser/Parser.hs
 
 clean:
 	rm -r build/
-	mkdir build/
+	mkdir -p build/Brainfuck/Parser/
 
 hlint:
-	$(HOME)/.cabal/bin/hlint . -p src
+	$(HOME)/.cabal/bin/hlint . -c -p src
