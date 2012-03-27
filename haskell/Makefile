@@ -38,6 +38,6 @@ clean:
 	mkdir -p $(outdir)/Brainfuck/Parser/
 
 hlint:
-	hlint . -c -p src
+	hlint src -c
 
 .PHONY: clean
