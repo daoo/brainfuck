@@ -1,4 +1,4 @@
-module Brainfuck.Tests.Example where
+module Examples where
 
 import Data.Char
 import Data.Foldable (toList)
@@ -6,11 +6,12 @@ import Data.Word
 
 import Test.QuickCheck hiding (output)
 
-import Brainfuck.Run
 import Brainfuck.Compiler.IL
+import Brainfuck.Compiler.Optimizer
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
+import Brainfuck.Run
 
 -- Prints "Hello World!\n"
 bfHello :: String
@@ -88,5 +89,12 @@ programs = all f bf
          , ("+++++[>>+++++<<-]>>.", [25])
          , (bfHello, []) ]
 -- }}}
+
+compareOptimized :: String -> IO ()
+compareOptimized bf = do
+  putStrLn "Unoptimized:"
+  putStrLn bf
+  putStrLn "Optimized:"
+  print $ decompile $ optimizeFully $ compile $ parse bf
 
 -- vim: set fdm=marker :

@@ -30,7 +30,7 @@ current = head . fst
 modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
 modify = mapFst . mapHead
 
-times :: (a -> a) -> a -> Int -> a
-times f a i | i < 0 = error "Negative number"
+times :: (a -> a) -> Int -> a -> a
+times f i a | i < 0 = error "Negative number"
             | i == 0 = a
-            | otherwise = times f (f a) (i - 1)
+            | otherwise = times f (i - 1) (f a)

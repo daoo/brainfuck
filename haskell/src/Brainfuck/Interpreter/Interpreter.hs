@@ -19,8 +19,11 @@ opPure :: (Integral a) => IL -> ([a], [a]) -> ([a], [a])
 opPure tok mem =
   case tok of
     Shift s -> case s of
-      ShiftLeft i -> times shiftL mem i
-      ShiftRight i -> times shiftR mem i
+      ShiftLeft i  -> times shiftL i mem
+      ShiftRight i -> times shiftR i mem
 
     Poke 0 i -> modify (+ fromIntegral i) mem
-    _        -> error "Unsupported operation"
+    Poke d i | d > 0 -> times shiftL d  $ modify (+ fromIntegral i) $ times shiftR d mem
+             | d < 0 -> times shiftR d' $ modify (+ fromIntegral i) $ times shiftL d' mem
+      where
+        d' = abs d

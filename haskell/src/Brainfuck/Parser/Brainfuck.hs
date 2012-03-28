@@ -1,5 +1,7 @@
 module Brainfuck.Parser.Brainfuck where
 
+import Test.QuickCheck
+
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq
 
@@ -23,4 +25,10 @@ instance Show Brainfuck where
   show (Token t) = show t
 
   showList bf = (++) (concatMap show bf)
+
+instance Arbitrary Token where
+  arbitrary = oneof $ map return [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
+
+instance Arbitrary Brainfuck where
+  arbitrary = Token `fmap` arbitrary
 

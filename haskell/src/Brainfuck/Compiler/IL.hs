@@ -1,11 +1,11 @@
 module Brainfuck.Compiler.IL where
 
+import Test.QuickCheck
+
 import qualified Brainfuck.Parser.Brainfuck as B
 
-import Brainfuck.Ext
-
 data MemShift = ShiftLeft Int | ShiftRight Int
-  deriving Show
+  deriving (Show, Eq)
 
 fromInt :: Int -> MemShift
 fromInt i = if i < 0
@@ -13,7 +13,7 @@ fromInt i = if i < 0
   else ShiftRight i
 
 shiftCount :: MemShift -> Int
-shiftCount (ShiftLeft i)  = -i
+shiftCount (ShiftLeft i)  = negate i
 shiftCount (ShiftRight i) = i
 
 data IL = Loop [IL]
@@ -21,21 +21,32 @@ data IL = Loop [IL]
         | Shift MemShift
         | PutChar Int
         | GetChar Int
-  deriving Show
+  deriving (Show, Eq)
+
+instance Arbitrary IL where
+  arbitrary = do
+    i1 <- choose (-100, 100)
+    i2 <- choose (-100, 100)
+    oneof $ map return [Poke i1 i2, Shift (fromInt i1)]
+
+filterIL :: (IL -> Bool) -> [IL] -> [IL]
+filterIL _ []                     = []
+filterIL f (Loop loop : ils)      = Loop (filterIL f loop) : filterIL f ils
+filterIL f (il : ils) | f il      = il : filterIL f ils
+                      | otherwise = filterIL f ils
 
 compile :: [B.Brainfuck] -> [IL]
-compile []                  = []
-compile (B.Loop l : bs)     = Loop (compile l) : compile bs
-compile bf@(B.Token tok:bs) = case tok of
-  B.Plus       -> Poke 0 p : compile bsp
-  B.Minus      -> Poke 0 p : compile bsp
-  B.ShiftRight -> Shift (fromInt s) : compile bss
-  B.ShiftLeft  -> Shift (fromInt s) : compile bss
-  B.Output     -> PutChar 0 : compile bs
-  B.Input      -> GetChar 0 : compile bs
+compile []                 = []
+compile (B.Loop l : bs)    = Loop (compile l) : compile bs
+compile (B.Token tok : bs) = tok' : compile bs
   where
-    (p, bsp) = pokes bf
-    (s, bss) = shifts bf
+    tok' = case tok of
+      B.Plus       -> Poke 0 1
+      B.Minus      -> Poke 0 (-1)
+      B.ShiftRight -> Shift (ShiftRight 1)
+      B.ShiftLeft  -> Shift (ShiftLeft 1)
+      B.Output     -> PutChar 0
+      B.Input      -> GetChar 0
 
 decompile :: [IL] -> [B.Brainfuck]
 decompile []            = []
@@ -60,13 +71,9 @@ decompile (tok : il)    = token ++ decompile il
          | i < 0     = replicate (abs i) (B.Token B.Minus)
          | otherwise = replicate i (B.Token B.Plus)
 
-shifts :: [B.Brainfuck] -> (Int, [B.Brainfuck])
-shifts (B.Token B.ShiftRight:bs) = mapFst (+1) $ shifts bs
-shifts (B.Token B.ShiftLeft:bs)  = mapFst (subtract 1) $ shifts bs
-shifts bs                        = (0, bs)
-
-pokes :: [B.Brainfuck] -> (Int, [B.Brainfuck])
-pokes (B.Token B.Plus:bs)  = mapFst (+1) $ pokes bs
-pokes (B.Token B.Minus:bs) = mapFst (subtract 1) $ pokes bs
-pokes bs                   = (0, bs)
-
+modifyRelative :: IL -> Int -> IL
+modifyRelative (PutChar _) p = PutChar p
+modifyRelative (GetChar _) p = GetChar p
+modifyRelative (Poke _ i) p  = Poke p i
+modifyRelative il _          = il
+     

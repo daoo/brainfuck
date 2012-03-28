@@ -34,7 +34,7 @@ main = do
         else return str
 
     internal :: String -> [IL]
-    internal = optimize . compile . parse
+    internal = optimizeFully . compile . parse
 
     makeC :: String -> String
     makeC = showC . internal

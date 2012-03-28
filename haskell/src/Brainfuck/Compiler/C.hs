@@ -31,14 +31,14 @@ toC = helper
                                   , indent i
                                   , "}\n"
                                   , helper i xs ]
-    helper i (x:xs)      = concat [ indent i
-                                  , line x
-                                  , "\n"
-                                  , helper i xs ]
+    helper i (x:xs) = concat [ indent i
+                             , line x
+                             , "\n"
+                             , helper i xs ]
 
-    line (Poke p i)              = concat [ "*(ptr + ", show p, ") += ", show i, ";" ]
+    line (Poke p i)              = concat [ "ptr[", show p, "] += ", show i, ";" ]
     line (Shift (ShiftLeft i))   = concat [ "ptr -= ", show i, ";" ]
     line (Shift (ShiftRight i))  = concat [ "ptr += ", show i, ";" ]
-    line (PutChar p)             = concat [ "putchar(*(ptr + ", show p, "));" ]
-    line (GetChar p)             = concat [ "*(ptr + ", show p, ") = getchar();" ]
+    line (PutChar p)             = concat [ "putchar(ptr[", show p, "]);" ]
+    line (GetChar p)             = concat [ "ptr[", show p, "] = getchar();" ]
     line _                       = error "error"

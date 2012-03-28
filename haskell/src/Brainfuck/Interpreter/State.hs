@@ -7,7 +7,7 @@ data State a = State {
   input :: [a],
   output :: Seq a,
   memory :: ([a], [a])
-} deriving Show
+} deriving (Show, Eq)
 
 chrIntegral :: (Integral a) => a -> Char
 chrIntegral = chr . fromIntegral
