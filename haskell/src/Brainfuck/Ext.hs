@@ -12,6 +12,9 @@ shiftR :: ([a], [a]) -> ([a], [a])
 shiftR (a:as, bs) = (as, a:bs)
 shiftR x          = x
 
+zipBoth :: (a -> b -> c) -> (a, a) -> (b, b) -> (c, c)
+zipBoth f (a, b) (c, d) = (f a c, f b d)
+
 mapBoth :: (a -> b) -> (a, a) -> (b, b)
 mapBoth f (a, b) = (f a, f b)
 
@@ -37,14 +40,9 @@ offset :: (Integral a) => a -> ([b], [b]) -> b
 offset i tup | i < 0     = (`genericIndex` (abs i - 1)) $ snd tup
              | otherwise = (`genericIndex` i) $ fst tup
 
--- Apply f to the first element of the second array
-modify :: (a -> a) -> ([a], [a]) -> ([a], [a])
-modify = mapFst . mapHead
-
-modify' :: (Integral b) => (a -> a) -> b -> ([a], [a]) -> ([a], [a])
-modify' f i tup | i == 0    = modify f tup
-                | i < 0     = mapSnd (mapOffset f (abs i - 1)) tup
-                | otherwise = mapFst (mapOffset f i) tup
+modify :: (Integral b) => (a -> a) -> b -> ([a], [a]) -> ([a], [a])
+modify f i tup | i < 0     = mapSnd (mapOffset f (abs i - 1)) tup
+               | otherwise = mapFst (mapOffset f i) tup
 
 times :: (a -> a) -> Int -> a -> a
 times f i a | i < 0 = error "Negative number"
