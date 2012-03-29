@@ -2,62 +2,56 @@ module Brainfuck.Compiler.Optimizer where
 
 import Brainfuck.Compiler.IL
 
---optimize (s1@(Shift _) : il : s2@(Shift _) : ils) = reduceShifts s1 il s2 ++ optimize ils
-
 optimize :: [IL] -> [IL]
-optimize = shiftShifts . clean . sortPokes . reduceShifts . mergeSame
+optimize = merge3 reduceShifts
+         . merge2 sortPokes
+         . filterIL clean
+         . merge2 mergeSame
+         . whileModified (merge2 shiftShifts)
+
+whileModified :: (Eq a) => (a -> a) -> a -> a
+whileModified f a | a == a'   = a'
+                  | otherwise = whileModified f a'
+  where a' = f a
 
 optimizeFully :: [IL] -> [IL]
-optimizeFully ils | ils == ils' = ils'
-                  | otherwise   = optimizeFully ils'
+optimizeFully = whileModified optimize
+
+clean :: IL -> Bool
+clean (Shift ms) = shiftCount ms /= 0
+clean (Poke _ i) = i /= 0
+clean _          = True
+
+sortPokes :: IL -> IL -> Merge
+sortPokes p1@(Poke d1 _) p2@(Poke d2 _) | d1 <= d2  = Keep
+                                        | otherwise = Replace [p2, p1]
+sortPokes _ _ = Keep
+
+shiftShifts :: IL -> IL -> Merge
+shiftShifts s@(Shift ms) (Poke d i)  = Replace [Poke (d + shiftCount ms) i, s]
+shiftShifts s@(Shift ms) (PutChar d) = Replace [PutChar (d + shiftCount ms), s]
+shiftShifts s@(Shift ms) (GetChar d) = Replace [GetChar (d + shiftCount ms), s]
+shiftShifts _ _                      = Keep
+
+mergeSame :: IL -> IL -> Merge
+mergeSame (Poke d1 i1) (Poke d2 i2) | d1 /= d2  = Keep
+                                    | i' == 0   = Remove
+                                    | otherwise = Replace [Poke d1 i']
   where
-    ils' = optimize ils
+    i' = i1 + i2
 
-clean :: [IL] -> [IL]
-clean = filterIL f
+mergeSame (Shift s1) (Shift s2) | c' == 0   = Remove
+                                | otherwise = Replace [Shift $ fromInt c']
   where
-    f (Shift ms) = shiftCount ms /= 0
-    f (Poke _ i) = i /= 0
-    f _          = True
+    c' = shiftCount s1 + shiftCount s2
 
-sortPokes :: [IL] -> [IL]
-sortPokes = merge2 f
-  where
-    f p1@(Poke d1 _) p2@(Poke d2 _) | d1 <= d2  = Keep
-                                    | otherwise = Replace [p2, p1]
-    f _ _ = Keep
+mergeSame _ _ = Keep
 
-shiftShifts :: [IL] -> [IL]
-shiftShifts = merge2 f
-  where
-    f s@(Shift ms) (Poke d i)  = Replace [Poke (d + shiftCount ms) i, s]
-    f s@(Shift ms) (PutChar d) = Replace [PutChar (d + shiftCount ms), s]
-    f s@(Shift ms) (GetChar d) = Replace [GetChar (d + shiftCount ms), s]
-    f _ _                      = Keep
-
-mergeSame :: [IL] -> [IL]
-mergeSame = merge2 f
-  where
-    f (Poke d1 i1) (Poke d2 i2) | d1 /= d2  = Keep
-                                | i' == 0   = Remove
-                                | otherwise = Replace [Poke d1 i']
-      where
-        i' = i1 + i2
-
-    f (Shift s1) (Shift s2) | c' == 0   = Remove
-                            | otherwise = Replace [Shift $ fromInt c']
-      where
-        c' = shiftCount s1 + shiftCount s2
-
-    f _ _ = Keep
-
-reduceShifts :: [IL] -> [IL]
-reduceShifts = merge3 f
-  where
-    f (Shift s1) il (Shift s2) = if s1 `shiftEq` s2
-      then Replace [modifyRelative il 0]
-      else Keep
-    f _ _ _ = Keep
+reduceShifts :: IL -> IL -> IL -> Merge
+reduceShifts (Shift s1) il (Shift s2) = if s1 `shiftEq` s2
+  then Replace [modifyRelative il 0]
+  else Keep
+reduceShifts _ _ _ = Keep
 
 shiftEq :: MemShift -> MemShift -> Bool
 shiftEq (ShiftLeft i1) (ShiftRight i2) = i1 == i2

@@ -48,9 +48,9 @@ propOptimize f il = comp len (run state il) (run state opt)
     opt   = f il
     len   = length il
 
-propOptimizeClean        = propOptimize clean
-propOptimizeSortPokes    = propOptimize sortPokes
-propOptimizeShiftShifts  = propOptimize shiftShifts
-propOptimizeMergeSame    = propOptimize mergeSame
-propOptimizeReduceShifts = propOptimize reduceShifts
+propOptimizeClean        = propOptimize $ filterIL clean
+propOptimizeSortPokes    = propOptimize $ merge2 sortPokes
+propOptimizeShiftShifts  = propOptimize $ merge2 shiftShifts
+propOptimizeMergeSame    = propOptimize $ merge2 mergeSame
+propOptimizeReduceShifts = propOptimize $ merge3 reduceShifts
 propOptimizeFully        = propOptimize optimizeFully
