@@ -1,9 +1,12 @@
 module Brainfuck.Compiler.C (showC) where
 
+import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.IL
 
 showC :: [IL] -> String
-showC = program 30001 . toC 1
+showC ils = program mem $ toC 1 ils
+  where
+    mem = memoryRequired ils
 
 program :: Int -> String -> String
 program mem code =
