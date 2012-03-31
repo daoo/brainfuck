@@ -1,16 +1,18 @@
 module Brainfuck.Compiler.Analyzer where
 
+import Control.Monad
+
 import Brainfuck.Compiler.IL
 import Brainfuck.Ext
 
-memoryRequired :: [IL] -> Maybe Int
-memoryRequired ils | a == b    = Just a
-                   | otherwise = Nothing
+--memoryRequired :: [IL] ->
+memoryRequired ils = undefined
   where
-    (a, b) = foldl1 (zipBoth (+)) $ map helper ils
+    helper []                           = Just (0, 0)
+    helper (Loop loop : ils)            = helper loop `f` helper ils
+    helper (Shift (ShiftLeft i) : ils)  = helper ils
+    helper (Shift (ShiftRight i) : ils) = helper ils
+    helper (_ : ils)                    = zipBoth f (0, 0) $ helper ils
 
-    helper il = case il of
-      Loop loop            -> foldl1 (zipBoth (+)) $ map helper loop
-      Shift (ShiftRight d) -> (d, d)
-      Shift (ShiftLeft d)  -> (-d, 0)
-      _                    -> (0, 0)
+    f = liftM2 (+)
+

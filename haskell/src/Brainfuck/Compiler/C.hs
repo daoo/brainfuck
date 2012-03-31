@@ -6,9 +6,7 @@ import Brainfuck.Compiler.IL
 showC :: [IL] -> String
 showC ils = program mem $ toC 1 ils
   where
-    mem = case memoryRequired ils of
-      Just i  -> i
-      Nothing -> 30001
+    mem = 30001
 
 program :: Int -> String -> String
 program mem code =
