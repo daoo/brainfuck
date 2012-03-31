@@ -35,6 +35,11 @@ filterIL f (Loop loop : ils)      = Loop (filterIL f loop) : filterIL f ils
 filterIL f (il : ils) | f il      = il : filterIL f ils
                       | otherwise = filterIL f ils
 
+mapIL :: (IL -> IL) -> [IL] -> [IL]
+mapIL _ []               = []
+mapIL f (Loop loop : as) = Loop (mapIL f loop) : mapIL f as
+mapIL f (a : as)         = f a : mapIL f as
+
 compile :: [B.Brainfuck] -> [IL]
 compile []                 = []
 compile (B.Loop l : bs)    = Loop (compile l) : compile bs
@@ -71,9 +76,10 @@ decompile (tok : il)    = token ++ decompile il
          | i < 0     = replicate (abs i) (B.Token B.Minus)
          | otherwise = replicate i (B.Token B.Plus)
 
-modifyRelative :: IL -> Int -> IL
-modifyRelative (PutChar _) p = PutChar p
-modifyRelative (GetChar _) p = GetChar p
-modifyRelative (Poke _ i) p  = Poke p i
-modifyRelative il _          = il
+modifyRelative :: (Int -> Int) -> IL -> IL
+modifyRelative f il = case il of
+  PutChar d -> PutChar $ f d
+  GetChar d -> GetChar $ f d
+  Poke d i  -> Poke (f d) i
+  _         -> il
      

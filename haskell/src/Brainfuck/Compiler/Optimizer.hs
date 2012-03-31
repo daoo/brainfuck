@@ -15,7 +15,14 @@ whileModified f a | a == a'   = a'
   where a' = f a
 
 optimizeFully :: [IL] -> [IL]
-optimizeFully = whileModified optimize
+optimizeFully = removeFromEnd . whileModified optimize
+
+removeFromEnd :: [IL] -> [IL]
+removeFromEnd = reverse . helper . reverse
+  where
+    helper (Poke _ _ : ils) = helper ils
+    helper (Shift _ : ils)  = helper ils
+    helper ils              = ils
 
 clean :: IL -> Bool
 clean (Shift ms) = shiftCount ms /= 0
@@ -28,10 +35,12 @@ sortPokes p1@(Poke d1 _) p2@(Poke d2 _) | d1 <= d2  = Keep
 sortPokes _ _ = Keep
 
 shiftShifts :: IL -> IL -> Merge
-shiftShifts s@(Shift ms) (Poke d i)  = Replace [Poke (d + shiftCount ms) i, s]
-shiftShifts s@(Shift ms) (PutChar d) = Replace [PutChar (d + shiftCount ms), s]
-shiftShifts s@(Shift ms) (GetChar d) = Replace [GetChar (d + shiftCount ms), s]
-shiftShifts _ _                      = Keep
+shiftShifts s@(Shift ms) il = let sc = shiftCount ms in case il of
+  Poke d i  -> Replace [Poke (d + sc) i, s]
+  PutChar d -> Replace [PutChar (d + sc), s]
+  GetChar d -> Replace [GetChar (d + sc), s]
+  _         -> Keep
+shiftShifts _ _ = Keep
 
 mergeSame :: IL -> IL -> Merge
 mergeSame (Poke d1 i1) (Poke d2 i2) | d1 /= d2  = Keep
@@ -49,7 +58,7 @@ mergeSame _ _ = Keep
 
 reduceShifts :: IL -> IL -> IL -> Merge
 reduceShifts (Shift s1) il (Shift s2) = if s1 `shiftEq` s2
-  then Replace [modifyRelative il 0]
+  then Replace [modifyRelative (const 0) il]
   else Keep
 reduceShifts _ _ _ = Keep
 

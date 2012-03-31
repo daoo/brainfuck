@@ -19,3 +19,4 @@ evalOp (State inp out mem) op = state'
       Poke d i             -> State inp out $ modify (+ fromIntegral i) d mem
       Shift (ShiftLeft i)  -> State inp out $ times shiftL i mem
       Shift (ShiftRight i) -> State inp out $ times shiftR i mem
+      _                    -> error "Should not happen"
