@@ -4,6 +4,7 @@ import Data.Foldable (toList)
 import Data.Word
 
 import Brainfuck.Compiler.IL
+import Brainfuck.Compiler.COptimizer
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
@@ -14,6 +15,6 @@ brainfuck str inp = map chrIntegral $ brainfuck1 str inp
 brainfuck1 :: String -> String -> [Word8]
 brainfuck1 str inp = toList out
   where
-    il            = compile $ parse str
+    il            = optimizeForC $ compile $ parse str
     State _ out _ = run (newState inp) il
 

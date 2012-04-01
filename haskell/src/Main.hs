@@ -6,8 +6,8 @@ import System.Environment
 import System.Directory
 
 import Brainfuck.Compiler.C
+import Brainfuck.Compiler.COptimizer
 import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.Optimizer
 import Brainfuck.Parser.Parser
 import Brainfuck.Run
 
@@ -34,7 +34,7 @@ main = do
         else return str
 
     internal :: String -> [IL]
-    internal = optimizeFully . compile . parse
+    internal = compile . parse
 
     makeC :: String -> String
-    makeC = showC . internal
+    makeC = showC . optimizeForC . internal

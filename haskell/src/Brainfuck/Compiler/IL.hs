@@ -4,30 +4,19 @@ import Test.QuickCheck
 
 import qualified Brainfuck.Parser.Brainfuck as B
 
-data MemShift = ShiftLeft Int | ShiftRight Int
-  deriving (Show, Eq)
-
-fromInt :: Int -> MemShift
-fromInt i = if i < 0
-  then ShiftLeft (abs i)
-  else ShiftRight i
-
-shiftCount :: MemShift -> Int
-shiftCount (ShiftLeft i)  = negate i
-shiftCount (ShiftRight i) = i
-
 data IL = Loop [IL]
         | Poke Int Int
-        | Shift MemShift
+        | Shift Int
         | PutChar Int
         | GetChar Int
   deriving (Show, Eq)
 
 instance Arbitrary IL where
+  -- TODO: Random loops
   arbitrary = do
     i1 <- choose (-100, 100)
     i2 <- choose (-100, 100)
-    oneof $ map return [Poke i1 i2, Shift (fromInt i1)]
+    oneof $ map return [Poke i1 i2, Shift i1]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                     = []
@@ -48,8 +37,8 @@ compile (B.Token tok : bs) = tok' : compile bs
     tok' = case tok of
       B.Plus       -> Poke 0 1
       B.Minus      -> Poke 0 (-1)
-      B.ShiftRight -> Shift (ShiftRight 1)
-      B.ShiftLeft  -> Shift (ShiftLeft 1)
+      B.ShiftRight -> Shift 1
+      B.ShiftLeft  -> Shift (-1)
       B.Output     -> PutChar 0
       B.Input      -> GetChar 0
 
@@ -60,7 +49,7 @@ decompile (tok : il)    = token ++ decompile il
   where
     token = case tok of
       Poke d i  -> ws d (mp i)
-      Shift s   -> ms (shiftCount s)
+      Shift s   -> ms s
       PutChar d -> ws d [B.Token B.Output]
       GetChar d -> ws d [B.Token B.Input]
       _         -> error "Should not happen"
@@ -78,10 +67,9 @@ decompile (tok : il)    = token ++ decompile il
 
 modifyRelative :: (Int -> Int) -> IL -> IL
 modifyRelative f il = case il of
-  PutChar d            -> PutChar $ f d
-  GetChar d            -> GetChar $ f d
-  Poke d i             -> Poke (f d) i
-  Shift (ShiftLeft i)  -> Shift $ ShiftLeft $ f i
-  Shift (ShiftRight i) -> Shift $ ShiftRight $ f i
-  _                    -> il
+  PutChar d -> PutChar $ f d
+  GetChar d -> GetChar $ f d
+  Poke d i  -> Poke (f d) i
+  --Shift i   -> Shift $ f i
+  _         -> il
 

@@ -12,7 +12,7 @@ memoryRequired = helper
     helper []                = []
     helper (Loop loop : ils) = TempLoop (helper loop) : helper ils
     helper (Poke d _ : ils)  = Delta d : helper ils
-    helper (Shift s : ils)   = Delta (shiftCount s) : helper ils
+    helper (Shift s : ils)   = Delta s : helper ils
     helper (PutChar d : ils) = Delta d : helper ils
     helper (GetChar d : ils) = Delta d : helper ils
 

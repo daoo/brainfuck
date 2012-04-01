@@ -4,14 +4,16 @@ import Data.Char
 import Data.Foldable (toList)
 import Data.Word
 
-import Test.QuickCheck hiding (output)
+import Test.QuickCheck
 
 import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.Optimizer
+import Brainfuck.Compiler.COptimizer
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
 import Brainfuck.Run
+
+-- {{{ Programs
 
 -- Prints "Hello World!\n"
 bfHello :: String
@@ -39,7 +41,7 @@ bf30000 = "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<
 
 bfFib :: String
 bfFib = ">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]"
-
+-- }}}
 -- {{{ QuickCheck properties
 propReverse :: String -> Property
 propReverse s = notElem '\NUL' s ==> out == reverse s
@@ -54,7 +56,6 @@ propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
     out    = brainfuck bfASCIIValues s'
     values = map length $ words out
 -- }}}
-
 -- {{{ Tests
 testSquares :: Bool
 testSquares = and $ zipWith (==) squares out
@@ -72,8 +73,8 @@ testIO = length l == 2 && let [a, b] = l in a == b
     out     = brainfuck bfIO "\n\EOT"
     bfIO    = ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
 
---testSize :: Bool
-testSize = out
+testSize :: Bool
+testSize = out == "#\n"
   where
     out = brainfuck bf30000 ""
 
@@ -82,7 +83,7 @@ programs = all f bf
   where
     state = newState ""
 
-    f (p, o) = toList (output $ run state p') == o
+    f (p, o) = toList (getOutput $ run state p') == o
       where
         p' = compile $ parse p
 
@@ -98,6 +99,6 @@ compareOptimized bf = do
   putStrLn "Unoptimized:"
   putStrLn bf
   putStrLn "Optimized:"
-  print $ decompile $ optimizeFully $ compile $ parse bf
+  print $ decompile $ optimizeForC $ compile $ parse bf
 
 -- vim: set fdm=marker :

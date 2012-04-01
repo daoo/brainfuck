@@ -1,9 +1,11 @@
 module Tests where
 
+import Data.Word
+
 import Test.QuickCheck
 
 import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.Optimizer
+import Brainfuck.Compiler.Optimizing
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
@@ -21,7 +23,6 @@ propShiftLength x (NonNegative l) (NonNegative r) = f x1 == f x2
     x2 = times shiftR r' x
 
     f (a, b) = length a + length b
-
 
 propShiftToEmpty :: ([a], [a]) -> Bool
 propShiftToEmpty x@(a, b) = null ae && null be && length af == lx && length bf == lx
@@ -44,13 +45,14 @@ comp i (State _ _ (ml1, mr1)) (State _ _ (ml2, mr2)) =
 propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
 propOptimize f il = comp len (run state il) (run state opt)
   where
+    state :: State Word8
     state = newState ""
     opt   = f il
     len   = length il
 
-propOptimizeClean        = propOptimize $ filterIL clean
-propOptimizeSortPokes    = propOptimize $ merge2 sortPokes
-propOptimizeShiftShifts  = propOptimize $ merge2 shiftShifts
-propOptimizeMergeSame    = propOptimize $ merge2 mergeSame
-propOptimizeReduceShifts = propOptimize $ merge3 reduceShifts
-propOptimizeFully        = propOptimize optimizeFully
+propOptimizeClean , propOptimizeSortPokes, propOptimizeShiftShifts,
+  propOptimizeMergeSame :: [IL] -> Bool
+propOptimizeClean       = propOptimize $ filterIL clean
+propOptimizeSortPokes   = propOptimize $ merge2 sortPokes
+propOptimizeShiftShifts = propOptimize $ merge2 shiftShifts
+propOptimizeMergeSame   = propOptimize $ merge2 mergeSame
