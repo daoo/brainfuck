@@ -78,8 +78,10 @@ decompile (tok : il)    = token ++ decompile il
 
 modifyRelative :: (Int -> Int) -> IL -> IL
 modifyRelative f il = case il of
-  PutChar d -> PutChar $ f d
-  GetChar d -> GetChar $ f d
-  Poke d i  -> Poke (f d) i
-  _         -> il
-     
+  PutChar d            -> PutChar $ f d
+  GetChar d            -> GetChar $ f d
+  Poke d i             -> Poke (f d) i
+  Shift (ShiftLeft i)  -> Shift $ ShiftLeft $ f i
+  Shift (ShiftRight i) -> Shift $ ShiftRight $ f i
+  _                    -> il
+

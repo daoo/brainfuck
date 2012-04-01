@@ -1,12 +1,15 @@
 module Brainfuck.Interpreter.State where
 
 import Data.Char
+import Data.List
 import Data.Sequence
 
+import Brainfuck.Ext
+
 data State a = State {
-  input :: [a],
-  output :: Seq a,
-  memory :: ([a], [a])
+  getInput :: [a],
+  getOutput :: Seq a,
+  getMemory :: ([a], [a])
 } deriving (Show, Eq)
 
 chrIntegral :: (Integral a) => a -> Char
@@ -23,3 +26,13 @@ newMemory = (zeros, zeros)
 newState :: (Integral a) => String -> State a
 newState inp = State (map ordIntegral inp) empty newMemory
 
+current :: ([a], b) -> a
+current = head . fst
+
+offset :: (Integral a) => a -> ([b], [b]) -> b
+offset i tup | i < 0     = (`genericIndex` (abs i - 1)) $ snd tup
+             | otherwise = (`genericIndex` i) $ fst tup
+
+modify :: (Integral b) => (a -> a) -> b -> ([a], [a]) -> ([a], [a])
+modify f i tup | i < 0     = mapSnd (mapIndex f (abs i - 1)) tup
+               | otherwise = mapFst (mapIndex f i) tup

@@ -24,14 +24,14 @@ warnings = -Wall \
 sources = $(shell find src -type f -name '*.hs')
 flags   = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 
-build: parser
+build: parser.hs
 	ghc --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
 
-ghci: parser
+ghci: parser.hs
 	ghci $(warnings) $(flags) $(sources)
 
-parser: src/Brainfuck/Parser/Parser.y
-	happy src/Brainfuck/Parser/Parser.y -o $(outdir)/Brainfuck/Parser/Parser.hs
+parser.hs: src/Brainfuck/Parser/Parser.y
+	happy -gc src/Brainfuck/Parser/Parser.y -o $(outdir)/Brainfuck/Parser/Parser.hs
 
 clean:
 	rm -r $(outdir)/*
@@ -40,4 +40,4 @@ clean:
 hlint:
 	hlint src -c
 
-.PHONY: clean
+.PHONY: clean hlint

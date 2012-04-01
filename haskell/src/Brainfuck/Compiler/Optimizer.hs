@@ -1,18 +1,15 @@
 module Brainfuck.Compiler.Optimizer where
 
 import Brainfuck.Compiler.IL
+import Brainfuck.Ext
 
 optimize :: [IL] -> [IL]
-optimize = merge3 reduceShifts
+optimize = removeFromEnd
+         . merge3 reduceShifts
          . merge2 sortPokes
          . filterIL clean
          . merge2 mergeSame
          . whileModified (merge2 shiftShifts)
-
-whileModified :: (Eq a) => (a -> a) -> a -> a
-whileModified f a | a == a'   = a'
-                  | otherwise = whileModified f a'
-  where a' = f a
 
 optimizeFully :: [IL] -> [IL]
 optimizeFully = removeFromEnd . whileModified optimize
@@ -39,6 +36,7 @@ shiftShifts s@(Shift ms) il = let sc = shiftCount ms in case il of
   Poke d i  -> Replace [Poke (d + sc) i, s]
   PutChar d -> Replace [PutChar (d + sc), s]
   GetChar d -> Replace [GetChar (d + sc), s]
+  --Loop loop -> Replace [Loop $ mapIL (modifyRelative (+sc)) loop, s]
   _         -> Keep
 shiftShifts _ _ = Keep
 

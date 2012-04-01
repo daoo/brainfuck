@@ -10,7 +10,7 @@ run :: (Integral a) => State a -> [IL] -> State a
 run = foldl evalOp
 
 evalOp :: (Integral a) => State a -> IL -> State a
-evalOp state (Loop ops)       = until ((== 0) . current . memory) (`run` ops) state
+evalOp state (Loop ops)       = until ((== 0) . current . getMemory) (`run` ops) state
 evalOp (State inp out mem) op = state'
   where
     state' = case op of
