@@ -7,11 +7,10 @@ import Data.Word
 import Test.QuickCheck
 
 import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.COptimizer
+import Brainfuck.Compiler.C.Optimize
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
-import Brainfuck.Run
 
 -- {{{ Programs
 
@@ -94,11 +93,22 @@ programs = all f bf
          , (bfHello, []) ]
 -- }}}
 
+brainfuck :: String -> String -> String
+brainfuck bf inp = runBF $ optimizeForC $ compile $ parse bf
+  where
+    runBF :: [IL] -> String
+    runBF = map chrIntegral . toList . getOutput . run state
+      where
+        state :: State Word8
+        state = newState inp
+
 compareOptimized :: String -> IO ()
 compareOptimized bf = do
   putStrLn "Unoptimized:"
-  putStrLn bf
+  putStrLn $ showIL il
   putStrLn "Optimized:"
-  print $ decompile $ optimizeForC $ compile $ parse bf
+  putStrLn $ showIL $ optimizeForC il
+  where
+    il = compile $ parse bf
 
 -- vim: set fdm=marker :

@@ -73,3 +73,11 @@ modifyRelative f il = case il of
   --Shift i   -> Shift $ f i
   _         -> il
 
+showIL :: [IL] -> String
+showIL = unlines . helper ""
+  where
+    helper _ []                = []
+    helper s (Loop loop : ils) = (s ++ "Loop {") : helper (s ++ indent) loop ++ [s ++ "}"] ++ helper s ils
+    helper s (il : ils)        = (s ++ show il) : helper s ils 
+
+    indent = "  "

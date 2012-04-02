@@ -1,40 +1,56 @@
 module Main where
 
+import Data.Foldable (toList)
 import Data.List
+import Data.Word
 
 import System.Environment
 import System.Directory
 
-import Brainfuck.Compiler.C
-import Brainfuck.Compiler.COptimizer
+import Brainfuck.Compiler.C.Optimize
+import Brainfuck.Compiler.C.Show
 import Brainfuck.Compiler.IL
+import Brainfuck.Interpreter.Interpreter
+import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
-import Brainfuck.Run
 
-main :: IO ()
-main = do
-  argv <- getArgs
+data Action = ToC | Interpret
 
-  -- Decide what we're going to do
-  case partition (== "-c") argv of
-    (["-c"], str) -> do
-      bf <- getBF $ concat str
-      putStrLn $ makeC bf
-    (_, str)      -> do
-      inp <- getContents
-      bf <- getBF $ concat str
-      putStr $ brainfuck bf inp
-
+params :: [String] -> IO (Action, String)
+params p = code (concat p') >>= (\bf -> return (action, bf))
   where
-    getBF :: String -> IO String
-    getBF str = do
+    (pc, p') = partition (== "-c") p
+    action = case pc of
+      []     -> Interpret
+      ["-c"] -> ToC
+      _      -> error "Unrecognized parameter"
+
+    code str = do
       isfile <- doesFileExist str
       if isfile
         then readFile str
         else return str
 
-    internal :: String -> [IL]
-    internal = compile . parse
+main :: IO ()
+main = do
+  argv <- getArgs
+  p    <- params argv
+  inp  <- getContents
 
-    makeC :: String -> String
-    makeC = showC . optimizeForC . internal
+  putStr $ case p of
+    (ToC, code)       -> makeC $ ilify code
+    (Interpret, code) -> runBF inp $ ilify code
+
+  where
+    ilify :: String -> [IL]
+    ilify = compile . parse
+
+    makeC :: [IL] -> String
+    makeC = showC . optimizeForC
+
+    runBF :: String -> [IL] -> String
+    runBF inp = map chrIntegral . toList . getOutput . run state
+      where
+        state :: State Word8
+        state = newState inp
+      

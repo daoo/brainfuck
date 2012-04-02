@@ -1,4 +1,4 @@
-module Brainfuck.Compiler.C (showC) where
+module Brainfuck.Compiler.C.Show (showC) where
 
 import Brainfuck.Compiler.IL
 
