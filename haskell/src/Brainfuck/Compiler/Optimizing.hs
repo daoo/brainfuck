@@ -50,6 +50,7 @@ mergeSame (Shift s1) (Shift s2) | c' == 0   = Remove
 mergeSame _ _ = Keep
 
 data Action = Keep | Replace [IL] | Remove
+  deriving (Show)
 
 merge2 :: (IL -> IL -> Action) -> [IL] -> [IL]
 merge2 f (Loop loop : ils) = Loop (merge2 f loop) : merge2 f ils

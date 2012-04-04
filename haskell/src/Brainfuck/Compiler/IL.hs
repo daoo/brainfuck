@@ -9,7 +9,22 @@ data IL = Loop [IL]
         | Shift Int
         | PutChar Int
         | GetChar Int
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show IL where
+  show loop@(Loop _) = showList [loop] ""
+  show (Poke d i)    = "Poke " ++ show d ++ " " ++ show i
+  show (Shift i)     = "Shift " ++ show i
+  show (PutChar d)   = "PutChar " ++ show d
+  show (GetChar d)   = "GetChar " ++ show d
+
+  showList = helper ""
+    where
+      helper _ []                = showString ""
+      helper s (Loop loop : ils) = showString s . showString "Loop\n" . helper (indent s) loop . helper s ils
+      helper s (il : ils)        = showString s . shows il . showString "\n" . helper s ils 
+
+      indent s = ' ' : ' ' : s
 
 instance Arbitrary IL where
   -- TODO: Random loops
@@ -73,11 +88,3 @@ modifyRelative f il = case il of
   --Shift i   -> Shift $ f i
   _         -> il
 
-showIL :: [IL] -> String
-showIL = unlines . helper ""
-  where
-    helper _ []                = []
-    helper s (Loop loop : ils) = (s ++ "Loop {") : helper (s ++ indent) loop ++ [s ++ "}"] ++ helper s ils
-    helper s (il : ils)        = (s ++ show il) : helper s ils 
-
-    indent = "  "

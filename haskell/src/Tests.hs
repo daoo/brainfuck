@@ -9,7 +9,7 @@ import Brainfuck.Compiler.Optimizing
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
-import Brainfuck.Parser.Brainfuck
+import qualified Brainfuck.Parser.Brainfuck as B
 import Brainfuck.Parser.Parser
 
 propShiftLength :: ([a], [a]) -> NonNegative Int -> NonNegative Int -> Bool
@@ -35,7 +35,7 @@ propShiftToEmpty x@(a, b) = null ae && null be && length af == lx && length bf =
     (ae, bf) = times shiftR la x
     (af, be) = times shiftL lb x
 
-propParser :: [Brainfuck] -> Bool
+propParser :: [B.Brainfuck] -> Bool
 propParser bf = bf == parse (show bf)
 
 comp :: (Integral a) => Int -> State a -> State a -> Bool
