@@ -7,6 +7,7 @@ import Data.Word
 import System.Environment
 import System.Directory
 
+import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.C.Optimize
 import Brainfuck.Compiler.C.Show
 import Brainfuck.Compiler.IL

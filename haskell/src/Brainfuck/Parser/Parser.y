@@ -26,8 +26,8 @@ import Brainfuck.Parser.Brainfuck
 Expr ::                  { [Brainfuck] }
      : Token             { [Token $1] }
      | Token Expr        { Token $1 : $2 }
-     | '[' Expr ']'      { [Loop $2] }
-     | '[' Expr ']' Expr { Loop $2 : $4 }
+     | '[' Expr ']'      { [Repeat $2] }
+     | '[' Expr ']' Expr { Repeat $2 : $4 }
 
 Token ::    { Token }
 Token : '+' { Plus }

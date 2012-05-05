@@ -26,7 +26,7 @@ newMemory = (zeros, zeros)
 newState :: (Integral a) => String -> State a
 newState inp = State (map ordIntegral inp) empty newMemory
 
-current :: ([a], b) -> a
+current :: ([a], [a]) -> a
 current = head . fst
 
 offset :: (Integral a) => a -> ([b], [b]) -> b

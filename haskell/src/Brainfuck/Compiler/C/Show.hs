@@ -27,16 +27,18 @@ toC :: Int -> [IL] -> String
 toC = helper
   where
     helper _ []          = []
-    helper i (Loop l:xs) = concat [ indent i
-                                  , "while (*ptr) {\n"
-                                  , helper (i + 1) l
-                                  , indent i
-                                  , "}\n"
-                                  , helper i xs ]
-    helper i (x:xs) = concat [ indent i
-                             , line x
-                             , "\n"
-                             , helper i xs ]
+    helper i (Loop d l : xs) = concat [ indent i
+                                      , "while (*(ptr + "
+                                      , show d
+                                      , ")) {\n"
+                                      , helper (i + 1) l
+                                      , indent i
+                                      , "}\n"
+                                      , helper i xs ]
+    helper i (x : xs) = concat [ indent i
+                               , line x
+                               , "\n"
+                               , helper i xs ]
 
     line (Poke p i)  = concat [ "ptr[", show p, "] += ", show i, ";" ]
     line (Shift s)   = concat [ "ptr += ", show s, ";" ]

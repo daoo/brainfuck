@@ -5,7 +5,7 @@ import Test.QuickCheck
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq
 
-data Brainfuck = Loop [Brainfuck]
+data Brainfuck = Repeat [Brainfuck]
                | Token Token
   deriving Eq
 
@@ -21,8 +21,8 @@ instance Show Token where
   show t = [toChar t]
 
 instance Show Brainfuck where
-  show (Loop bf) = concat ["[", concatMap show bf, "]"]
-  show (Token t) = show t
+  show (Repeat bf) = concat ["[", concatMap show bf, "]"]
+  show (Token t)   = show t
 
   showList bf = (++) (concatMap show bf)
 

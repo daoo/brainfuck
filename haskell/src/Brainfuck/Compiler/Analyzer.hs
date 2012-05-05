@@ -9,10 +9,10 @@ data Temp = TempLoop [Temp]
 memoryRequired :: [IL] -> [Temp]
 memoryRequired = helper
   where
-    helper []                = []
-    helper (Loop loop : ils) = TempLoop (helper loop) : helper ils
-    helper (Poke d _ : ils)  = Delta d : helper ils
-    helper (Shift s : ils)   = Delta s : helper ils
-    helper (PutChar d : ils) = Delta d : helper ils
-    helper (GetChar d : ils) = Delta d : helper ils
+    helper []                  = []
+    helper (Loop _ loop : ils) = TempLoop (helper loop) : helper ils
+    helper (Poke d _ : ils)    = Delta d : helper ils
+    helper (Shift s : ils)     = Delta s : helper ils
+    helper (PutChar d : ils)   = Delta d : helper ils
+    helper (GetChar d : ils)   = Delta d : helper ils
 

@@ -32,8 +32,8 @@ shiftShifts _ _ = Keep
 
 -- Apply shifts into loops
 applyShifts :: IL -> IL -> Action
-applyShifts s@(Shift sc) (Loop loop) =
-  Replace [Loop $ mapIL (modifyRelative (+sc)) loop, s]
+applyShifts s@(Shift sc) loop@(Loop i ils) =
+  Replace [Loop (i + sc) $ mapIL (modifyRelative (+sc)) ils, s]
 applyShifts _ _ = Keep
 
 -- Merge pokes and shifts that are next to eachother
@@ -53,8 +53,8 @@ data Action = Keep | Replace [IL] | Remove
   deriving (Show)
 
 merge2 :: (IL -> IL -> Action) -> [IL] -> [IL]
-merge2 f (Loop loop : ils) = Loop (merge2 f loop) : merge2 f ils
-merge2 f (il1 : il2 : ils) = case f il1 il2 of
+merge2 f (Loop i loop : ils) = Loop i (merge2 f loop) : merge2 f ils
+merge2 f (il1 : il2 : ils)   = case f il1 il2 of
   Replace ils' -> merge2 f $ ils' ++ ils
   Keep         -> il1 : merge2 f (il2 : ils)
   Remove       -> merge2 f ils
@@ -64,7 +64,7 @@ merge3 :: (IL -> IL -> IL -> Action) -> [IL] -> [IL]
 merge3 _ []                      = []
 merge3 _ [il]                    = [il]
 merge3 _ [il1, il2]              = [il1, il2]
-merge3 f (Loop loop : ils)       = Loop (merge3 f loop) : merge3 f ils
+merge3 f (Loop i loop : ils)     = Loop i (merge3 f loop) : merge3 f ils
 merge3 f (il1 : il2 : il3 : ils) = case f il1 il2 il3 of
   Replace ils' -> merge3 f $ ils' ++ ils
   Keep         -> il1 : merge3 f (il2 : il3 : ils)
