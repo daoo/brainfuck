@@ -106,9 +106,9 @@ brainfuck bf inp = runBF $ optimizeForC $ compile $ parse bf
 compareOptimized :: String -> IO ()
 compareOptimized bf = do
   putStrLn "Unoptimized:"
-  putStrLn $ show il
+  print il
   putStrLn "Optimized:"
-  putStrLn $ show $ optimizeForC il
+  print $ optimizeForC il
   where
     il = compile $ parse bf
 
