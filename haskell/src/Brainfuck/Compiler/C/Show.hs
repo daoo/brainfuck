@@ -40,8 +40,12 @@ toC = helper
                                , "\n"
                                , helper i xs ]
 
-    line (Poke p i)  = concat [ "ptr[", show p, "] += ", show i, ";" ]
-    line (Shift s)   = concat [ "ptr += ", show s, ";" ]
-    line (PutChar p) = concat [ "putchar(ptr[", show p, "]);" ]
-    line (GetChar p) = concat [ "ptr[", show p, "] = getchar();" ]
-    line _           = error "error"
+    line (AddFrom d1 d2) = concat [ "ptr[", show d1, "] += ptr[", show d2, "];" ]
+    line (SetFrom d1 d2) = concat [ "ptr[", show d1, "] = ptr[", show d2, "];" ]
+    line (Poke p i)      = concat [ "ptr[", show p, "] += ", show i, ";" ]
+    line (Set p i)       = concat [ "ptr[", show p, "] = ", show i, ";" ]
+    line (Shift s)       = concat [ "ptr += ", show s, ";" ]
+    line (PutChar p)     = concat [ "putchar(ptr[", show p, "]);" ]
+    line (GetChar p)     = concat [ "ptr[", show p, "] = getchar();" ]
+
+    line (Loop _ _) = error "error"

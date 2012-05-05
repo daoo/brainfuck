@@ -7,12 +7,28 @@ data Temp = TempLoop [Temp]
   deriving (Show)
 
 memoryRequired :: [IL] -> [Temp]
-memoryRequired = helper
-  where
-    helper []                  = []
-    helper (Loop _ loop : ils) = TempLoop (helper loop) : helper ils
-    helper (Poke d _ : ils)    = Delta d : helper ils
-    helper (Shift s : ils)     = Delta s : helper ils
-    helper (PutChar d : ils)   = Delta d : helper ils
-    helper (GetChar d : ils)   = Delta d : helper ils
+memoryRequired = undefined
 
+loopDepth :: IL -> Int
+loopDepth (Loop _ ils) = (+1) $ maximum $ map loopDepth ils
+loopDepth _            = 0
+
+copyLoop :: IL -> Maybe (Int, [Int])
+copyLoop (Loop _ [])  = Nothing
+copyLoop (Loop o ils) = if isCopyLoop
+  then Just (o, map (\(Poke d _) -> d) $ filter posPoke ils)
+  else Nothing
+  where
+    isCopyLoop = nLen == 1 && pLen >= 1 && len - pLen - 1 == 0
+      where
+        len  = length ils
+        nLen = length $ filter negPoke ils
+        pLen = length $ filter posPoke ils
+
+    negPoke (Poke _ (-1)) = True
+    negPoke _             = False
+
+    posPoke (Poke _ (1)) = True
+    posPoke _            = False
+
+copyLoop _            = Nothing
