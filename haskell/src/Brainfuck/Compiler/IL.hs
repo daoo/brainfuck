@@ -46,10 +46,10 @@ instance Arbitrary IL where
     oneof $ map return [Poke i1 i2, Shift i1]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
-filterIL _ []                     = []
-filterIL f (Loop i loop : ils)    = Loop i (filterIL f loop) : filterIL f ils
-filterIL f (il : ils) | f il      = il : filterIL f ils
-                      | otherwise = filterIL f ils
+filterIL _ []                                    = []
+filterIL f (Loop i loop : ils) | f (Loop i loop) = Loop i (filterIL f loop) : filterIL f ils
+filterIL f (il : ils)          | f il            = il : filterIL f ils
+filterIL f (_ : ils)                             = filterIL f ils
 
 mapIL :: (IL -> IL) -> [IL] -> [IL]
 mapIL _ []                 = []
