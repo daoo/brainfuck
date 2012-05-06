@@ -15,19 +15,21 @@ removeFromEnd = reverse . helper . reverse
 
 -- Remove instructions that does not do anything
 clean :: IL -> Bool
-clean (Shift s) = s /= 0
-clean (Add _ i) = i /= 0
-clean _         = True
+clean (Shift s)   = s  /= 0
+clean (Add _ i)   = i  /= 0
+clean (Set d1 d2) = d1 /= d2
+clean _           = True
 
 -- This is essentially bubble sort, could be a lot faster
 sortMutators :: IL -> IL -> Action
 sortMutators i1 i2 = case (i1, i2) of
-  (Add d1 _, AddFrom d2 d3) | d1 > d2 && d1 /= d3 -> Replace [i2, i1]
-  (Add d1 _, Add d2 _)      | d1 > d2             -> Replace [i2, i1]
-  (Add d1 _, Set d2 _)      | d1 > d2             -> Replace [i2, i1]
-  (Set d1 _, Add d2 _)      | d1 > d2             -> Replace [i2, i1]
-  (Set d1 _, Set d2 _)      | d1 > d2             -> Replace [i2, i1]
-  _                                               -> Keep
+  (Add d1 _, AddFrom d2 d3) | d1 > d2 && d1 /= d3             -> Replace [i2, i1]
+  (Set d1 _, AddFrom d2 d3) | d1 > d2 && d1 /= d2 && d1 /= d3 -> Replace [i2, i1]
+  (Add d1 _, Add d2 _)      | d1 > d2                         -> Replace [i2, i1]
+  (Add d1 _, Set d2 _)      | d1 > d2                         -> Replace [i2, i1]
+  (Set d1 _, Add d2 _)      | d1 > d2                         -> Replace [i2, i1]
+  (Set d1 _, Set d2 _)      | d1 > d2                         -> Replace [i2, i1]
+  _                                                           -> Keep
 
 -- Move shifts to the end of each block
 shiftShifts :: IL -> IL -> Action
