@@ -3,13 +3,15 @@ module Brainfuck.Compiler.Optimizing where
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.IL
 
--- Remove instructions from the end that does not perform any side effects
+-- Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
   where
-    helper (Poke _ _ : ils) = helper ils
-    helper (Shift _ : ils)  = helper ils
-    helper ils              = ils
+    helper []         = []
+    helper (il : ils) = case il of
+      PutChar _ -> il : ils
+      Loop _ _  -> il : ils
+      _         -> helper ils
 
 -- Remove shifts and pokes that does nothing
 clean :: IL -> Bool
