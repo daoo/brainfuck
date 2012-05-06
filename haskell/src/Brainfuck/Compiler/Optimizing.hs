@@ -13,26 +13,26 @@ removeFromEnd = reverse . helper . reverse
       Loop _ _  -> il : ils
       _         -> helper ils
 
--- Remove shifts and pokes that does nothing
+-- Remove instructions that does not do anything
 clean :: IL -> Bool
-clean (Shift s)  = s /= 0
-clean (Poke _ i) = i /= 0
-clean _          = True
+clean (Shift s) = s /= 0
+clean (Add _ i) = i /= 0
+clean _         = True
 
 -- This is essentially bubble sort, could be a lot faster
 sortMutators :: IL -> IL -> Action
 sortMutators i1 i2 = case (i1, i2) of
-  (Poke d1 _, AddFrom d2 d3) | d1 > d2 && d1 /= d3 -> Replace [i2, i1]
-  (Poke d1 _, Poke d2 _)     | d1 > d2             -> Replace [i2, i1]
-  (Poke d1 _, Set d2 _)      | d1 > d2             -> Replace [i2, i1]
-  (Set d1 _, Poke d2 _)      | d1 > d2             -> Replace [i2, i1]
-  (Set d1 _, Set d2 _)       | d1 > d2             -> Replace [i2, i1]
-  _                                                -> Keep
+  (Add d1 _, AddFrom d2 d3) | d1 > d2 && d1 /= d3 -> Replace [i2, i1]
+  (Add d1 _, Add d2 _)      | d1 > d2             -> Replace [i2, i1]
+  (Add d1 _, Set d2 _)      | d1 > d2             -> Replace [i2, i1]
+  (Set d1 _, Add d2 _)      | d1 > d2             -> Replace [i2, i1]
+  (Set d1 _, Set d2 _)      | d1 > d2             -> Replace [i2, i1]
+  _                                               -> Keep
 
 -- Move shifts to the end of each block
 shiftShifts :: IL -> IL -> Action
 shiftShifts s@(Shift sc) il = case il of
-  Poke d i      -> Replace [Poke (d + sc) i, s]
+  Add d i       -> Replace [Add (d + sc) i, s]
   PutChar d     -> Replace [PutChar (d + sc), s]
   GetChar d     -> Replace [GetChar (d + sc), s]
   Set d v       -> Replace [Set (d + sc) v, s]
@@ -49,7 +49,7 @@ applyShifts _ _ = Keep
 -- Reduce some loops to simpler operations
 reduceLoops :: IL -> Action
 reduceLoops il = case il of
-  Loop dl [Poke dp (-1)] | dl == dp -> Replace [Set dp 0]
+  Loop dl [Add dp (-1)] | dl == dp -> Replace [Set dp 0]
 
   Loop _ _ -> case copyLoop il of
     Nothing      -> Keep
@@ -60,9 +60,9 @@ reduceLoops il = case il of
 -- Merge pokes and shifts that are next to eachother
 mergeSame :: IL -> IL -> Action
 mergeSame il1 il2 = case (il1, il2) of
-  (Poke d1 i1, Poke d2 i2) | d1 /= d2  -> Keep
-                           | i' == 0   -> Remove
-                           | otherwise -> Replace [Poke d1 i']
+  (Add d1 i1, Add d2 i2) | d1 /= d2  -> Keep
+                         | i' == 0   -> Remove
+                         | otherwise -> Replace [Add d1 i']
     where i' = i1 + i2
 
   (Shift s1, Shift s2) | c' == 0   -> Remove

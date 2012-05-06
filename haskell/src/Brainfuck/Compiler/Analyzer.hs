@@ -16,19 +16,19 @@ loopDepth _            = 0
 copyLoop :: IL -> Maybe (Int, [Int])
 copyLoop (Loop _ [])  = Nothing
 copyLoop (Loop o ils) = if isCopyLoop
-  then Just (o, map (\(Poke d _) -> d) $ filter posPoke ils)
+  then Just (o, map (\(Add d _) -> d) $ filter posAdd ils)
   else Nothing
   where
     isCopyLoop = nLen == 1 && pLen >= 1 && len - pLen - 1 == 0
       where
         len  = length ils
-        nLen = length $ filter negPoke ils
-        pLen = length $ filter posPoke ils
+        nLen = length $ filter negAdd ils
+        pLen = length $ filter posAdd ils
 
-    negPoke (Poke _ (-1)) = True
-    negPoke _             = False
+    negAdd (Add _ (-1)) = True
+    negAdd _            = False
 
-    posPoke (Poke _ (1)) = True
-    posPoke _            = False
+    posAdd (Add _ (1)) = True
+    posAdd _           = False
 
 copyLoop _            = Nothing

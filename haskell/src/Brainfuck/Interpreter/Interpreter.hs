@@ -18,7 +18,7 @@ evalOp (State inp out mem) op = state'
       GetChar d     -> State (tail inp) out (modify (const $ head inp) d mem)
       AddFrom d1 d2 -> State inp out $ modify (+ offset d2 mem) d1 mem
       SetFrom d1 d2 -> State inp out $ modify (const $ offset d2 mem) d1 mem
-      Poke d i      -> State inp out $ modify (+ fromIntegral i) d mem
+      Add d i       -> State inp out $ modify (+ fromIntegral i) d mem
       Set d i       -> State inp out $ modify (const $ fromIntegral i) d mem
       Shift s       -> State inp out $ shift s mem
 
