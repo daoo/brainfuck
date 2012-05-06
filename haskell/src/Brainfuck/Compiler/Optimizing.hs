@@ -15,10 +15,10 @@ removeFromEnd = reverse . helper . reverse
 
 -- Remove instructions that does not do anything
 clean :: IL -> Bool
-clean (Shift s)   = s  /= 0
-clean (Add _ i)   = i  /= 0
-clean (Set d1 d2) = d1 /= d2
-clean _           = True
+clean (Shift s)       = s    /= 0
+clean (Add _ i)       = i    /= 0
+clean (SetFrom d1 d2) = d1   /= d2
+clean _               = True
 
 -- This is essentially bubble sort, could be a lot faster
 sortMutators :: IL -> IL -> Action
@@ -71,8 +71,19 @@ mergeSame il1 il2 = case (il1, il2) of
                        | otherwise -> Replace [Shift c']
     where c' = s1 + s2
 
-  (Set s1 _, Set s2 v)      | s1 == s2 -> Replace [Set s1 v]
-  (Set s1 0, AddFrom c1 c2) | s1 == c1 -> Replace [SetFrom c1 c2]
+  (_, _) -> Keep
+
+
+miscJoins :: IL -> IL -> Action
+miscJoins il1 il2 = case (il1, il2) of
+  (Set d1 _, Set d2 v)      | d1 == d2 -> Replace [Set d1 v]
+  (Set d1 0, AddFrom d2 d3) | d1 == d2 -> Replace [SetFrom d2 d3]
+  (Set d1 0, Add d2 v)      | d1 == d2 -> Replace [Set d1 v]
+
+  (Set d1 _, Set d2 0)     | d1 == d2 -> Replace [Set d2 0]
+  (SetFrom d1 _, Set d2 0) | d1 == d2 -> Replace [Set d2 0]
+
+  (SetFrom d1 d2, SetFrom d3 d4) | d1 == d4 && d2 == d3 -> Replace [SetFrom d1 d2]
 
   (_, _) -> Keep
 

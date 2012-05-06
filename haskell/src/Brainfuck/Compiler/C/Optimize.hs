@@ -9,6 +9,7 @@ optimize = merge1 reduceLoops
          . filterIL clean
          . merge2 applyShifts
          . merge2 sortMutators
+         . merge2 miscJoins
          . whileModified (merge2 shiftShifts)
          . whileModified (merge2 mergeSame)
 
