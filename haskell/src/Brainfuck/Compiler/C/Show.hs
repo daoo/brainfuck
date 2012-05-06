@@ -40,12 +40,13 @@ toC = helper
                                , "\n"
                                , helper i xs ]
 
-    line (AddFrom d1 d2) = concat [ "ptr[", show d1, "] += ptr[", show d2, "];" ]
-    line (SetFrom d1 d2) = concat [ "ptr[", show d1, "] = ptr[", show d2, "];" ]
-    line (Add p i)       = concat [ "ptr[", show p, "] += ", show i, ";" ]
-    line (Set p i)       = concat [ "ptr[", show p, "] = ", show i, ";" ]
-    line (Shift s)       = concat [ "ptr += ", show s, ";" ]
-    line (PutChar p)     = concat [ "putchar(ptr[", show p, "]);" ]
-    line (GetChar p)     = concat [ "ptr[", show p, "] = getchar();" ]
+    line (AddFactor d1 d2 1) = concat [ "ptr[", show d1, "] += ptr[", show d2, "];" ]
+    line (AddFactor d1 d2 f) = concat [ "ptr[", show d1, "] += ptr[", show d2, "] * ", show f, ";" ]
+    line (SetFrom d1 d2)     = concat [ "ptr[", show d1, "] = ptr[", show d2, "];" ]
+    line (Add p i)           = concat [ "ptr[", show p, "] += ", show i, ";" ]
+    line (Set p i)           = concat [ "ptr[", show p, "] = ", show i, ";" ]
+    line (Shift s)           = concat [ "ptr += ", show s, ";" ]
+    line (PutChar p)         = concat [ "putchar(ptr[", show p, "]);" ]
+    line (GetChar p)         = concat [ "ptr[", show p, "] = getchar();" ]
 
     line (Loop _ _) = error "error"

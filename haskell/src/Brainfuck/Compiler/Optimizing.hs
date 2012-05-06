@@ -23,23 +23,23 @@ clean _               = True
 -- This is essentially bubble sort, could be a lot faster
 sortMutators :: IL -> IL -> Action
 sortMutators i1 i2 = case (i1, i2) of
-  (Add d1 _, AddFrom d2 d3) | d1 > d2 && d1 /= d3             -> Replace [i2, i1]
-  (Set d1 _, AddFrom d2 d3) | d1 > d2 && d1 /= d2 && d1 /= d3 -> Replace [i2, i1]
-  (Add d1 _, Add d2 _)      | d1 > d2                         -> Replace [i2, i1]
-  (Add d1 _, Set d2 _)      | d1 > d2                         -> Replace [i2, i1]
-  (Set d1 _, Add d2 _)      | d1 > d2                         -> Replace [i2, i1]
-  (Set d1 _, Set d2 _)      | d1 > d2                         -> Replace [i2, i1]
-  _                                                           -> Keep
+  (Add d1 _, AddFactor d2 d3 _) | d1 > d2 && d1 /= d3             -> Replace [i2, i1]
+  (Set d1 _, AddFactor d2 d3 _) | d1 > d2 && d1 /= d2 && d1 /= d3 -> Replace [i2, i1]
+  (Add d1 _, Add d2 _)          | d1 > d2                         -> Replace [i2, i1]
+  (Add d1 _, Set d2 _)          | d1 > d2                         -> Replace [i2, i1]
+  (Set d1 _, Add d2 _)          | d1 > d2                         -> Replace [i2, i1]
+  (Set d1 _, Set d2 _)          | d1 > d2                         -> Replace [i2, i1]
+  _                                                               -> Keep
 
 -- Move shifts to the end of each block
 shiftShifts :: IL -> IL -> Action
 shiftShifts s@(Shift sc) il = case il of
-  Add d i       -> Replace [Add (d + sc) i, s]
-  PutChar d     -> Replace [PutChar (d + sc), s]
-  GetChar d     -> Replace [GetChar (d + sc), s]
-  Set d v       -> Replace [Set (d + sc) v, s]
-  AddFrom d1 d2 -> Replace [AddFrom (d1 + sc) (d2 + sc), s]
-  _             -> Keep
+  Add d i           -> Replace [Add (d + sc) i, s]
+  PutChar d         -> Replace [PutChar (d + sc), s]
+  GetChar d         -> Replace [GetChar (d + sc), s]
+  Set d v           -> Replace [Set (d + sc) v, s]
+  AddFactor d1 d2 f -> Replace [AddFactor (d1 + sc) (d2 + sc) f, s]
+  _                 -> Keep
 shiftShifts _ _ = Keep
 
 -- Apply shifts into loops
@@ -55,7 +55,7 @@ reduceLoops il = case il of
 
   Loop _ _ -> case copyLoop il of
     Nothing      -> Keep
-    Just (o, xs) -> Replace $ map (`AddFrom` o) xs ++ [Set o 0]
+    Just (o, xs) -> Replace $ map (\(d, f) -> AddFactor d o f) xs ++ [Set o 0]
 
   _ -> Keep
 
@@ -73,12 +73,11 @@ mergeSame il1 il2 = case (il1, il2) of
 
   (_, _) -> Keep
 
-
 miscJoins :: IL -> IL -> Action
 miscJoins il1 il2 = case (il1, il2) of
-  (Set d1 _, Set d2 v)      | d1 == d2 -> Replace [Set d1 v]
-  (Set d1 0, AddFrom d2 d3) | d1 == d2 -> Replace [SetFrom d2 d3]
-  (Set d1 0, Add d2 v)      | d1 == d2 -> Replace [Set d1 v]
+  (Set d1 _, Set d2 v)          | d1 == d2 -> Replace [Set d1 v]
+  (Set d1 0, AddFactor d2 d3 f) | d1 == d2 -> Replace [SetFrom d2 d3 f]
+  (Set d1 0, Add d2 v)          | d1 == d2 -> Replace [Set d1 v]
 
   (Set d1 _, Set d2 0)     | d1 == d2 -> Replace [Set d2 0]
   (SetFrom d1 _, Set d2 0) | d1 == d2 -> Replace [Set d2 0]

@@ -2,25 +2,27 @@ module Brainfuck.Compiler.IL where
 
 import Test.QuickCheck
 
+data Expr = From offset
+          | Mult Expr Expr
+          | Add Expr Expr
+
 data IL = Loop Int [IL]
-        | AddFrom Int Int
-        | SetFrom Int Int
-        | Set Int Int
-        | Add Int Int
+        | Add Int Expr
+        | Set Int Expr
         | Shift Int
         | PutChar Int
         | GetChar Int
   deriving (Eq)
 
 instance Show IL where
-  show loop@(Loop _ _) = showList [loop] ""
-  show (AddFrom d1 d2) = "AddFrom " ++ show d1 ++ " " ++ show d2
-  show (SetFrom d1 d2) = "SetFrom " ++ show d1 ++ " " ++ show d2
-  show (Add d i)       = "Add " ++ show d ++ " " ++ show i
-  show (Set d i)       = "Set " ++ show d ++ " " ++ show i
-  show (Shift i)       = "Shift " ++ show i
-  show (PutChar d)     = "PutChar " ++ show d
-  show (GetChar d)     = "GetChar " ++ show d
+  show loop@(Loop _ _)     = showList [loop] ""
+  show (AddFactor d1 d2 f) = "AddFactor " ++ show d1 ++ " " ++ show d2 ++ " " ++ show f
+  show (SetFrom d1 d2)     = "SetFrom " ++ show d1 ++ " " ++ show d2
+  show (Add d i)           = "Add " ++ show d ++ " " ++ show i
+  show (Set d i)           = "Set " ++ show d ++ " " ++ show i
+  show (Shift i)           = "Shift " ++ show i
+  show (PutChar d)         = "PutChar " ++ show d
+  show (GetChar d)         = "GetChar " ++ show d
 
   showList = helper ""
     where
@@ -58,11 +60,11 @@ mapIL f (a : as)           = f a : mapIL f as
 
 modifyRelative :: (Int -> Int) -> IL -> IL
 modifyRelative f il = case il of
-  PutChar d     -> PutChar $ f d
-  GetChar d     -> GetChar $ f d
-  Add d i       -> Add (f d) i
-  Set d i       -> Set (f d) i
-  AddFrom d1 d2 -> AddFrom (f d1) (f d2)
-  SetFrom d1 d2 -> SetFrom (f d1) (f d2)
-  Loop d ils    -> Loop (f d) ils
-  Shift s       -> Shift s
+  PutChar d              -> PutChar $ f d
+  GetChar d              -> GetChar $ f d
+  Add d i                -> Add (f d) i
+  Set d i                -> Set (f d) i
+  AddFactor d1 d2 factor -> AddFactor (f d1) (f d2) factor
+  SetFrom d1 d2          -> SetFrom (f d1) (f d2)
+  Loop d ils             -> Loop (f d) ils
+  Shift s                -> Shift s
