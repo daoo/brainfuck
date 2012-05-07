@@ -1,6 +1,7 @@
 module Brainfuck.Compiler.Optimizing where
 
 import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
 -- Remove side effect free instructions from the end
@@ -13,77 +14,60 @@ removeFromEnd = reverse . helper . reverse
       Loop _ _  -> il : ils
       _         -> helper ils
 
+-- Optimize expressions
+optimizeExpressions :: IL -> IL
+optimizeExpressions il = case il of
+  Add d e -> Add d $ cleanExpr e
+  Set d e -> Set d $ cleanExpr e
+  _       -> il
+
 -- Remove instructions that does not do anything
 clean :: IL -> Bool
-clean (Shift s)       = s    /= 0
-clean (Add _ i)       = i    /= 0
-clean (SetFrom d1 d2) = d1   /= d2
-clean _               = True
+clean (Shift s)         = s  /= 0
+clean (Add _ (Const i)) = i  /= 0
+clean (Set o1 (Get o2)) = o1 /= o2
+clean _                 = True
 
 -- This is essentially bubble sort, could be a lot faster
 sortMutators :: IL -> IL -> Action
 sortMutators i1 i2 = case (i1, i2) of
-  (Add d1 _, AddFactor d2 d3 _) | d1 > d2 && d1 /= d3             -> Replace [i2, i1]
-  (Set d1 _, AddFactor d2 d3 _) | d1 > d2 && d1 /= d2 && d1 /= d3 -> Replace [i2, i1]
-  (Add d1 _, Add d2 _)          | d1 > d2                         -> Replace [i2, i1]
-  (Add d1 _, Set d2 _)          | d1 > d2                         -> Replace [i2, i1]
-  (Set d1 _, Add d2 _)          | d1 > d2                         -> Replace [i2, i1]
-  (Set d1 _, Set d2 _)          | d1 > d2                         -> Replace [i2, i1]
-  _                                                               -> Keep
+  _ -> Keep
 
 -- Move shifts to the end of each block
 shiftShifts :: IL -> IL -> Action
 shiftShifts s@(Shift sc) il = case il of
-  Add d i           -> Replace [Add (d + sc) i, s]
+  Add d e           -> Replace [Add (d + sc) (modifyPtr (+sc) e), s]
+  Set d e           -> Replace [Set (d + sc) (modifyPtr (+sc) e), s]
   PutChar d         -> Replace [PutChar (d + sc), s]
   GetChar d         -> Replace [GetChar (d + sc), s]
-  Set d v           -> Replace [Set (d + sc) v, s]
-  AddFactor d1 d2 f -> Replace [AddFactor (d1 + sc) (d2 + sc) f, s]
   _                 -> Keep
 shiftShifts _ _ = Keep
 
 -- Apply shifts into loops
 applyShifts :: IL -> IL -> Action
 applyShifts s@(Shift sc) (Loop i ils) =
-  Replace [Loop (i + sc) $ mapIL (modifyRelative (+sc)) ils, s]
+  Replace [Loop (i + sc) $ mapIL (modifyOffset (+sc)) ils, s]
 applyShifts _ _ = Keep
 
 -- Reduce some loops to simpler operations
 reduceLoops :: IL -> Action
 reduceLoops il = case il of
-  Loop dl [Add dp (-1)] | dl == dp -> Replace [Set dp 0]
+  Loop dl [Add dp (Const (-1))] | dl == dp -> Replace [Set dp $ Const 0]
 
   Loop _ _ -> case copyLoop il of
     Nothing      -> Keep
-    Just (o, xs) -> Replace $ map (\(d, f) -> AddFactor d o f) xs ++ [Set o 0]
+    Just (o, xs) -> Replace $ map f xs ++ [Set o $ Const 0]
+      where f (d, i) = Add d $ Mult (Get o) (Const i)
 
   _ -> Keep
 
 -- Merge pokes and shifts that are next to eachother
 mergeSame :: IL -> IL -> Action
 mergeSame il1 il2 = case (il1, il2) of
-  (Add d1 i1, Add d2 i2) | d1 /= d2  -> Keep
-                         | i' == 0   -> Remove
-                         | otherwise -> Replace [Add d1 i']
-    where i' = i1 + i2
-
-  (Shift s1, Shift s2) | c' == 0   -> Remove
-                       | otherwise -> Replace [Shift c']
-    where c' = s1 + s2
-
   (_, _) -> Keep
 
 miscJoins :: IL -> IL -> Action
 miscJoins il1 il2 = case (il1, il2) of
-  (Set d1 _, Set d2 v)          | d1 == d2 -> Replace [Set d1 v]
-  (Set d1 0, AddFactor d2 d3 f) | d1 == d2 -> Replace [SetFrom d2 d3 f]
-  (Set d1 0, Add d2 v)          | d1 == d2 -> Replace [Set d1 v]
-
-  (Set d1 _, Set d2 0)     | d1 == d2 -> Replace [Set d2 0]
-  (SetFrom d1 _, Set d2 0) | d1 == d2 -> Replace [Set d2 0]
-
-  (SetFrom d1 d2, SetFrom d3 d4) | d1 == d4 && d2 == d3 -> Replace [SetFrom d1 d2]
-
   (_, _) -> Keep
 
 data Action = Keep | Replace [IL] | Remove

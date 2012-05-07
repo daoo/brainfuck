@@ -5,7 +5,8 @@ import Brainfuck.Compiler.Optimizing
 import Brainfuck.Ext
 
 optimize :: [IL] -> [IL]
-optimize = merge1 reduceLoops
+optimize = mapIL optimizeExpressions
+         . merge1 reduceLoops
          . filterIL clean
          . merge2 applyShifts
          . merge2 sortMutators

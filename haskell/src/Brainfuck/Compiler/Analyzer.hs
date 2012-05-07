@@ -1,5 +1,6 @@
 module Brainfuck.Compiler.Analyzer where
 
+import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
 data Temp = TempLoop [Temp]
@@ -16,7 +17,7 @@ loopDepth _            = 0
 copyLoop :: IL -> Maybe (Int, [(Int, Int)])
 copyLoop (Loop _ [])  = Nothing
 copyLoop (Loop o ils) = if isCopyLoop
-  then Just (o, map (\(Add d f) -> (d, f)) $ filter otherAdd ils)
+  then Just (o, map (\(Add d (Const i)) -> (d, i)) $ filter otherAdd ils)
   else Nothing
   where
     isCopyLoop = nLen == 1 && oLen >= 1 && len - oLen - 1 == 0
@@ -25,10 +26,10 @@ copyLoop (Loop o ils) = if isCopyLoop
         nLen = length $ filter negAdd ils
         oLen = length $ filter otherAdd ils
 
-    negAdd (Add _ (-1)) = True
-    negAdd _            = False
+    negAdd (Add _ (Const (-1))) = True
+    negAdd _                    = False
 
-    otherAdd (Add _ n) = n /= (-1)
-    otherAdd _         = False
+    otherAdd (Add _ (Const n)) = n /= (-1)
+    otherAdd _                 = False
 
 copyLoop _            = Nothing

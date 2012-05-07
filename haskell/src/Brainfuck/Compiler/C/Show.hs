@@ -1,11 +1,20 @@
 module Brainfuck.Compiler.C.Show (showC) where
 
+import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
 showC :: [IL] -> String
 showC ils = program mem $ toC 1 ils
   where
     mem = 30001
+
+showExpr :: Expr -> String
+showExpr (Get o)                 = "ptr[" ++ show o ++ "]"
+showExpr (Const i)               = show i
+showExpr (Plus e1 e2)            = show e1 ++ " + " ++ show e2
+showExpr (Mult e1@(Plus _ _) e2) = "( " ++ show e1 ++ " ) * " ++ show e2
+showExpr (Mult e1 e2@(Plus _ _)) = show e1 ++ " * ( " ++ show e2 ++ " )"
+showExpr (Mult e1 e2)            = show e1 ++ " * " ++ show e2
 
 program :: Int -> String -> String
 program mem code =
@@ -40,13 +49,10 @@ toC = helper
                                , "\n"
                                , helper i xs ]
 
-    line (AddFactor d1 d2 1) = concat [ "ptr[", show d1, "] += ptr[", show d2, "];" ]
-    line (AddFactor d1 d2 f) = concat [ "ptr[", show d1, "] += ptr[", show d2, "] * ", show f, ";" ]
-    line (SetFrom d1 d2)     = concat [ "ptr[", show d1, "] = ptr[", show d2, "];" ]
-    line (Add p i)           = concat [ "ptr[", show p, "] += ", show i, ";" ]
-    line (Set p i)           = concat [ "ptr[", show p, "] = ", show i, ";" ]
-    line (Shift s)           = concat [ "ptr += ", show s, ";" ]
-    line (PutChar p)         = concat [ "putchar(ptr[", show p, "]);" ]
-    line (GetChar p)         = concat [ "ptr[", show p, "] = getchar();" ]
+    line (Add d e)   = concat [ "ptr[", show d, "] += ", showExpr e, ";" ]
+    line (Set d e)   = concat [ "ptr[", show d, "] = ", showExpr e, ";" ]
+    line (Shift s)   = concat [ "ptr += ", show s, ";" ]
+    line (PutChar p) = concat [ "putchar(ptr[", show p, "]);" ]
+    line (GetChar p) = concat [ "ptr[", show p, "] = getchar();" ]
 
     line (Loop _ _) = error "error"

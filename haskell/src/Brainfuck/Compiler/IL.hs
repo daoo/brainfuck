@@ -2,9 +2,7 @@ module Brainfuck.Compiler.IL where
 
 import Test.QuickCheck
 
-data Expr = From offset
-          | Mult Expr Expr
-          | Add Expr Expr
+import Brainfuck.Compiler.Expr
 
 data IL = Loop Int [IL]
         | Add Int Expr
@@ -15,14 +13,12 @@ data IL = Loop Int [IL]
   deriving (Eq)
 
 instance Show IL where
-  show loop@(Loop _ _)     = showList [loop] ""
-  show (AddFactor d1 d2 f) = "AddFactor " ++ show d1 ++ " " ++ show d2 ++ " " ++ show f
-  show (SetFrom d1 d2)     = "SetFrom " ++ show d1 ++ " " ++ show d2
-  show (Add d i)           = "Add " ++ show d ++ " " ++ show i
-  show (Set d i)           = "Set " ++ show d ++ " " ++ show i
-  show (Shift i)           = "Shift " ++ show i
-  show (PutChar d)         = "PutChar " ++ show d
-  show (GetChar d)         = "GetChar " ++ show d
+  show loop@(Loop _ _) = showList [loop] ""
+  show (Add d e)       = "Add " ++ show d ++ " " ++ show e
+  show (Set d e)       = "Set " ++ show d ++ " " ++ show e
+  show (Shift i)       = "Shift " ++ show i
+  show (PutChar d)     = "PutChar " ++ show d
+  show (GetChar d)     = "GetChar " ++ show d
 
   showList = helper ""
     where
@@ -45,7 +41,7 @@ instance Arbitrary IL where
   arbitrary = do
     i1 <- choose (-100, 100)
     i2 <- choose (-100, 100)
-    oneof $ map return [Add i1 i2, Shift i1]
+    oneof $ map return [Add i1 $ Const i2, Shift i1]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                                    = []
@@ -58,13 +54,11 @@ mapIL _ []                 = []
 mapIL f (Loop i loop : as) = f (Loop i (mapIL f loop)) : mapIL f as
 mapIL f (a : as)           = f a : mapIL f as
 
-modifyRelative :: (Int -> Int) -> IL -> IL
-modifyRelative f il = case il of
-  PutChar d              -> PutChar $ f d
-  GetChar d              -> GetChar $ f d
-  Add d i                -> Add (f d) i
-  Set d i                -> Set (f d) i
-  AddFactor d1 d2 factor -> AddFactor (f d1) (f d2) factor
-  SetFrom d1 d2          -> SetFrom (f d1) (f d2)
-  Loop d ils             -> Loop (f d) ils
-  Shift s                -> Shift s
+modifyOffset :: (Int -> Int) -> IL -> IL
+modifyOffset f il = case il of
+  Loop d ils -> Loop (f d) ils
+  Add d e    -> Add (f d) $ modifyPtr f e
+  Set d e    -> Set (f d) $ modifyPtr f e
+  Shift s    -> Shift s
+  GetChar d  -> GetChar $ f d
+  PutChar d  -> PutChar $ f d
