@@ -7,6 +7,7 @@ data Expr = Get Int
   deriving (Show, Eq)
 
 modifyPtr :: (Int -> Int) -> Expr -> Expr
+modifyPtr _ (Const v)    = Const v
 modifyPtr f (Get i)      = Get $ f i
 modifyPtr f (Mult e1 e2) = Mult (modifyPtr f e1) (modifyPtr f e2)
 modifyPtr f (Plus e1 e2) = Plus (modifyPtr f e1) (modifyPtr f e2)
