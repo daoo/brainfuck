@@ -24,5 +24,5 @@ cleanExpr expr = case expr of
   Mult e (Const 1) -> cleanExpr e
   Mult (Const 1) e -> cleanExpr e
   Plus e1 e2       -> Plus (cleanExpr e1) (cleanExpr e2)
-  Mult e1 e2       -> Plus (cleanExpr e1) (cleanExpr e2)
+  Mult e1 e2       -> Mult (cleanExpr e1) (cleanExpr e2)
   e                -> e

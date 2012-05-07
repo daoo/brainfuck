@@ -64,12 +64,16 @@ reduceLoops il = case il of
 -- Merge pokes and shifts that are next to eachother
 mergeSame :: IL -> IL -> Action
 mergeSame il1 il2 = case (il1, il2) of
-  (Shift d1, Shift d2) -> Replace [Shift $ d1 + d2]
+  (Shift d1, Shift d2)              -> Replace [Shift $ d1 + d2]
   (Add d1 e1, Add d2 e2) | d1 == d2 -> Replace [Add d1 $ cleanExpr $ e1 `Plus` e2]
+  (Set d1 _, Set d2 e2)  | d1 == d2 -> Replace [Set d1 e2]
+
   (_, _) -> Keep
 
 miscJoins :: IL -> IL -> Action
 miscJoins il1 il2 = case (il1, il2) of
+  (Set d1 e1, Add d2 e2) | d1 == d2 -> Replace [Set d1 $ cleanExpr $ e1 `Plus` e2]
+
   (_, _) -> Keep
 
 data Action = Keep | Replace [IL] | Remove
