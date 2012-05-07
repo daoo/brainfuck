@@ -28,9 +28,13 @@ clean (Add _ (Const i)) = i  /= 0
 clean (Set o1 (Get o2)) = o1 /= o2
 clean _                 = True
 
--- This is essentially bubble sort, could be a lot faster
-sortMutators :: IL -> IL -> Action
-sortMutators i1 i2 = case (i1, i2) of
+-- This is essentially bubble sort
+sortIL :: IL -> IL -> Action
+sortIL i1 i2 = case (i1, i2) of
+  (Set d1 e1, Set d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
+  (Add d1 e1, Add d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
+  (Set d1 e1, Add d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
+  (Add d1 e1, Set d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
   _ -> Keep
 
 -- Move shifts to the end of each block
@@ -57,7 +61,7 @@ reduceLoops il = case il of
   Loop _ _ -> case copyLoop il of
     Nothing      -> Keep
     Just (o, xs) -> Replace $ map f xs ++ [Set o $ Const 0]
-      where f (d, i) = Add d $ Mult (Get o) (Const i)
+      where f (d, i) = Add d $ Const i `Mult` Get o
 
   _ -> Keep
 
@@ -68,13 +72,21 @@ mergeSame il1 il2 = case (il1, il2) of
   (Add d1 e1, Add d2 e2) | d1 == d2 -> Replace [Add d1 $ cleanExpr $ e1 `Plus` e2]
   (Set d1 _, Set d2 e2)  | d1 == d2 -> Replace [Set d1 e2]
 
-  (_, _) -> Keep
+  _ -> Keep
 
-miscJoins :: IL -> IL -> Action
-miscJoins il1 il2 = case (il1, il2) of
+joinTwo :: IL -> IL -> Action
+joinTwo il1 il2 = case (il1, il2) of
   (Set d1 e1, Add d2 e2) | d1 == d2 -> Replace [Set d1 $ cleanExpr $ e1 `Plus` e2]
 
-  (_, _) -> Keep
+  _ -> Keep
+
+joinThree :: IL -> IL -> IL -> Action
+joinThree il1 il2 il3 = case (il1, il2, il3) of
+  (Add d1 e1, Add d2 e2, Set d3 e3) | d1 == d3 -> Replace [Add d2 $ cleanExpr $ inlineAdd d1 e1 e2, Add d3 $ cleanExpr e1 `Plus` e3]
+
+  --(Add d1 e1, Set d2 e2, Set d3 e3) | d1 == d3 -> Replace [Set d2 $ cleanExpr $ e1 `Plus` e2, Set d3 e3]
+
+  _ -> Keep
 
 data Action = Keep | Replace [IL] | Remove
   deriving (Show)

@@ -23,7 +23,22 @@ cleanExpr expr = case expr of
   Mult (Const 0) _ -> Const 0
   Mult e (Const 1) -> cleanExpr e
   Mult (Const 1) e -> cleanExpr e
-  Plus e1 e2       -> Plus (cleanExpr e1) (cleanExpr e2)
-  Mult e1 e2       -> Mult (cleanExpr e1) (cleanExpr e2)
+
+  Plus e1 e2@(Const _) -> e2 `Plus` cleanExpr e1
+
+  Plus e1 e2       -> cleanExpr e1 `Plus` cleanExpr e2
+  Mult e1 e2       -> cleanExpr e1 `Mult` cleanExpr e2
 
   e -> e
+
+inlineSet :: Int -> Expr -> Expr -> Expr
+inlineSet d ei (Get i) | d == i = ei
+inlineSet d ei (Mult e1 e2)     = inlineSet d ei e1 `Mult` inlineSet d ei e2
+inlineSet d ei (Plus e1 e2)     = inlineSet d ei e1 `Plus` inlineSet d ei e2
+inlineSet _ _ e                 = e
+
+inlineAdd :: Int -> Expr -> Expr -> Expr
+inlineAdd d ei (Get i) | d == i = ei `Plus` Get i
+inlineAdd d ei (Mult e1 e2)     = inlineAdd d ei e1 `Mult` inlineAdd d ei e2
+inlineAdd d ei (Plus e1 e2)     = inlineAdd d ei e1 `Plus` inlineAdd d ei e2
+inlineAdd _ _ e                 = e

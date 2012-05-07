@@ -33,3 +33,9 @@ copyLoop (Loop o ils) = if isCopyLoop
     otherAdd _                 = False
 
 copyLoop _            = Nothing
+
+exprDepends :: Int -> Expr -> Bool
+exprDepends i (Get o)      = i == o
+exprDepends i (Plus e1 e2) = exprDepends i e1 || exprDepends i e2
+exprDepends i (Mult e1 e2) = exprDepends i e1 || exprDepends i e2
+exprDepends _ _            = False
