@@ -6,6 +6,7 @@ import Brainfuck.Ext
 
 optimize :: [IL] -> [IL]
 optimize = mapIL optimizeExpressions
+         . inline
          . merge1 reduceLoops
          . merge3 joinThree
          . filterIL clean

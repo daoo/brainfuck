@@ -4,6 +4,20 @@ import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
+-- Inline expressions
+inline :: [IL] -> [IL]
+inline ils = case ils of
+  []              -> []
+  Set od oe : ils' -> inline $ helper ils'
+    where
+      f = cleanExpr . inlineSet od oe
+
+      helper (Set d e : ils'') | od /= d = Set d (f e) : helper ils''
+      helper (Add d e : ils'') | od /= d = Set d (f e) : helper ils''
+      helper ils''                       = Set od oe : ils''
+
+  il : ils' -> il : inline ils'
+
 -- Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
