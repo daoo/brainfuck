@@ -26,8 +26,8 @@ cleanExpr expr = case expr of
 
   Plus e1 e2@(Const _) -> e2 `Plus` cleanExpr e1
 
-  Plus e1 e2       -> cleanExpr e1 `Plus` cleanExpr e2
-  Mult e1 e2       -> cleanExpr e1 `Mult` cleanExpr e2
+  Plus e1 e2 -> cleanExpr e1 `Plus` cleanExpr e2
+  Mult e1 e2 -> cleanExpr e1 `Mult` cleanExpr e2
 
   e -> e
 

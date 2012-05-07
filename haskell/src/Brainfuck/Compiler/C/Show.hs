@@ -12,8 +12,8 @@ showExpr :: Expr -> String
 showExpr (Get o)                 = "ptr[" ++ show o ++ "]"
 showExpr (Const i)               = show i
 showExpr (Plus e1 e2)            = showExpr e1 ++ " + " ++ showExpr e2
-showExpr (Mult e1@(Plus _ _) e2) = "( " ++ showExpr e1 ++ " ) * " ++ showExpr e2
-showExpr (Mult e1 e2@(Plus _ _)) = showExpr e1 ++ " * ( " ++ showExpr e2 ++ " )"
+showExpr (Mult e1@(Plus _ _) e2) = "(" ++ showExpr e1 ++ ") * " ++ showExpr e2
+showExpr (Mult e1 e2@(Plus _ _)) = showExpr e1 ++ " * (" ++ showExpr e2 ++ ")"
 showExpr (Mult e1 e2)            = showExpr e1 ++ " * " ++ showExpr e2
 
 program :: Int -> String -> String
