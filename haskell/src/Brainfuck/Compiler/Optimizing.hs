@@ -82,7 +82,7 @@ joinTwo il1 il2 = case (il1, il2) of
 
 joinThree :: IL -> IL -> IL -> Action
 joinThree il1 il2 il3 = case (il1, il2, il3) of
-  (Add d1 e1, Add d2 e2, Set d3 e3) | d1 == d3 -> Replace [Add d2 $ cleanExpr $ inlineAdd d1 e1 e2, Add d3 $ cleanExpr e1 `Plus` e3]
+  (Add d1 e1, Add d2 e2, Set d3 e3) | d1 == d3 -> Replace [Add d2 $ cleanExpr $ inlineAdd d1 e1 e2, Set d3 e3]
 
   --(Add d1 e1, Set d2 e2, Set d3 e3) | d1 == d3 -> Replace [Set d2 $ cleanExpr $ e1 `Plus` e2, Set d3 e3]
 
