@@ -14,6 +14,9 @@ modifyPtr f (Plus e1 e2) = Plus (modifyPtr f e1) (modifyPtr f e2)
 
 cleanExpr :: Expr -> Expr
 cleanExpr expr = case expr of
+  Plus (Const v1) (Const v2) -> Const $ v1 + v2
+  Mult (Const v1) (Const v2) -> Const $ v1 * v2
+
   Plus e (Const 0) -> cleanExpr e
   Plus (Const 0) e -> cleanExpr e
   Mult _ (Const 0) -> Const 0
