@@ -12,9 +12,12 @@ inline ils = case ils of
     where
       f = cleanExpr . inlineSet od oe
 
-      helper (Set d e : ils'') | od /= d = Set d (f e) : helper ils''
-      helper (Add d e : ils'') | od /= d = Set d (f e) : helper ils''
-      helper ils''                       = Set od oe : ils''
+      helper (Set d e : ils'') | od == d   = Set d (f e) : ils''
+                               | otherwise = Set d (f e) : helper ils''
+      helper (Add d e : ils'') | od == d   = Add d (f e) : ils''
+                               | otherwise = Add d (f e) : helper ils''
+      helper (PutChar d : ils'') | od /= d = PutChar d : helper ils''
+      helper ils''                         = Set od oe : ils''
 
   il : ils' -> il : inline ils'
 
