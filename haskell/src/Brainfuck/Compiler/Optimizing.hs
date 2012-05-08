@@ -25,10 +25,10 @@ inline (il : ils) = il : inline ils
 
 -- Reduce multiplications and clear loops
 reduceLoops :: [IL] -> [IL]
-reduceLoops []                  = []
+reduceLoops []                       = []
 reduceLoops (il@(Loop d loop) : ils) = case copyLoop il of
   Nothing -> Loop d (reduceLoops loop) : reduceLoops ils
-  Just xs -> map (\(ds, v) -> Set ds (Const v `Mult` Get d)) xs ++ [Set d (Const 0)] ++ reduceLoops ils
+  Just xs -> map (\(ds, v) -> Set ds (Const v `Mult` Get d)) xs ++ [Set d $ Const 0] ++ reduceLoops ils
 reduceLoops (il : ils) = il : reduceLoops ils
 
 -- Remove side effect free instructions from the end
