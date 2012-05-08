@@ -49,14 +49,8 @@ cleanExpr expr = case expr of
 
   e -> e
 
-inlineSet :: Int -> Expr -> Expr -> Expr
-inlineSet d ei (Get i) | d == i = ei
-inlineSet d ei (Mult e1 e2)     = inlineSet d ei e1 `Mult` inlineSet d ei e2
-inlineSet d ei (Plus e1 e2)     = inlineSet d ei e1 `Plus` inlineSet d ei e2
-inlineSet _ _ e                 = e
-
-inlineAdd :: Int -> Expr -> Expr -> Expr
-inlineAdd d ei (Get i) | d == i = ei `Plus` Get i
-inlineAdd d ei (Mult e1 e2)     = inlineAdd d ei e1 `Mult` inlineAdd d ei e2
-inlineAdd d ei (Plus e1 e2)     = inlineAdd d ei e1 `Plus` inlineAdd d ei e2
-inlineAdd _ _ e                 = e
+inline :: Int -> Expr -> Expr -> Expr
+inline d ei (Get i) | d == i = ei
+inline d ei (Mult e1 e2)     = inline d ei e1 `Mult` inline d ei e2
+inline d ei (Plus e1 e2)     = inline d ei e1 `Plus` inline d ei e2
+inline _ _ e                 = e

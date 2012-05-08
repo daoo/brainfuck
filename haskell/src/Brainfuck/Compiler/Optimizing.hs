@@ -4,24 +4,24 @@ import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
-inline :: [IL] -> [IL]
-inline []                  = []
-inline (Loop i loop : ils) = Loop i (inline loop) : inline ils
-inline (il1 : il2 : ils)   = case (il1, il2) of
+applyIL :: [IL] -> [IL]
+applyIL []                  = []
+applyIL (Loop i loop : ils) = Loop i (applyIL loop) : applyIL ils
+applyIL (il1 : il2 : ils)   = case (il1, il2) of
   -- Inline sets
-  (Set d1 e1, Set d2 e2) | d2 == d1                  -> Set d2 (inlineSet d1 e1 e2) : inline ils
-                         | not (e1 `exprDepends` d2) -> Set d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Set d1 e1, Set d2 e2) | d2 == d1                  -> Set d2 (inline d1 e1 e2) : applyIL ils
+                         | not (e1 `exprDepends` d2) -> Set d2 (inline d1 e1 e2) : applyIL (il1 : ils)
 
-  (Set d1 e1, PutChar e2) -> PutChar (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Set d1 e1, PutChar e2) -> PutChar (inline d1 e1 e2) : applyIL (il1 : ils)
 
   -- Apply shifts
-  (Shift s1, Shift s2)   -> inline $ Shift (s1 + s2) : ils
-  (Shift s, Set d e)     -> Set (d + s) (modifyPtr (+s) e) : inline (il1 : ils)
+  (Shift s1, Shift s2)   -> applyIL $ Shift (s1 + s2) : ils
+  (Shift s, Set d e)     -> Set (d + s) (modifyPtr (+s) e) : applyIL (il1 : ils)
   (Shift s, Loop d loop) -> Loop (d + s) (mapIL (modifyOffset (+s)) loop) : (il1 : ils)
 
-  _ -> il1 : inline (il2 : ils)
+  _ -> il1 : applyIL (il2 : ils)
 
-inline (il : ils) = il : inline ils
+applyIL (il : ils) = il : applyIL ils
 
 -- Reduce multiplications and clear loops
 reduceLoops :: [IL] -> [IL]
