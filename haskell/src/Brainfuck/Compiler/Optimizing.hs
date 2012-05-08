@@ -4,42 +4,52 @@ import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
--- Inline expressions
 inline :: [IL] -> [IL]
 inline []                  = []
 inline (Loop i loop : ils) = Loop i (inline loop) : inline ils
 inline (il1 : il2 : ils)   = case (il1, il2) of
+  -- Inline sets
   (Set d1 e1, Set d2 e2) | d2 == d1                  -> Set d2 (inlineSet d1 e1 e2) : inline ils
                          | not (e1 `exprDepends` d2) -> Set d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (Set d1 e1, Add d2 e2) | d2 == d1                  -> Set d2 (e1 `Plus` e2) : inline ils
-                         | not (e1 `exprDepends` d2) -> Add d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
-
-  (Add d1 e1, Add d2 e2) | d1 == d2                  -> Add d2 (e1 `Plus` e2) : inline ils
-                         | not (e1 `exprDepends` d2) -> Add d2 (inlineAdd d1 e1 e2) : inline (il1 : ils)
-  (Add d1 e1, Set d2 e2) | d1 == d2                  -> Set d2 (inlineAdd d1 e1 e2) : inline ils
-                         | not (e1 `exprDepends` d2) -> Set d2 (inlineAdd d1 e1 e2) : inline (il1 : ils)
 
   (Set d1 e1, PutChar e2) -> PutChar (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (Add d1 e1, PutChar e2) -> PutChar (inlineAdd d1 e1 e2) : inline (il1 : ils)
+
+  -- Apply shifts
+  (Shift s1, Shift s2)   -> inline $ Shift (s1 + s2) : ils
+  (Shift s, Set d e)     -> Set (d + s) (modifyPtr (+s) e) : inline (il1 : ils)
+  (Shift s, Loop d loop) -> Loop (d + s) (mapIL (modifyOffset (+s)) loop) : (il1 : ils)
 
   _ -> il1 : inline (il2 : ils)
 
 inline (il : ils) = il : inline ils
 
+-- Reduce multiplications and clear loops
+reduceLoops :: [IL] -> [IL]
+reduceLoops []                  = []
+reduceLoops (il@(Loop d loop) : ils) = case copyLoop il of
+  Nothing -> Loop d (reduceLoops loop) : reduceLoops ils
+  Just xs -> map (\(ds, v) -> Set ds (Const v `Mult` Get d)) xs ++ [Set d (Const 0)] ++ reduceLoops ils
+reduceLoops (il : ils) = il : reduceLoops ils
+
 -- Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
   where
+    sideEffect (PutChar _) = True
+    sideEffect _           = False
+
     helper []         = []
     helper (il : ils) = case il of
-      PutChar _ -> il : ils
-      Loop _ _  -> il : ils
-      _         -> helper ils
+      Loop _ loop -> if any sideEffect loop
+        then il : ils
+        else helper ils
+      _ -> if sideEffect il
+        then il : ils
+        else helper ils
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
 optimizeExpressions il = case il of
-  Add d e -> Add d $ cleanExpr e
   Set d e -> Set d $ cleanExpr e
   _       -> il
 
@@ -47,84 +57,6 @@ optimizeExpressions il = case il of
 clean :: IL -> Bool
 clean il = case il of
   Shift s         -> s /= 0
-  Add _ (Const i) -> i /= 0
   Set o1 (Get o2) -> o1 /= o2
   _               -> True
 
--- This is essentially bubble sort
-sortIL :: IL -> IL -> Action
-sortIL i1 i2 = case (i1, i2) of
-  (Set d1 e1, Set d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
-  (Add d1 e1, Add d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
-  (Set d1 e1, Add d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
-  (Add d1 e1, Set d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
-  _ -> Keep
-
--- Move shifts to the end of each block
-shiftShifts :: IL -> IL -> Action
-shiftShifts s@(Shift sc) il = case il of
-  Add d e   -> Replace [Add (d + sc) $ modifyPtr (+sc) e, s]
-  Set d e   -> Replace [Set (d + sc) $ modifyPtr (+sc) e, s]
-  PutChar e -> Replace [PutChar $ modifyPtr (+sc) e, s]
-  GetChar d -> Replace [GetChar $ d + sc, s]
-  _         -> Keep
-shiftShifts _ _ = Keep
-
--- Apply shifts into loops
-applyShifts :: IL -> IL -> Action
-applyShifts s@(Shift sc) (Loop i ils) =
-  Replace [Loop (i + sc) $ mapIL (modifyOffset (+sc)) ils, s]
-applyShifts _ _ = Keep
-
--- Reduce some loops to simpler operations
-reduceLoops :: IL -> Action
-reduceLoops il = case il of
-  Loop dl [Add dp (Const (-1))] | dl == dp -> Replace [Set dp $ Const 0]
-
-  Loop _ _ -> case copyLoop il of
-    Nothing      -> Keep
-    Just (o, xs) -> Replace $ map f xs ++ [Set o $ Const 0]
-      where f (d, i) = Add d $ Const i `Mult` Get o
-
-  _ -> Keep
-
--- Merge pokes and shifts that are next to eachother
-mergeSame :: IL -> IL -> Action
-mergeSame il1 il2 = case (il1, il2) of
-  (Shift d1, Shift d2)              -> Replace [Shift $ d1 + d2]
-  (Add d1 e1, Add d2 e2) | d1 == d2 -> Replace [Add d1 $ e1 `Plus` e2]
-  (Set d1 _, Set d2 e2)  | d1 == d2 -> Replace [Set d1 e2]
-
-  _ -> Keep
-
-data Action = Keep | Replace [IL] | Remove
-  deriving (Show)
-
-merge1 :: (IL -> Action) -> [IL] -> [IL]
-merge1 f (Loop d loop : ils) = case f (Loop d (merge1 f loop)) of
-  Replace ils' -> merge1 f $ ils' ++ ils
-  Keep         -> Loop d (merge1 f loop) : merge1 f ils
-  Remove       -> merge1 f ils
-merge1 f (il : ils)          = case f il of
-  Replace ils' -> merge1 f $ ils' ++ ils
-  Keep         -> il : merge1 f ils
-  Remove       -> merge1 f ils
-merge1 _ ils = ils
-
--- TODO: il1 can not be a loop
-merge2 :: (IL -> IL -> Action) -> [IL] -> [IL]
-merge2 f (Loop d loop : ils) = Loop d (merge2 f loop) : merge2 f ils
-merge2 f (il1 : il2 : ils)   = case f il1 il2 of
-  Replace ils' -> merge2 f $ ils' ++ ils
-  Keep         -> il1 : merge2 f (il2 : ils)
-  Remove       -> merge2 f ils
-merge2 _ ils = ils
-
--- TODO: il2 can not be a loop
-merge3 :: (IL -> IL -> IL -> Action) -> [IL] -> [IL]
-merge3 f (Loop d loop : ils)     = Loop d (merge3 f loop) : merge3 f ils
-merge3 f (il1 : il2 : il3 : ils) = case f il1 il2 il3 of
-  Replace ils' -> merge3 f $ ils' ++ ils
-  Keep         -> il1 : merge3 f (il2 : il3 : ils)
-  Remove       -> merge3 f ils
-merge3 _ ils = ils

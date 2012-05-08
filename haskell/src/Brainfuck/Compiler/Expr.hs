@@ -27,24 +27,23 @@ modifyPtr f (Plus e1 e2) = Plus (modifyPtr f e1) (modifyPtr f e2)
 
 cleanExpr :: Expr -> Expr
 cleanExpr expr = case expr of
-  Plus (Const v1) (Const v2) -> Const $ v1 + v2
-  Mult (Const v1) (Const v2) -> Const $ v1 * v2
+  Const 0 `Plus` e -> cleanExpr e
+  Const 0 `Mult` _ -> Const 0
+  Const 1 `Mult` e -> cleanExpr e
 
-  Plus e (Const 0) -> cleanExpr e
-  Plus (Const 0) e -> cleanExpr e
-  Mult _ (Const 0) -> Const 0
-  Mult (Const 0) _ -> Const 0
-  Mult e (Const 1) -> cleanExpr e
-  Mult (Const 1) e -> cleanExpr e
+  e `Plus` Const 0 -> cleanExpr e
+  _ `Mult` Const 0 -> Const 0
+  e `Mult` Const 1 -> cleanExpr e
 
-  Plus e1 e2@(Const _) -> e2 `Plus` cleanExpr e1
+  Const v1 `Plus` Const v2 -> Const $ v1 + v2
+  Const v1 `Mult` Const v2 -> Const $ v1 * v2
 
-  Mult (Const v1) (Plus (Const v2) e) -> Const (v1 * v2) `Plus` (Const v1 `Mult` e)
-  
-  Plus e1 (Plus e2 e3) -> Plus (Plus e1 e2) e3
+  Const v1 `Mult` (Const v2 `Plus` e) -> Const (v1 * v2) `Plus` (Const v1 `Mult` e)
+  Const v1 `Plus` (Const v2 `Plus` e) -> Const (v1 + v2) `Plus` e
+  (e `Plus` Const v1) `Plus` Const v2 -> e `Plus` Const (v1 + v2)
 
-  Plus e1 e2 -> cleanExpr e1 `Plus` cleanExpr e2
-  Mult e1 e2 -> cleanExpr e1 `Mult` cleanExpr e2
+  e1 `Plus` e2 -> cleanExpr e1 `Plus` cleanExpr e2
+  e1 `Mult` e2 -> cleanExpr e1 `Mult` cleanExpr e2
 
   e -> e
 

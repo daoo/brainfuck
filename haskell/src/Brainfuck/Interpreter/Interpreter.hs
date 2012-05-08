@@ -17,7 +17,6 @@ evalOp (State inp out mem) op = state'
     state' = case op of
       PutChar e -> State inp (out |> evalExpr mem e) mem
       GetChar d -> State (tail inp) out (modify (const $ head inp) d mem)
-      Add d e   -> State inp out $ modify (+ evalExpr mem e) d mem
       Set d e   -> State inp out $ modify (const $ evalExpr mem e) d mem
       Shift s   -> State inp out $ shift s mem
 

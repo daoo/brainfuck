@@ -49,7 +49,6 @@ toC = helper
                                , "\n"
                                , helper i xs ]
 
-    line (Add d e)   = concat [ "ptr[", show d, "] += ", showExpr e, ";" ]
     line (Set d e)   = concat [ "ptr[", show d, "] = ", showExpr e, ";" ]
     line (Shift s)   = concat [ "ptr += ", show s, ";" ]
     line (PutChar e) = concat [ "putchar(", showExpr e, ");" ]

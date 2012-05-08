@@ -10,8 +10,8 @@ compile (Repeat l : bs)  = Loop 0 (compile l) : compile bs
 compile (Token tok : bs) = tok' : compile bs
   where
     tok' = case tok of
-      Plus       -> Add 0 $ Expr.Const 1
-      Minus      -> Add 0 $ Expr.Const (-1)
+      Plus       -> Set 0 $ Expr.Get 0 `Expr.Plus` Expr.Const 1
+      Minus      -> Set 0 $ Expr.Get 0 `Expr.Plus` Expr.Const (-1)
       ShiftRight -> Shift 1
       ShiftLeft  -> Shift (-1)
       Output     -> PutChar $ Expr.Get 0

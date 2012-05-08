@@ -6,12 +6,8 @@ import Brainfuck.Ext
 
 optimize :: [IL] -> [IL]
 optimize = mapIL optimizeExpressions
-         . inline
-         . merge1 reduceLoops
          . filterIL clean
-         . merge2 applyShifts
-         . whileModified (merge2 shiftShifts)
-         . whileModified (merge2 mergeSame)
+         . inline
 
 optimizeForC :: [IL] -> [IL]
 optimizeForC = removeFromEnd . times optimize 100

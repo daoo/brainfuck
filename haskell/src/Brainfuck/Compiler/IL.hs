@@ -5,7 +5,6 @@ import Test.QuickCheck
 import Brainfuck.Compiler.Expr
 
 data IL = Loop Int [IL]
-        | Add Int Expr
         | Set Int Expr
         | Shift Int
         | PutChar Expr
@@ -14,7 +13,6 @@ data IL = Loop Int [IL]
 
 instance Show IL where
   show loop@(Loop _ _) = showList [loop] ""
-  show (Add d e)       = "Add " ++ show d ++ " " ++ show e
   show (Set d e)       = "Set " ++ show d ++ " " ++ show e
   show (Shift i)       = "Shift " ++ show i
   show (PutChar d)     = "PutChar " ++ show d
@@ -41,7 +39,7 @@ instance Arbitrary IL where
   arbitrary = do
     i <- choose (-4, 10)
     e <- arbitrary
-    oneof $ map return [Add i e, Set i e, Shift i]
+    oneof $ map return [Set i e, Shift i]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                              = []
@@ -58,7 +56,6 @@ mapIL = map . g
 modifyOffset :: (Int -> Int) -> IL -> IL
 modifyOffset f il = case il of
   Loop d ils -> Loop (f d) ils
-  Add d e    -> Add (f d) $ modifyPtr f e
   Set d e    -> Set (f d) $ modifyPtr f e
   Shift s    -> Shift s
   GetChar d  -> GetChar $ f d
