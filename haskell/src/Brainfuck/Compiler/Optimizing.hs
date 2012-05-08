@@ -9,12 +9,14 @@ inline :: [IL] -> [IL]
 inline []                  = []
 inline (Loop i loop : ils) = Loop i (inline loop) : inline ils
 inline (il1 : il2 : ils)   = case (il1, il2) of
-  (Set d1 e1, Set d2 e2) | d2 == d1  -> Set d2 (inlineSet d1 e1 e2) : inline ils
-                         | otherwise -> Set d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (Set d1 e1, Add d2 e2) | d2 == d1  -> Set d2 (inlineSet d1 e1 e2) : inline ils
-                         | otherwise -> Add d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (Set d1 e1, PutChar e2)            -> PutChar (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (_, _)                             -> il1 : inline (il2 : ils)
+  (Set d1 e1, Set d2 e2) | d2 == d1                -> Set d2 (inlineSet d1 e1 e2) : inline ils
+                         | not (exprDepends d2 e1) -> Set d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Set d1 e1, Add d2 e2) | d2 == d1                -> Set d2 (inlineSet d1 e1 e2) : inline ils
+                         | not (exprDepends d2 e1) -> Add d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Set d1 e1, PutChar e2)                          -> PutChar (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Add d1 e1, Add d2 e2) | d1 == d2                -> Add d2 (inlineAdd d1 e1 e2) : inline ils
+                         | not (exprDepends d2 e1) -> Add d2 (inlineAdd d1 e1 e2) : inline (il1 : ils)
+  (_, _)                                           -> il1 : inline (il2 : ils)
 
 inline (il : ils) = il : inline ils
 

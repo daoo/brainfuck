@@ -14,5 +14,5 @@ optimize = mapIL optimizeExpressions
          . whileModified (merge2 mergeSame)
 
 optimizeForC :: [IL] -> [IL]
-optimizeForC = removeFromEnd . times optimize 100
+optimizeForC = removeFromEnd . times optimize 10
 
