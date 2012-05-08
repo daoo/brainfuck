@@ -39,7 +39,8 @@ instance Arbitrary IL where
   arbitrary = do
     i <- choose (-4, 10)
     e <- arbitrary
-    oneof $ map return [Set i e, Shift i]
+    frequency [ (2, return $ Set i e)
+              , (1, return $ Shift i) ]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                              = []
