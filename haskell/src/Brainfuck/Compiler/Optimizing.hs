@@ -9,14 +9,20 @@ inline :: [IL] -> [IL]
 inline []                  = []
 inline (Loop i loop : ils) = Loop i (inline loop) : inline ils
 inline (il1 : il2 : ils)   = case (il1, il2) of
-  (Set d1 e1, Set d2 e2) | d2 == d1                -> Set d2 (inlineSet d1 e1 e2) : inline ils
-                         | not (exprDepends d2 e1) -> Set d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (Set d1 e1, Add d2 e2) | d2 == d1                -> Set d2 (inlineSet d1 e1 e2) : inline ils
-                         | not (exprDepends d2 e1) -> Add d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (Set d1 e1, PutChar e2)                          -> PutChar (inlineSet d1 e1 e2) : inline (il1 : ils)
-  (Add d1 e1, Add d2 e2) | d1 == d2                -> Add d2 (inlineAdd d1 e1 e2) : inline ils
-                         | not (exprDepends d2 e1) -> Add d2 (inlineAdd d1 e1 e2) : inline (il1 : ils)
-  (_, _)                                           -> il1 : inline (il2 : ils)
+  (Set d1 e1, Set d2 e2) | d2 == d1                  -> Set d2 (inlineSet d1 e1 e2) : inline ils
+                         | not (e1 `exprDepends` d2) -> Set d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Set d1 e1, Add d2 e2) | d2 == d1                  -> Set d2 (e1 `Plus` e2) : inline ils
+                         | not (e1 `exprDepends` d2) -> Add d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
+
+  (Add d1 e1, Add d2 e2) | d1 == d2                  -> Add d2 (e1 `Plus` e2) : inline ils
+                         | not (e1 `exprDepends` d2) -> Add d2 (inlineAdd d1 e1 e2) : inline (il1 : ils)
+  (Add d1 e1, Set d2 e2) | d1 == d2                  -> Set d2 (inlineAdd d1 e1 e2) : inline ils
+                         | not (e1 `exprDepends` d2) -> Set d2 (inlineAdd d1 e1 e2) : inline (il1 : ils)
+
+  (Set d1 e1, PutChar e2) -> PutChar (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Add d1 e1, PutChar e2) -> PutChar (inlineAdd d1 e1 e2) : inline (il1 : ils)
+
+  _ -> il1 : inline (il2 : ils)
 
 inline (il : ils) = il : inline ils
 
@@ -39,18 +45,19 @@ optimizeExpressions il = case il of
 
 -- Remove instructions that does not do anything
 clean :: IL -> Bool
-clean (Shift s)         = s  /= 0
-clean (Add _ (Const i)) = i  /= 0
-clean (Set o1 (Get o2)) = o1 /= o2
-clean _                 = True
+clean il = case il of
+  Shift s         -> s /= 0
+  Add _ (Const i) -> i /= 0
+  Set o1 (Get o2) -> o1 /= o2
+  _               -> True
 
 -- This is essentially bubble sort
 sortIL :: IL -> IL -> Action
 sortIL i1 i2 = case (i1, i2) of
-  (Set d1 e1, Set d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
-  (Add d1 e1, Add d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
-  (Set d1 e1, Add d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
-  (Add d1 e1, Set d2 e2) | d2 < d1 && not (exprDepends d1 e2) && not (exprDepends d2 e1) -> Replace [i2, i1]
+  (Set d1 e1, Set d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
+  (Add d1 e1, Add d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
+  (Set d1 e1, Add d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
+  (Add d1 e1, Set d2 e2) | d2 < d1 && not (e2 `exprDepends` d1) && not (e1 `exprDepends` d2) -> Replace [i2, i1]
   _ -> Keep
 
 -- Move shifts to the end of each block
@@ -85,7 +92,7 @@ reduceLoops il = case il of
 mergeSame :: IL -> IL -> Action
 mergeSame il1 il2 = case (il1, il2) of
   (Shift d1, Shift d2)              -> Replace [Shift $ d1 + d2]
-  (Add d1 e1, Add d2 e2) | d1 == d2 -> Replace [Add d1 $ cleanExpr $ e1 `Plus` e2]
+  (Add d1 e1, Add d2 e2) | d1 == d2 -> Replace [Add d1 $ e1 `Plus` e2]
   (Set d1 _, Set d2 e2)  | d1 == d2 -> Replace [Set d1 e2]
 
   _ -> Keep

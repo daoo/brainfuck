@@ -40,8 +40,8 @@ copyLoop (Loop o ils) = if isCopyLoop
 
 copyLoop _            = Nothing
 
-exprDepends :: Int -> Expr -> Bool
-exprDepends i (Get o)      = i == o
-exprDepends i (Plus e1 e2) = exprDepends i e1 || exprDepends i e2
-exprDepends i (Mult e1 e2) = exprDepends i e1 || exprDepends i e2
+exprDepends :: Expr -> Int -> Bool
+exprDepends (Get o)      i = i == o
+exprDepends (Plus e1 e2) i = exprDepends e1 i || exprDepends e2 i
+exprDepends (Mult e1 e2) i = exprDepends e1 i || exprDepends e2 i
 exprDepends _ _            = False

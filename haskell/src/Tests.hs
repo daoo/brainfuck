@@ -51,8 +51,10 @@ propOptimize f il = comp len (run state il) (run state opt)
     len   = length il
 
 propOptimizeClean , propOptimizeSortIL, propOptimizeShiftShifts,
-  propOptimizeMergeSame :: [IL] -> Bool
+  propOptimizeMergeSame, propOptimizeInline :: [IL] -> Bool
+propOptimizeInline      = propOptimize $ inline
 propOptimizeClean       = propOptimize $ filterIL clean
 propOptimizeSortIL      = propOptimize $ merge2 sortIL
 propOptimizeShiftShifts = propOptimize $ merge2 shiftShifts
 propOptimizeMergeSame   = propOptimize $ merge2 mergeSame
+propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions

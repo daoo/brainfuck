@@ -39,9 +39,9 @@ instance Show IL where
 instance Arbitrary IL where
   -- TODO: Random loops
   arbitrary = do
-    i1 <- choose (-100, 100)
-    i2 <- choose (-100, 100)
-    oneof $ map return [Add i1 $ Const i2, Shift i1]
+    i <- choose (-4, 10)
+    e <- arbitrary
+    oneof $ map return [Add i e, Set i e, Shift i]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                              = []

@@ -1,10 +1,23 @@
 module Brainfuck.Compiler.Expr where
 
+import Test.QuickCheck
+
 data Expr = Get Int
           | Const Int
           | Mult Expr Expr
           | Plus Expr Expr
   deriving (Show, Eq)
+
+instance Arbitrary Expr where
+  arbitrary = do
+    i <- choose (-10, 100)
+    d <- choose (-5, 10)
+    e1 <- arbitrary
+    e2 <- arbitrary
+    frequency [ (3, return $ Const i)
+              , (3, return $ Get d)
+              , (1, return $ e1 `Plus` e2)
+              , (1, return $ e1 `Mult` e2) ]
 
 modifyPtr :: (Int -> Int) -> Expr -> Expr
 modifyPtr _ (Const v)    = Const v
@@ -25,6 +38,10 @@ cleanExpr expr = case expr of
   Mult (Const 1) e -> cleanExpr e
 
   Plus e1 e2@(Const _) -> e2 `Plus` cleanExpr e1
+
+  Mult (Const v1) (Plus (Const v2) e) -> Const (v1 * v2) `Plus` (Const v1 `Mult` e)
+  
+  Plus e1 (Plus e2 e3) -> Plus (Plus e1 e2) e3
 
   Plus e1 e2 -> cleanExpr e1 `Plus` cleanExpr e2
   Mult e1 e2 -> cleanExpr e1 `Mult` cleanExpr e2
