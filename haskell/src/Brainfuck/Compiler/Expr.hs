@@ -39,7 +39,7 @@ cleanExpr expr = case expr of
   Const v1 `Mult` Const v2 -> Const $ v1 * v2
 
   Const v1 `Mult` (Const v2 `Plus` e) -> cleanExpr $ Const (v1 * v2) `Plus` (Const v1 `Mult` e)
-  (Const v1 `Plus` e) `Mult` Const v2 -> cleanExpr $ (Const v1 `Mult` e) `Plus` Const (v1 * v2)
+  (Const v1 `Plus` e) `Mult` Const v2 -> cleanExpr $ (Const v2 `Mult` e) `Plus` Const (v1 * v2)
 
   Const v1 `Plus` (Const v2 `Plus` e) -> cleanExpr $ Const (v1 + v2) `Plus` e
   (e `Plus` Const v1) `Plus` Const v2 -> cleanExpr $ e `Plus` Const (v1 + v2)
