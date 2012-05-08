@@ -37,9 +37,9 @@ toC = helper
   where
     helper _ []              = []
     helper i (Loop d l : xs) = concat [ indent i
-                                      , "while (*(ptr + "
+                                      , "while (ptr["
                                       , show d
-                                      , ")) {\n"
+                                      , "]) {\n"
                                       , helper (i + 1) l
                                       , indent i
                                       , "}\n"
