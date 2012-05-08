@@ -10,6 +10,12 @@ data Temp = TempLoop [Temp]
 memoryRequired :: [IL] -> [Temp]
 memoryRequired = undefined
 
+ilCount :: [IL] -> Int
+ilCount = sum . map f
+  where
+    f (Loop _ ils) = 1 + ilCount ils
+    f _            = 1
+
 loopDepth :: IL -> Int
 loopDepth (Loop _ ils) = (+1) $ maximum $ map loopDepth ils
 loopDepth _            = 0

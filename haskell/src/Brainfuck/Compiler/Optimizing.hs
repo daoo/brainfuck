@@ -6,20 +6,17 @@ import Brainfuck.Compiler.IL
 
 -- Inline expressions
 inline :: [IL] -> [IL]
-inline ils = case ils of
-  []              -> []
-  Set od oe : ils' -> inline $ helper ils'
-    where
-      f = cleanExpr . inlineSet od oe
+inline []                  = []
+inline (Loop i loop : ils) = Loop i (inline loop) : inline ils
+inline (il1 : il2 : ils)   = case (il1, il2) of
+  (Set d1 e1, Set d2 e2) | d2 == d1  -> Set d2 (inlineSet d1 e1 e2) : inline ils
+                         | otherwise -> Set d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Set d1 e1, Add d2 e2) | d2 == d1  -> Set d2 (inlineSet d1 e1 e2) : inline ils
+                         | otherwise -> Add d2 (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (Set d1 e1, PutChar e2)            -> PutChar (inlineSet d1 e1 e2) : inline (il1 : ils)
+  (_, _)                             -> il1 : inline (il2 : ils)
 
-      helper (Set d e : ils'') | od == d   = Set d (f e) : ils''
-                               | otherwise = Set d (f e) : helper ils''
-      helper (Add d e : ils'') | od == d   = Add d (f e) : ils''
-                               | otherwise = Add d (f e) : helper ils''
-      helper (PutChar d : ils'') | od /= d = PutChar d : helper ils''
-      helper ils''                         = Set od oe : ils''
-
-  il : ils' -> il : inline ils'
+inline (il : ils) = il : inline ils
 
 -- Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
@@ -57,11 +54,11 @@ sortIL i1 i2 = case (i1, i2) of
 -- Move shifts to the end of each block
 shiftShifts :: IL -> IL -> Action
 shiftShifts s@(Shift sc) il = case il of
-  Add d e           -> Replace [Add (d + sc) (modifyPtr (+sc) e), s]
-  Set d e           -> Replace [Set (d + sc) (modifyPtr (+sc) e), s]
-  PutChar d         -> Replace [PutChar (d + sc), s]
-  GetChar d         -> Replace [GetChar (d + sc), s]
-  _                 -> Keep
+  Add d e   -> Replace [Add (d + sc) $ modifyPtr (+sc) e, s]
+  Set d e   -> Replace [Set (d + sc) $ modifyPtr (+sc) e, s]
+  PutChar e -> Replace [PutChar $ modifyPtr (+sc) e, s]
+  GetChar d -> Replace [GetChar $ d + sc, s]
+  _         -> Keep
 shiftShifts _ _ = Keep
 
 -- Apply shifts into loops
@@ -88,20 +85,6 @@ mergeSame il1 il2 = case (il1, il2) of
   (Shift d1, Shift d2)              -> Replace [Shift $ d1 + d2]
   (Add d1 e1, Add d2 e2) | d1 == d2 -> Replace [Add d1 $ cleanExpr $ e1 `Plus` e2]
   (Set d1 _, Set d2 e2)  | d1 == d2 -> Replace [Set d1 e2]
-
-  _ -> Keep
-
-joinTwo :: IL -> IL -> Action
-joinTwo il1 il2 = case (il1, il2) of
-  (Set d1 e1, Add d2 e2) | d1 == d2 -> Replace [Set d1 $ cleanExpr $ e1 `Plus` e2]
-
-  _ -> Keep
-
-joinThree :: IL -> IL -> IL -> Action
-joinThree il1 il2 il3 = case (il1, il2, il3) of
-  (Add d1 e1, Add d2 e2, Set d3 e3) | d1 == d3 -> Replace [Add d2 $ cleanExpr $ inlineAdd d1 e1 e2, Set d3 e3]
-
-  --(Add d1 e1, Set d2 e2, Set d3 e3) | d1 == d3 -> Replace [Set d2 $ cleanExpr $ e1 `Plus` e2, Set d3 e3]
 
   _ -> Keep
 

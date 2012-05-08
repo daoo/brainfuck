@@ -15,7 +15,7 @@ evalOp state (Loop i ops)     = until ((== 0) . offset i . getMemory) (`run` ops
 evalOp (State inp out mem) op = state'
   where
     state' = case op of
-      PutChar d -> State inp (out |> offset d mem) mem
+      PutChar e -> State inp (out |> evalExpr mem e) mem
       GetChar d -> State (tail inp) out (modify (const $ head inp) d mem)
       Add d e   -> State inp out $ modify (+ evalExpr mem e) d mem
       Set d e   -> State inp out $ modify (const $ evalExpr mem e) d mem

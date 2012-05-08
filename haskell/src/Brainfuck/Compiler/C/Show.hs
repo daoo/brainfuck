@@ -35,7 +35,7 @@ indent i = replicate (2 * i) ' '
 toC :: Int -> [IL] -> String
 toC = helper
   where
-    helper _ []          = []
+    helper _ []              = []
     helper i (Loop d l : xs) = concat [ indent i
                                       , "while (*(ptr + "
                                       , show d
@@ -52,7 +52,7 @@ toC = helper
     line (Add d e)   = concat [ "ptr[", show d, "] += ", showExpr e, ";" ]
     line (Set d e)   = concat [ "ptr[", show d, "] = ", showExpr e, ";" ]
     line (Shift s)   = concat [ "ptr += ", show s, ";" ]
-    line (PutChar p) = concat [ "putchar(ptr[", show p, "]);" ]
+    line (PutChar e) = concat [ "putchar(", showExpr e, ");" ]
     line (GetChar p) = concat [ "ptr[", show p, "] = getchar();" ]
 
     line (Loop _ _) = error "error"

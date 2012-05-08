@@ -14,5 +14,5 @@ compile (Token tok : bs) = tok' : compile bs
       Minus      -> Add 0 $ Expr.Const (-1)
       ShiftRight -> Shift 1
       ShiftLeft  -> Shift (-1)
-      Output     -> PutChar 0
+      Output     -> PutChar $ Expr.Get 0
       Input      -> GetChar 0

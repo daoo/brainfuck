@@ -8,7 +8,7 @@ data IL = Loop Int [IL]
         | Add Int Expr
         | Set Int Expr
         | Shift Int
-        | PutChar Int
+        | PutChar Expr
         | GetChar Int
   deriving (Eq)
 
@@ -44,15 +44,16 @@ instance Arbitrary IL where
     oneof $ map return [Add i1 $ Const i2, Shift i1]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
-filterIL _ []                                    = []
-filterIL f (Loop i loop : ils) | f (Loop i loop) = Loop i (filterIL f loop) : filterIL f ils
-filterIL f (il : ils)          | f il            = il : filterIL f ils
-filterIL f (_ : ils)                             = filterIL f ils
+filterIL _ []                              = []
+filterIL f (il@(Loop i loop) : ils) | f il = Loop i (filterIL f loop) : filterIL f ils
+filterIL f (il : ils)               | f il = il : filterIL f ils
+filterIL f (_ : ils)                       = filterIL f ils
 
 mapIL :: (IL -> IL) -> [IL] -> [IL]
-mapIL _ []                 = []
-mapIL f (Loop i loop : as) = f (Loop i (mapIL f loop)) : mapIL f as
-mapIL f (a : as)           = f a : mapIL f as
+mapIL = map . g
+  where
+    g f (Loop i loop) = f $ Loop i (map (g f) loop)
+    g f il            = f il
 
 modifyOffset :: (Int -> Int) -> IL -> IL
 modifyOffset f il = case il of
@@ -61,4 +62,4 @@ modifyOffset f il = case il of
   Set d e    -> Set (f d) $ modifyPtr f e
   Shift s    -> Shift s
   GetChar d  -> GetChar $ f d
-  PutChar d  -> PutChar $ f d
+  PutChar e  -> PutChar $ modifyPtr f e
