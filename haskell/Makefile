@@ -25,14 +25,14 @@ sources = $(shell find src -type f -name '*.hs')
 flags   = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 
 build: parser
-	ghc --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
+	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
 
 ghci: parser
 	ghci $(warnings) $(flags) $(sources)
 
 parser: src/Brainfuck/Parser/Parser.y
 	happy -gc src/Brainfuck/Parser/Parser.y -o $(outdir)/Brainfuck/Parser/Parser.hs
-	ghc --make $(flags) $(outdir)/Brainfuck/Parser/Parser.hs
+	ghc -O3 --make $(flags) $(outdir)/Brainfuck/Parser/Parser.hs
 
 clean:
 	rm -r $(outdir)/*
