@@ -64,6 +64,9 @@ toC = helper
                                , "\n"
                                , helper i xs ]
 
+    line (Set d1 (Add [Get d2, Const c])) | d1 == d2 = concat [ "ptr[", show d1, "] += ", show c, ";" ]
+    line (Set d1 (Add [Const c, Get d2])) | d1 == d2 = concat [ "ptr[", show d1, "] += ", show c, ";" ]
+
     line (Set d e)   = concat [ "ptr[", show d, "] = ", showExpr e, ";" ]
     line (Shift s)   = concat [ "ptr += ", show s, ";" ]
     line (PutChar e) = concat [ "putchar(", showExpr e, ");" ]
