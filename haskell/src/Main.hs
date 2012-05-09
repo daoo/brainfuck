@@ -8,8 +8,7 @@ import System.Environment
 import System.Directory
 
 import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.C.Optimize
-import Brainfuck.Compiler.C.Show
+import Brainfuck.Compiler.Target.C99
 import Brainfuck.Compiler.IL
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State

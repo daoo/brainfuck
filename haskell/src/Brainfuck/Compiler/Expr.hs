@@ -1,6 +1,5 @@
 module Brainfuck.Compiler.Expr where
 
-import Data.List
 import Test.QuickCheck
 
 data Expr = Get Int
@@ -31,6 +30,10 @@ cleanExpr expr = case expr of
   Add [Const c] -> Const c
   Add exs       -> let (c, exs') = add $ map cleanExpr exs in Add $ Const c : exs'
 
+  Mult [Const c] -> Const c
+
+  _ -> expr
+
   where
     add []              = (0, [])
     add (Const c : exs) = let (c', exs') = add exs in (c + c', exs')
@@ -39,6 +42,6 @@ cleanExpr expr = case expr of
 inline :: Int -> Expr -> Expr -> Expr
 inline d1 e (Get d2) | d1 == d2  = e
                      | otherwise = Get d2
-inline d e (Const c)             = Const c
+inline _ _ (Const c)             = Const c
 inline d e (Mult exs)            = Mult $ map (inline d e) exs
 inline d e (Add exs)             = Add $ map (inline d e) exs

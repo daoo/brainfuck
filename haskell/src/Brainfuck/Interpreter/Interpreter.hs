@@ -29,5 +29,5 @@ evalOp (State inp out mem) op = state'
 evalExpr :: (Integral a) => Memory a -> Expr -> a
 evalExpr _ (Const v)  = fromIntegral v
 evalExpr m (Get o)    = offset o m
-evalExpr m (Mult exs) = foldr (*) 1 $ map (evalExpr m) exs
-evalExpr m (Add exs)  = foldr (+) 0 $ map (evalExpr m) exs
+evalExpr m (Mult exs) = foldr ((*) . evalExpr m) 1 exs
+evalExpr m (Add exs)  = foldr ((+) . evalExpr m) 0 exs

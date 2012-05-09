@@ -1,9 +1,19 @@
-module Brainfuck.Compiler.C.Show (showC) where
+module Brainfuck.Compiler.Target.C99 (showC, optimizeForC) where
 
 import Data.List
 
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
+import Brainfuck.Compiler.Optimizing
+import Brainfuck.Ext
+
+optimizeForC :: [IL] -> [IL]
+optimizeForC = removeFromEnd . times optimize 100
+  where
+    optimize = reduceLoops
+             . mapIL optimizeExpressions
+             . filterIL clean
+             . applyIL
 
 showC :: [IL] -> String
 showC ils = program mem $ toC 1 ils
@@ -13,10 +23,10 @@ showC ils = program mem $ toC 1 ils
 showExpr :: Expr -> String
 showExpr (Get d)    = "ptr[" ++ show d ++ "]"
 showExpr (Const c)  = show c
-showExpr (Add exs)  = concat $ intersperse " + " $ map showExpr exs 
-showExpr (Mult exs) = concat $ intersperse " * " $ map showExpr' exs
+showExpr (Add exs)  = intercalate " + " $ map showExpr exs 
+showExpr (Mult exs) = intercalate " * " $ map showExpr' exs
   where
-    showExpr' (Add exs') = "(" ++ (concat $ intersperse " + " $ map showExpr exs') ++ ")"
+    showExpr' (Add exs') = '(' : intercalate " + " (map showExpr exs') ++ ")"
     showExpr' expr       = showExpr expr
 
 program :: Int -> String -> String
