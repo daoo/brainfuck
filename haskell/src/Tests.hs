@@ -52,7 +52,7 @@ propOptimize f il = comp len (run state il) (run state opt)
 
 propOptimizeClean, propOptimizeExpressions, propOptimizeApply,
   propOptimizeLoops :: [IL] -> Bool
-propOptimizeLoops       = propOptimize $ reduceLoops
-propOptimizeApply       = propOptimize $ applyIL
+propOptimizeLoops       = propOptimize reduceLoops
+propOptimizeApply       = propOptimize applyIL
 propOptimizeClean       = propOptimize $ filterIL clean
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
