@@ -5,8 +5,8 @@ import Brainfuck.Compiler.Optimizing
 import Brainfuck.Ext
 
 optimize :: [IL] -> [IL]
-optimize = -- reduceLoops
-           mapIL optimizeExpressions
+optimize = reduceLoops
+         . mapIL optimizeExpressions
          . filterIL clean
          . applyIL
 

@@ -22,11 +22,11 @@ loopDepth :: IL -> Int
 loopDepth (Loop _ ils) = (+1) $ maximum $ map loopDepth ils
 loopDepth _            = 0
 
-exprDepends :: Expr -> Int -> Bool
-exprDepends (Get o)      i = i == o
-exprDepends (Plus e1 e2) i = exprDepends e1 i || exprDepends e2 i
-exprDepends (Mult e1 e2) i = exprDepends e1 i || exprDepends e2 i
-exprDepends _ _            = False
+exprDepends :: Int -> Expr -> Bool
+exprDepends i (Get d)    = i == d
+exprDepends i (Add exs)  = any (exprDepends i) exs
+exprDepends i (Mult exs) = any (exprDepends i) exs
+exprDepends _ _          = False
 
 copyLoop :: IL -> Maybe [(Int, Int)]
 copyLoop (Loop o loop) = helper
@@ -37,16 +37,16 @@ copyLoop (Loop o loop) = helper
         (a, b) = partition (isDec o) loop
         (c, d) = partition isConstAdd b
 
-    getConst (Set d (Get _ `Plus` Const v)) = (d, v)
-    getConst (Set d (Const v `Plus` Get _)) = (d, v)
+    getConst (Set d (Add [Get _, Const c])) = (d, c)
+    getConst (Set d (Add [Const c, Get _])) = (d, c)
     getConst _ = error "Not a const add"
 
-    isConstAdd (Set d1 (Get d2 `Plus` Const _)) = d1 == d2
-    isConstAdd (Set d1 (Const _ `Plus` Get d2)) = d1 == d2
+    isConstAdd (Set d1 (Add [Get d2, Const _])) = d1 == d2
+    isConstAdd (Set d1 (Add [Const _, Get d2])) = d1 == d2
     isConstAdd _                                = False
 
-    isDec d1 (Set d2 (Get d3 `Plus` Const (-1))) = d1 == d2 && d1 == d3
-    isDec d1 (Set d2 (Const (-1) `Plus` Get d3)) = d1 == d2 && d1 == d3
+    isDec d1 (Set d2 (Add [Get d3, Const (-1)])) = d1 == d2 && d1 == d3
+    isDec d1 (Set d2 (Add [Const (-1), Get d3])) = d1 == d2 && d1 == d3
     isDec _ _                                    = False
 
 copyLoop _ = Nothing

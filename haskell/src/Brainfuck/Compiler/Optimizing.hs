@@ -10,7 +10,7 @@ applyIL (Loop i loop : ils) = Loop i (applyIL loop) : applyIL ils
 applyIL (il1 : il2 : ils)   = case (il1, il2) of
   -- Inline sets
   (Set d1 e1, Set d2 e2) | d2 == d1                  -> applyIL $ Set d2 (inline d1 e1 e2) : ils
-                         | not (e1 `exprDepends` d2) -> Set d2 (inline d1 e1 e2) : applyIL (il1 : ils)
+                         | not (d2 `exprDepends` e1) -> Set d2 (inline d1 e1 e2) : applyIL (il1 : ils)
 
   (Set d1 e1, PutChar e2) -> PutChar (inline d1 e1 e2) : applyIL (il1 : ils)
 
@@ -29,8 +29,8 @@ reduceLoops :: [IL] -> [IL]
 reduceLoops []                       = []
 reduceLoops (il@(Loop d loop) : ils) = case copyLoop il of
   Nothing -> Loop d (reduceLoops loop) : reduceLoops ils
-  Just xs -> map f xs ++ [Set d $ Const 0] ++ ils
-  where f (ds, v) = Set ds $ Const v `Mult` Get d
+  Just xs -> map f xs ++ [Set d $ Const 0] ++ reduceLoops ils
+  where f (ds, v) = Set ds $ Add [Get ds, Mult [Const v, Get d]]
 reduceLoops (il : ils) = il : reduceLoops ils
 
 -- Remove side effect free instructions from the end

@@ -1,5 +1,7 @@
 module Brainfuck.Compiler.C.Show (showC) where
 
+import Data.List
+
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
@@ -9,12 +11,13 @@ showC ils = program mem $ toC 1 ils
     mem = 30001
 
 showExpr :: Expr -> String
-showExpr (Get o)                 = "ptr[" ++ show o ++ "]"
-showExpr (Const i)               = show i
-showExpr (Plus e1 e2)            = showExpr e1 ++ " + " ++ showExpr e2
-showExpr (Mult e1@(Plus _ _) e2) = "(" ++ showExpr e1 ++ ") * " ++ showExpr e2
-showExpr (Mult e1 e2@(Plus _ _)) = showExpr e1 ++ " * (" ++ showExpr e2 ++ ")"
-showExpr (Mult e1 e2)            = showExpr e1 ++ " * " ++ showExpr e2
+showExpr (Get d)    = "ptr[" ++ show d ++ "]"
+showExpr (Const c)  = show c
+showExpr (Add exs)  = concat $ intersperse " + " $ map showExpr exs 
+showExpr (Mult exs) = concat $ intersperse " * " $ map showExpr' exs
+  where
+    showExpr' (Add exs') = "(" ++ (concat $ intersperse " + " $ map showExpr exs') ++ ")"
+    showExpr' expr       = showExpr expr
 
 program :: Int -> String -> String
 program mem code =

@@ -4,14 +4,17 @@ import Data.Word
 
 import Test.QuickCheck
 
+import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimizing
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
+
 import qualified Brainfuck.Parser.Brainfuck as B
 import Brainfuck.Parser.Parser
 
+-- {{{ Memory operations
 propShiftLength :: ([a], [a]) -> NonNegative Int -> NonNegative Int -> Bool
 propShiftLength x (NonNegative l) (NonNegative r) = f x1 == f x2
   where
@@ -34,21 +37,22 @@ propShiftToEmpty x@(a, b) = null ae && null be && length af == lx && length bf =
 
     (ae, bf) = times shiftR la x
     (af, be) = times shiftL lb x
-
+-- }}}
+-- {{{ Parser
 propParser :: [B.Brainfuck] -> Bool
 propParser bf = bf == parse (show bf)
-
+-- }}}
+-- {{{ Optimization
 comp :: (Integral a) => Int -> State a -> State a -> Bool
 comp i (State _ _ (ml1, mr1)) (State _ _ (ml2, mr2)) = 
   take i ml1 == take i ml2 && take i mr1 == take i mr2
 
 propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
-propOptimize f il = comp len (run state il) (run state opt)
+propOptimize f il = comp (length il) (run state il) (run state opt)
   where
     state :: State Word8
     state = newState ""
     opt   = f il
-    len   = length il
 
 propOptimizeClean, propOptimizeExpressions, propOptimizeApply,
   propOptimizeLoops :: [IL] -> Bool
@@ -56,3 +60,26 @@ propOptimizeLoops       = propOptimize reduceLoops
 propOptimizeApply       = propOptimize applyIL
 propOptimizeClean       = propOptimize $ filterIL clean
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
+-- }}}
+-- {{{ Copy Loops
+exCopyLoop1 :: IL
+exCopyLoop1 =
+  Loop 0
+    [ Set 0 $ Add [Get 0, Const (-1)] ]
+
+exCopyLoop2 :: IL
+exCopyLoop2 =
+  Loop 5
+    [ Set 5 $ Add [Get 5, Const (-1)]
+    , Set 1 $ Add [Get 1, Const 1]
+    , Set 2 $ Add [Get 2, Const 5]
+    , Set 3 $ Add [Get 3, Const 10] ]
+
+exNotCopyLoop1 :: IL
+exNotCopyLoop1 =
+  Loop 5
+    [ Set 5 $ Add [Get 5, Const (-1)]
+    , Set 6 $ Add [Get 5, Const 10] ]
+-- }}}
+
+-- vim: set fdm=marker :
