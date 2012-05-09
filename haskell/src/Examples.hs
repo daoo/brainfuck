@@ -8,7 +8,7 @@ import Test.QuickCheck
 
 import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.C.Optimize
+import Brainfuck.Compiler.Target.C99
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser

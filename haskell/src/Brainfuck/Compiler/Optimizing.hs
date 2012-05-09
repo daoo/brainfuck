@@ -30,7 +30,7 @@ reduceLoops []                       = []
 reduceLoops (il@(Loop d loop) : ils) = case copyLoop il of
   Nothing -> Loop d (reduceLoops loop) : reduceLoops ils
   Just xs -> map f xs ++ [Set d $ Const 0] ++ reduceLoops ils
-  where f (ds, v) = Set ds $ Add [Get ds, Mult [Const v, Get d]]
+    where f (ds, v) = Set ds $ Add [Get ds, Mult [Const v, Get d]]
 reduceLoops (il : ils) = il : reduceLoops ils
 
 -- Remove side effect free instructions from the end
@@ -52,8 +52,9 @@ removeFromEnd = reverse . helper . reverse
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
 optimizeExpressions il = case il of
-  Set d e -> Set d $ cleanExpr e
-  _       -> il
+  Set d e   -> Set d $ cleanExpr e
+  PutChar e -> PutChar $ cleanExpr e
+  _         -> il
 
 -- Remove instructions that does not do anything
 clean :: IL -> Bool

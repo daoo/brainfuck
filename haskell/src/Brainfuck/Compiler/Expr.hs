@@ -27,21 +27,38 @@ modifyPtr f (Add es)  = Add $ map (modifyPtr f) es
 
 cleanExpr :: Expr -> Expr
 cleanExpr expr = case expr of
-  Add [Const c] -> Const c
-  Add exs       -> let (c, exs') = add $ map cleanExpr exs in Add $ Const c : exs'
+  Add [e] -> cleanExpr e
+  Add exs -> case add 0 $ map cleanExpr exs of
+    [e] -> e
+    exs -> Add exs
 
-  Mult [Const c] -> Const c
+  Mult [e] -> cleanExpr e
+  Mult exs -> case mult 1 $ map cleanExpr exs of
+    [e] -> e
+    exs -> Mult exs
 
   _ -> expr
 
   where
-    add []              = (0, [])
-    add (Const c : exs) = let (c', exs') = add exs in (c + c', exs')
-    add (ex : exs)      = let (c', exs') = add exs in (c', ex : exs')
+    add 0 []               = []
+    add i []               = [Const i]
+    add i (Const c : xs)   = add (i + c) xs
+    add i (x@(Add _) : xs) = case cleanExpr x of
+      Add ys -> add i (xs ++ ys)
+      x'     -> add i (x' : xs)
+    add i (x : xs) = x : add i xs
+
+    mult 1 []                = []
+    mult i []                = [Const i]
+    mult i (Const c : xs)    = mult (i * c) xs
+    mult i (x@(Mult _) : xs) = case cleanExpr x of
+      Mult ys -> mult i (xs ++ ys)
+      x'      -> mult i (x' : xs)
+    mult i (x : xs)          = x : mult i xs
 
 inline :: Int -> Expr -> Expr -> Expr
 inline d1 e (Get d2) | d1 == d2  = e
                      | otherwise = Get d2
 inline _ _ (Const c)             = Const c
-inline d e (Mult exs)            = Mult $ map (inline d e) exs
-inline d e (Add exs)             = Add $ map (inline d e) exs
+inline d e (Mult xs)             = Mult $ map (inline d e) xs
+inline d e (Add xs)              = Add $ map (inline d e) xs
