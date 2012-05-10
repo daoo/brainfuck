@@ -6,7 +6,15 @@ data Expr = Get Int
           | Const Int
           | Mult [Expr]
           | Add [Expr] 
-  deriving (Show, Eq)
+  deriving (Show)
+
+instance Eq Expr where
+  (==) e1 e2 = eval e1 == eval e2
+    where
+      eval (Const c) = c
+      eval (Get d)   = d
+      eval (Add xs)  = foldr ((+) . eval) 0 xs
+      eval (Mult xs) = foldr ((*) . eval) 1 xs
 
 instance Arbitrary Expr where
   arbitrary = do
@@ -29,8 +37,8 @@ cleanExpr :: Expr -> Expr
 cleanExpr expr = case expr of
   Add [e] -> cleanExpr e
   Add exs -> case add 0 $ map cleanExpr exs of
-    [e]   -> e
-    exs'  -> Add $ mergeGets $ exs'
+    [e]  -> e
+    exs' -> Add $ mergeGets exs'
 
   Mult [e] -> cleanExpr e
   Mult exs -> case mult 1 $ map cleanExpr exs of
@@ -59,16 +67,16 @@ cleanExpr expr = case expr of
     mergeGets = helper []
       where
         helper m []           = finalize m
-        helper m (Get d : xs) = helper (ins d m) xs
+        helper m (Get d : xs) = helper (inc d m) xs
         helper m (x : xs)     = x : helper m xs
 
         finalize []            = []
         finalize ((d, 1) : xs) = Get d : finalize xs
         finalize ((d, i) : xs) = Mult [Get d, Const i] : finalize xs
 
-        ins d []                         = [(d, 1)]
-        ins d ((d', i) : ys) | d == d'   = (d', i + d) : ys
-                             | otherwise = (d', i) : ins d ys
+        inc d []                         = [(d, 1)]
+        inc d ((d', i) : xs) | d == d'   = (d', i + 1) : xs
+                             | otherwise = (d', i) : inc d xs
 
 inline :: Int -> Expr -> Expr -> Expr
 inline d1 e (Get d2) | d1 == d2  = e

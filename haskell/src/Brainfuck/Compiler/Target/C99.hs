@@ -10,7 +10,8 @@ import Brainfuck.Ext
 optimizeForC :: [IL] -> [IL]
 optimizeForC = removeFromEnd . times optimize 100
   where
-    optimize = mapIL optimizeExpressions
+    optimize = id
+             . mapIL optimizeExpressions
              . reduceLoops
              . mapIL optimizeExpressions
              . filterIL clean

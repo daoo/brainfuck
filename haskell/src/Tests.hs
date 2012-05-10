@@ -81,5 +81,9 @@ exNotCopyLoop1 =
     [ Set 5 $ Add [Get 5, Const (-1)]
     , Set 6 $ Add [Get 5, Const 10] ]
 -- }}}
+-- {{{ Expressions
+propCleanExpr :: Expr -> Bool
+propCleanExpr e = e == cleanExpr e
+-- }}}
 
 -- vim: set fdm=marker :
