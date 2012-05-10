@@ -29,13 +29,13 @@ cleanExpr :: Expr -> Expr
 cleanExpr expr = case expr of
   Add [e] -> cleanExpr e
   Add exs -> case add 0 $ map cleanExpr exs of
-    [e] -> e
-    exs -> Add exs
+    [e]   -> e
+    exs'  -> Add $ mergeGets $ exs'
 
   Mult [e] -> cleanExpr e
   Mult exs -> case mult 1 $ map cleanExpr exs of
-    [e] -> e
-    exs -> Mult exs
+    [e]    -> e
+    exs'   -> Mult exs'
 
   _ -> expr
 
@@ -55,6 +55,20 @@ cleanExpr expr = case expr of
       Mult ys -> mult i (xs ++ ys)
       x'      -> mult i (x' : xs)
     mult i (x : xs)          = x : mult i xs
+
+    mergeGets = helper []
+      where
+        helper m []           = finalize m
+        helper m (Get d : xs) = helper (ins d m) xs
+        helper m (x : xs)     = x : helper m xs
+
+        finalize []            = []
+        finalize ((d, 1) : xs) = Get d : finalize xs
+        finalize ((d, i) : xs) = Mult [Get d, Const i] : finalize xs
+
+        ins d []                         = [(d, 1)]
+        ins d ((d', i) : ys) | d == d'   = (d', i + d) : ys
+                             | otherwise = (d', i) : ins d ys
 
 inline :: Int -> Expr -> Expr -> Expr
 inline d1 e (Get d2) | d1 == d2  = e
