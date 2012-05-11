@@ -53,4 +53,4 @@ main = do
       where
         state :: State Word8
         state = newState inp
-      
+

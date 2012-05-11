@@ -47,13 +47,13 @@ optimizeExpr = opt
       Mul (Const c1) (Const c2) -> Const $ c1 * c2
 
       Add (Const c1) (Add (Const c2) e') -> opt $ Add (Const $ c1 + c2) e'
-  
+
       Add e' (Const c)          -> opt $ Add (Const c) e'
       Add (Add (Const c) e1) e2 -> opt $ Add (Const c) (Add e1 e2)
 
       Add e1 e2 -> optIf Add e1 e2
       Mul e1 e2 -> optIf Mul e1 e2
-      
+
     optIf f e1 e2 = case (opt e1, opt e2) of
       (e1', e2') | e1' /= e1 || e2' /= e2 -> opt $ e1' `f` e2'
                  | otherwise              -> e1' `f` e2'
