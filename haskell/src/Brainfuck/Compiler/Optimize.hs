@@ -1,4 +1,4 @@
-module Brainfuck.Compiler.Optimizing where
+module Brainfuck.Compiler.Optimize where
 
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr

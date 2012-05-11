@@ -2,7 +2,7 @@ module Brainfuck.Compiler.Target.C99 (showC, optimizeForC) where
 
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.Optimizing
+import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
 
 optimizeForC :: [IL] -> [IL]
