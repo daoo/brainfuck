@@ -6,7 +6,7 @@ import Test.QuickCheck
 
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.Optimizing
+import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State

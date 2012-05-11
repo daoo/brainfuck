@@ -38,8 +38,8 @@ optimizeExpr = opt
 
       Add (Const 0) e' -> opt e'
       Add e' (Const 0) -> opt e'
-      Mul (Const 0) e' -> Const 0
-      Mul e' (Const 0) -> Const 0
+      Mul (Const 0) _  -> Const 0
+      Mul _ (Const 0)  -> Const 0
       Mul (Const 1) e' -> opt e'
       Mul e' (Const 1) -> opt e'
 
