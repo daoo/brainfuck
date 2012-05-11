@@ -53,3 +53,11 @@ copyLoop (Loop o loop) = helper
     isDec _ _                                   = False
 
 copyLoop _ = Nothing
+
+-- |Returns True if the list of ILs has any shifts.
+hasShifts :: [IL] -> Bool
+hasShifts = any f
+  where
+    f (Loop _ loop) = hasShifts loop
+    f (Shift _)     = True
+    f _             = False

@@ -9,6 +9,7 @@ optimizeForC :: [IL] -> [IL]
 optimizeForC = removeFromEnd . times optimize 100
   where
     optimize = id
+             . inlineZeros
              . mapIL optimizeExpressions
              . reduceLoops
              . mapIL optimizeExpressions

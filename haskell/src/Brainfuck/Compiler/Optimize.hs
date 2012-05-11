@@ -1,5 +1,7 @@
 module Brainfuck.Compiler.Optimize where
 
+import Data.Set hiding (map)
+
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
@@ -24,6 +26,28 @@ applyIL (il1 : il2 : ils)   = case (il1, il2) of
   _ -> il1 : applyIL (il2 : ils)
 
 applyIL (il : ils) = il : applyIL ils
+
+-- |Inline instructions
+-- Inline initial zeros
+inlineZeros :: [IL] -> [IL]
+inlineZeros = go empty
+  where
+    go :: Set Int -> [IL] -> [IL]
+    go _ []         = []
+    go s (il : ils) = case il of
+      Loop i loop | hasShifts loop -> il : ils
+                  | otherwise      -> Loop i (go s loop) : go s ils
+      Set i e                      -> Set i (inl s e) : go (insert i s) ils
+      PutChar e                    -> PutChar (inl s e) : go s ils
+      GetChar _                    -> il : go s ils
+      Shift _                      -> il : ils
+
+    inl :: Set Int -> Expr -> Expr
+    inl _ (Const c)            = Const c
+    inl s (Get i) | member i s = Get i
+                  | otherwise  = Const 0
+    inl s (Add e1 e2)          = inl s e1 `Add` inl s e2
+    inl s (Mul e1 e2)          = inl s e1 `Mul` inl s e2
 
 -- Reduce multiplications and clear loops
 reduceLoops :: [IL] -> [IL]
