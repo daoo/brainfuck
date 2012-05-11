@@ -1,5 +1,6 @@
 module Brainfuck.Compiler.IL where
 
+import Data.List
 import Test.QuickCheck
 
 import Brainfuck.Compiler.Expr
@@ -41,6 +42,12 @@ instance Arbitrary IL where
     e <- arbitrary
     frequency [ (2, return $ Set i e)
               , (1, return $ Shift i) ]
+
+  shrink (Loop i loop) = map (Loop i) $ tails loop
+  shrink (Set d e)     = map (Set d) $ shrink e
+  shrink (Shift i)     = map Shift [0 .. i - 1]
+  shrink (PutChar e)   = map PutChar $ shrink e
+  shrink (GetChar _)   = []
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                              = []
