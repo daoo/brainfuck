@@ -1,5 +1,7 @@
 module Brainfuck.Compiler.Target.C99 (showC, optimizeForC) where
 
+import Data.Char
+
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
@@ -43,7 +45,7 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
 
     end :: [String]
     end = [ indent 1 "return 0;", "}" ]
-          
+
     mem xs prep = if usesMemory xs
       then alloc $ ptr $ newLine prep
       else prep
@@ -59,10 +61,12 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
         body  = code (i + 1) loop
 
     code i (x : xs) prep = indent i (line x) : code i xs prep
-      
+
     line x = case x of
       Set d1 (Get d2 `Add` Const c) | d1 == d2 -> ptr (shows d1) "+=" (shows c)
       Set d1 (Const c `Add` Get d2) | d1 == d2 -> ptr (shows d1) "+=" (shows c)
+
+      PutChar (Const c) -> showString "putchar(" $ shows (chr c) ");"
 
       Set d e   -> ptr (shows d) "=" (showExpr e)
       Shift s   -> showString "ptr += " $ shows s ";"
