@@ -65,25 +65,25 @@ propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
 exCopyLoop1 :: IL
 exCopyLoop1 =
   Loop 0
-    [ Set 0 $ Add [Get 0, Const (-1)] ]
+    [ Set 0 $ Get 0 `Add` Const (-1) ]
 
 exCopyLoop2 :: IL
 exCopyLoop2 =
   Loop 5
-    [ Set 5 $ Add [Get 5, Const (-1)]
-    , Set 1 $ Add [Get 1, Const 1]
-    , Set 2 $ Add [Get 2, Const 5]
-    , Set 3 $ Add [Get 3, Const 10] ]
+    [ Set 5 $ Get 5 `Add` Const (-1)
+    , Set 1 $ Get 1 `Add` Const 1
+    , Set 2 $ Get 2 `Add` Const 5
+    , Set 3 $ Get 3 `Add` Const 10 ]
 
 exNotCopyLoop1 :: IL
 exNotCopyLoop1 =
   Loop 5
-    [ Set 5 $ Add [Get 5, Const (-1)]
-    , Set 6 $ Add [Get 5, Const 10] ]
+    [ Set 5 $ Get 5 `Add` Const (-1)
+    , Set 6 $ Get 5 `Add` Const 10 ]
 -- }}}
 -- {{{ Expressions
-propCleanExpr :: Expr -> Bool
-propCleanExpr e = e == cleanExpr e
+propOptimizeExprTwice :: Expr -> Bool
+propOptimizeExprTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
 -- }}}
 
 -- vim: set fdm=marker :

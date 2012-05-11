@@ -1,7 +1,5 @@
 module Brainfuck.Compiler.Target.C99 (showC, optimizeForC) where
 
-import Data.List
-
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimizing
@@ -24,13 +22,12 @@ showC ils = program mem $ toC 1 ils
     mem = 30001
 
 showExpr :: Expr -> String
-showExpr (Get d)    = "ptr[" ++ show d ++ "]"
-showExpr (Const c)  = show c
-showExpr (Add exs)  = intercalate " + " $ map showExpr exs 
-showExpr (Mult exs) = intercalate " * " $ map showExpr' exs
-  where
-    showExpr' (Add exs') = '(' : intercalate " + " (map showExpr exs') ++ ")"
-    showExpr' expr       = showExpr expr
+showExpr (Const c)            = show c
+showExpr (Get d)              = "ptr[" ++ show d ++ "]"
+showExpr (Add e1 e2)          = showExpr e1 ++ " + " ++ showExpr e2
+showExpr (Mul (Add e1 e2) e3) = "(" ++ showExpr e1 ++ " + " ++ showExpr e2 ++ ") * " ++ showExpr e3
+showExpr (Mul e1 (Add e2 e3)) = showExpr e1 ++ " * (" ++ showExpr e2 ++ " + " ++ showExpr e3 ++ ")"
+showExpr (Mul e1 e2)          = showExpr e1 ++ " * " ++ showExpr e2
 
 program :: Int -> String -> String
 program mem code =
@@ -65,8 +62,8 @@ toC = helper
                                , "\n"
                                , helper i xs ]
 
-    line (Set d1 (Add [Get d2, Const c])) | d1 == d2 = concat [ "ptr[", show d1, "] += ", show c, ";" ]
-    line (Set d1 (Add [Const c, Get d2])) | d1 == d2 = concat [ "ptr[", show d1, "] += ", show c, ";" ]
+    line (Set d1 (Get d2 `Add` Const c)) | d1 == d2 = concat [ "ptr[", show d1, "] += ", show c, ";" ]
+    line (Set d1 (Const c `Add` Get d2)) | d1 == d2 = concat [ "ptr[", show d1, "] += ", show c, ";" ]
 
     line (Set d e)   = concat [ "ptr[", show d, "] = ", showExpr e, ";" ]
     line (Shift s)   = concat [ "ptr += ", show s, ";" ]

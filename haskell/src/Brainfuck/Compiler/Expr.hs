@@ -4,17 +4,9 @@ import Test.QuickCheck
 
 data Expr = Get Int
           | Const Int
-          | Mult [Expr]
-          | Add [Expr] 
-  deriving (Show)
-
-instance Eq Expr where
-  (==) e1 e2 = eval e1 == eval e2
-    where
-      eval (Const c) = c
-      eval (Get d)   = d
-      eval (Add xs)  = foldr ((+) . eval) 0 xs
-      eval (Mult xs) = foldr ((*) . eval) 1 xs
+          | Add Expr Expr
+          | Mul Expr Expr
+  deriving (Eq, Show)
 
 instance Arbitrary Expr where
   arbitrary = do
@@ -23,64 +15,53 @@ instance Arbitrary Expr where
     e1 <- arbitrary
     e2 <- arbitrary
     frequency [ (3, return $ Const c)
-              , (3, return $ Get d)
-              , (1, return $ Mult [e1, e2])
-              , (1, return $ Add [e1, e2]) ]
+              , (2, return $ Get d)
+              , (1, return $ Mul e1 e2)
+              , (1, return $ Add e1 e2) ]
+
+  shrink (Add e1 e2) = [e1, e2]
+  shrink (Mul e1 e2) = [e1, e2]
+  shrink _           = []
 
 modifyPtr :: (Int -> Int) -> Expr -> Expr
-modifyPtr _ (Const c) = Const c
-modifyPtr f (Get d)   = Get $ f d
-modifyPtr f (Mult es) = Mult $ map (modifyPtr f) es
-modifyPtr f (Add es)  = Add $ map (modifyPtr f) es
+modifyPtr _ (Const c)   = Const c
+modifyPtr f (Get d)     = Get $ f d
+modifyPtr f (Mul e1 e2) = modifyPtr f e1 `Mul` modifyPtr f e2
+modifyPtr f (Add e1 e2) = modifyPtr f e1 `Add` modifyPtr f e2
 
-cleanExpr :: Expr -> Expr
-cleanExpr expr = case expr of
-  Add [e] -> cleanExpr e
-  Add exs -> case add 0 $ map cleanExpr exs of
-    [e]  -> e
-    exs' -> Add $ mergeGets exs'
-
-  Mult [e] -> cleanExpr e
-  Mult exs -> case mult 1 $ map cleanExpr exs of
-    [e]    -> e
-    exs'   -> Mult exs'
-
-  _ -> expr
-
+optimizeExpr :: Expr -> Expr
+optimizeExpr = opt
   where
-    add 0 []               = []
-    add i []               = [Const i]
-    add i (Const c : xs)   = add (i + c) xs
-    add i (x@(Add _) : xs) = case cleanExpr x of
-      Add ys -> add i (xs ++ ys)
-      x'     -> add i (x' : xs)
-    add i (x : xs) = x : add i xs
+    opt e = case e of
+      Const _ -> e
+      Get _   -> e
 
-    mult 1 []                = []
-    mult i []                = [Const i]
-    mult i (Const c : xs)    = mult (i * c) xs
-    mult i (x@(Mult _) : xs) = case cleanExpr x of
-      Mult ys -> mult i (xs ++ ys)
-      x'      -> mult i (x' : xs)
-    mult i (x : xs)          = x : mult i xs
+      Add (Const 0) e' -> opt e'
+      Add e' (Const 0) -> opt e'
+      Mul (Const 0) e' -> Const 0
+      Mul e' (Const 0) -> Const 0
+      Mul (Const 1) e' -> opt e'
+      Mul e' (Const 1) -> opt e'
 
-    mergeGets = helper []
-      where
-        helper m []           = finalize m
-        helper m (Get d : xs) = helper (inc d m) xs
-        helper m (x : xs)     = x : helper m xs
+      Add (Const c1) (Const c2) -> Const $ c1 + c2
+      Mul (Const c1) (Const c2) -> Const $ c1 * c2
 
-        finalize []            = []
-        finalize ((d, 1) : xs) = Get d : finalize xs
-        finalize ((d, i) : xs) = Mult [Get d, Const i] : finalize xs
+      Add (Const c1) (Add (Const c2) e') -> opt $ Add (Const $ c1 + c2) e'
+  
+      Add e' (Const c)          -> opt $ Add (Const c) e'
+      Add (Add (Const c) e1) e2 -> opt $ Add (Const c) (Add e1 e2)
 
-        inc d []                         = [(d, 1)]
-        inc d ((d', i) : xs) | d == d'   = (d', i + 1) : xs
-                             | otherwise = (d', i) : inc d xs
+      Add e1 e2 -> optIf Add e1 e2
+      Mul e1 e2 -> optIf Mul e1 e2
+      
+    optIf f e1 e2 = case (opt e1, opt e2) of
+      (e1', e2') | e1' /= e1 || e2' /= e2 -> opt $ e1' `f` e2'
+                 | otherwise              -> e1' `f` e2'
 
 inline :: Int -> Expr -> Expr -> Expr
 inline d1 e (Get d2) | d1 == d2  = e
                      | otherwise = Get d2
-inline _ _ (Const c)             = Const c
-inline d e (Mult xs)             = Mult $ map (inline d e) xs
-inline d e (Add xs)              = Add $ map (inline d e) xs
+
+inline _ _ (Const c)   = Const c
+inline d e (Add e1 e2) = inline d e e1 `Add` inline d e e2
+inline d e (Mul e1 e2) = inline d e e1 `Mul` inline d e e2
