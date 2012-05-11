@@ -1,5 +1,6 @@
 module Brainfuck.Parser.Brainfuck where
 
+import Data.List
 import Test.QuickCheck
 
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
@@ -32,3 +33,5 @@ instance Arbitrary Token where
 instance Arbitrary Brainfuck where
   arbitrary = Token `fmap` arbitrary
 
+  shrink (Repeat bf) = map Repeat $ tails bf
+  shrink _           = []
