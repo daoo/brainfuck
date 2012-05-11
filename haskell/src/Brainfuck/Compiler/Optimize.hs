@@ -4,6 +4,7 @@ import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
+-- Inline and apply instructions
 applyIL :: [IL] -> [IL]
 applyIL []                  = []
 applyIL (Loop i loop : ils) = Loop i (applyIL loop) : applyIL ils

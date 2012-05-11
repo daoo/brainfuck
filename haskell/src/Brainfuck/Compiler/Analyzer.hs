@@ -30,6 +30,7 @@ exprDepends _ _           = False
 --   * Contains no shifts, puts or gets
 --   * The loop memory position is decremented by 1
 --   * Increment or decrement any other memory cell by any integer
+-- If the supplied instruction isn't a Loop, we will return Nothing.
 copyLoop :: IL -> Maybe [(Int, Int)]
 copyLoop (Loop o loop) = helper
   where
