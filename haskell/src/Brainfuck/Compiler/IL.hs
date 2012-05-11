@@ -15,7 +15,7 @@ instance Show IL where
   show loop@(Loop _ _) = showList [loop] ""
   show (Set d e)       = "Set " ++ show d ++ " " ++ show e
   show (Shift i)       = "Shift " ++ show i
-  show (PutChar d)     = "PutChar " ++ show d
+  show (PutChar e)     = "PutChar " ++ show e
   show (GetChar d)     = "GetChar " ++ show d
 
   showList = helper ""
