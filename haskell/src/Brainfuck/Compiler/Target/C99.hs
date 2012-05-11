@@ -32,7 +32,6 @@ showExpr (Mul e1 e2)          = showExpr e1 ++ " * " ++ showExpr e2
 program :: Int -> String -> String
 program mem code =
   unlines [ "#include <stdio.h>"
-          , "#include <stdlib.h>"
           , ""
           , "int main() {"
           , indent 1 ++ "char mem[" ++ show mem ++ "];"
