@@ -63,16 +63,12 @@ removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
   where
     sideEffect (PutChar _) = True
+    sideEffect (Loop _ _)  = True
     sideEffect _           = False
 
-    helper []         = []
-    helper (il : ils) = case il of
-      Loop _ loop -> if any sideEffect loop
-        then il : ils
-        else helper ils
-      _ -> if sideEffect il
-        then il : ils
-        else helper ils
+    helper []                         = []
+    helper (il : ils) | sideEffect il = il : ils
+                      | otherwise     = helper ils
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL

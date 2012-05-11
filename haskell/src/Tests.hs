@@ -44,8 +44,8 @@ propParser bf = bf == parse (show bf)
 -- }}}
 -- {{{ Optimization
 comp :: (Integral a) => Int -> State a -> State a -> Bool
-comp i (State _ _ (ml1, mr1)) (State _ _ (ml2, mr2)) = 
-  take i ml1 == take i ml2 && take i mr1 == take i mr2
+comp i (State _ out1 (ml1, mr1)) (State _ out2 (ml2, mr2)) =
+  take i ml1 == take i ml2 && take i mr1 == take i mr2 && out1 == out2
 
 propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
 propOptimize f il = comp (length il) (run state il) (run state opt)
@@ -54,11 +54,12 @@ propOptimize f il = comp (length il) (run state il) (run state opt)
     state = newState ""
     opt   = f il
 
-propOptimizeInlineZeros = propOptimize inlineZeros
-propOptimizeLoops       = propOptimize reduceLoops
-propOptimizeApply       = propOptimize applyIL
-propOptimizeClean       = propOptimize $ filterIL clean
-propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
+-- TODO: propOptimizeRemoveFromEnd = propOptimize removeFromEnd
+propOptimizeInlineZeros   = propOptimize inlineZeros
+propOptimizeLoops         = propOptimize reduceLoops
+propOptimizeApply         = propOptimize applyIL
+propOptimizeClean         = propOptimize $ filterIL clean
+propOptimizeExpressions   = propOptimize $ mapIL optimizeExpressions
 -- }}}
 -- {{{ Copy Loops
 exCopyLoop1 :: IL
