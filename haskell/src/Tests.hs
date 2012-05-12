@@ -15,24 +15,20 @@ import Brainfuck.Parser.Brainfuck
 import Brainfuck.Parser.Parser
 
 -- {{{ Memory operations
-propShiftLength :: ([a], [a]) -> NonNegative Int -> NonNegative Int -> Bool
-propShiftLength x (NonNegative l) (NonNegative r) = f x1 == f x2
+propShiftLength :: ([Int], [Int]) -> Property
+propShiftLength x = forAll gen $ \l -> forAll gen $ \r -> f (g l) == f (g r)
   where
-    -- Hack to save time :/
-    l' = l `mod` 1000
-    r' = r `mod` 1000
-
-    x1 = times shiftL l' x
-    x2 = times shiftR r' x
-
+    gen      = choose (0, 1000)
     f (a, b) = length a + length b
+    g i      = times shiftL i x
 
-propShiftToEmpty :: ([a], [a]) -> Bool
-propShiftToEmpty x@(a, b) = null ae && null be && length af == lx && length bf == lx
+
+propShiftToEmpty :: ([Int], [Int]) -> Property
+propShiftToEmpty x@(a, b) =
+  (null ae && null be) ==> (length af == lx && length bf == lx)
   where
     la = length a
     lb = length b
-
     lx = la + lb
 
     (ae, bf) = times shiftR la x

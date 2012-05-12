@@ -1,6 +1,7 @@
 module Brainfuck.Compiler.Expr where
 
 import Brainfuck.Ext
+import Control.Monad
 import Test.QuickCheck
 
 data Expr = Get Int
@@ -10,18 +11,21 @@ data Expr = Get Int
   deriving (Ord, Eq, Show)
 
 instance Arbitrary Expr where
-  arbitrary = do
-    c <- choose (-10, 100)
-    d <- choose (-5, 10)
-    e1 <- arbitrary
-    e2 <- arbitrary
-    frequency [ (3, return $ Const c)
-              , (2, return $ Get d)
-              , (1, return $ Mul e1 e2)
-              , (1, return $ Add e1 e2) ]
+  arbitrary = expr
+    where
+      expr = sized $ \n -> expr' n n
 
-  shrink (Add e1 e2) = [e1, e2]
-  shrink (Mul e1 e2) = [e1, e2]
+      expr' 0 s = leaf s
+      expr' n s = oneof [leaf s, branch n s]
+
+      branch n s = oneof [ liftM2 Add (expr' (n `div` 2) s) (expr' (n `div` 2) s)
+                         , liftM2 Mul (expr' (n `div` 2) s) (expr' (n `div` 2) s) ]
+      leaf s     = oneof [ liftM Const $ choose (-s, s)
+                         , liftM Get $ choose (-s `div` 10, s `div` 5) ]
+
+
+  shrink (Add e1 e2) = [e1, e2] ++ shrink e1 ++ shrink e2
+  shrink (Mul e1 e2) = [e1, e2] ++ shrink e1 ++ shrink e2
   shrink _           = []
 
 -- For easier testing
