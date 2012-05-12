@@ -36,7 +36,6 @@ instance Show IL where
       indent s = ' ' : ' ' : s
 
 instance Arbitrary IL where
-  -- TODO: Random loops
   arbitrary = do
     i <- choose (-4, 10)
     e <- arbitrary

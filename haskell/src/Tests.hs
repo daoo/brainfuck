@@ -10,8 +10,7 @@ import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
-
-import qualified Brainfuck.Parser.Brainfuck as B
+import Brainfuck.Parser.Brainfuck
 import Brainfuck.Parser.Parser
 
 -- {{{ Memory operations
@@ -39,7 +38,7 @@ propShiftToEmpty x@(a, b) = null ae && null be && length af == lx && length bf =
     (af, be) = times shiftL lb x
 -- }}}
 -- {{{ Parser
-propParser :: [B.Brainfuck] -> Bool
+propParser :: [Brainfuck] -> Bool
 propParser bf = bf == parse (show bf)
 -- }}}
 -- {{{ Optimization
