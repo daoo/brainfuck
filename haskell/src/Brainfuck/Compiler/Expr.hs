@@ -2,6 +2,7 @@ module Brainfuck.Compiler.Expr where
 
 import Brainfuck.Ext
 import Control.Monad
+import Data.List (intersperse)
 import Test.QuickCheck
 
 data Expr = Get Int
@@ -52,27 +53,50 @@ eval f (Mul e1 e2) = eval f e1 * eval f e2
 
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
-optimizeExpr = finalize . whileModified (move . clean)
+optimizeExpr = finalize . whileModified (clean . pipe (intersperse clean pipeline))
   where
+    pipeline = [mult, sort, listify]
+
     finalize e = case e of
-      Mul (Const 2) e' -> Add e' e'
+      Mul (Const 2) e'@(Get _) -> Add e' e'
 
       Add e1 e2 -> finalize e1 `Add` finalize e2
       Mul e1 e2 -> finalize e1 `Mul` finalize e2
 
       _ -> e
 
-    move e = case e of
-      Add e1@(Get _) e2@(Const _) -> Add e2 e1
+    mult e = case e of
+      Add e1 e2          | e1 == e2 -> mult $ Mul (Const 2) e1
+      Add e1 (Add e2 e3) | e1 == e2 -> mult $ Add (Mul (Const 2) e1) e3
 
-      Add (Add e1 e2) (Add e3 e4) -> move $ Add e1 (Add e2 (Add e3 e4))
+      Add e1 (Add (Mul (Const i) e2) e3) | e1 == e2 -> Add (Mul (Const i + 1) e2) e3
 
-      Add e1@(Get _) (Add e2@(Const _) e3) -> move $ Add e2 (Add e1 e3)
+      Add e1 e2 -> mult e1 `Add` mult e2
+      Mul e1 e2 -> mult e1 `Mul` mult e2
 
-      Add (Add e1@(Const _) e2) e3 -> move $ Add e1 (Add e2 e3)
+      _ -> e
 
-      Add e1 e2 -> move e1 `Add` move e2
-      Mul e1 e2 -> move e1 `Mul` move e2
+    listify e = case e of
+      Add (Add e1 e2) e3 -> listify $ Add e1 (Add e2 e3)
+      Mul (Mul e1 e2) e3 -> listify $ Mul e1 (Mul e2 e3)
+
+      Add e1 e2 -> Add (listify e1) (listify e2)
+      Mul e1 e2 -> Mul (listify e1) (listify e2)
+
+      _ -> e
+
+    sort e = case e of
+      Add e1@(Get _) e2@(Const _)             -> Add e2 e1
+      Add e1@(Get d1) e2@(Get d2) | d1 > d2   -> Add e2 e1
+                                  | otherwise -> Add e1 e2
+
+      Add e1@(Get d1) (Add e2@(Get d2) e3) | d1 > d2   -> sort $ Add e2 (Add e1 e3)
+                                           | otherwise -> Add e1 $ sort $ Add e2 (sort e3)
+
+      Add e1@(Get _) (Add e2@(Const _) e3) -> sort $ Add e2 (Add e1 e3)
+
+      Add e1 e2 -> sort e1 `Add` sort e2
+      Mul e1 e2 -> sort e1 `Mul` sort e2
 
       _ -> e
 

@@ -37,3 +37,6 @@ mapIndex f 0 (x : xs) = f x : xs
 mapIndex f i (x : xs) = x : mapIndex f (i - 1) xs
 mapIndex _ _ _        = error "Index out of range"
 
+-- |Pipe a value through a list of functions
+pipe :: [a -> a] -> a -> a
+pipe xs x = foldl (\y f -> f y) x xs
