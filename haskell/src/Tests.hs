@@ -78,8 +78,8 @@ exNotCopyLoop1 =
     , Set 6 $ Get 5 `Add` Const 10 ]
 -- }}}
 -- {{{ Expressions
-propOptimizeExprTwice :: Expr -> Bool
-propOptimizeExprTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
+propExprOptimizeTwice :: Expr -> Bool
+propExprOptimizeTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
 
 propExprEval :: NonEmptyList Int -> Expr -> Bool
 propExprEval (NonEmpty xs) e = eval f e == eval f e'

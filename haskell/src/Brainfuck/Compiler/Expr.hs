@@ -18,8 +18,8 @@ instance Arbitrary Expr where
       expr' 0 s = leaf s
       expr' n s = oneof [leaf s, branch n s]
 
-      branch n s = oneof [ liftM2 Add (expr' (n `div` 2) s) (expr' (n `div` 2) s)
-                         , liftM2 Mul (expr' (n `div` 2) s) (expr' (n `div` 2) s) ]
+      branch n s = oneof [ liftM2 Add (expr' (n - 1) s) (expr' (n - 1) s)
+                         , liftM2 Mul (expr' (n - 1) s) (expr' (n - 1) s) ]
       leaf s     = oneof [ liftM Const $ choose (-s, s)
                          , liftM Get $ choose (-s `div` 10, s `div` 5) ]
 
