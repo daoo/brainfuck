@@ -1,6 +1,7 @@
 module Brainfuck.Compiler.Target.C99 (showC, optimizeForC) where
 
 import Data.Char
+import Data.List (intersperse)
 
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
@@ -9,16 +10,14 @@ import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
 
 optimizeForC :: [IL] -> [IL]
-optimizeForC = removeFromEnd . times optimize 100
+optimizeForC = removeFromEnd . times (mid . pipe pipeline') 100
   where
-    optimize = id
-             . inlineZeros
-             . mapIL optimizeExpressions
-             . reduceLoops
-             . mapIL optimizeExpressions
-             . filterIL clean
-             . mapIL optimizeExpressions
-             . applyIL
+    mid = mapIL optimizeExpressions
+    pipeline' = intersperse mid pipeline
+    pipeline = [ inlineZeros
+               , reduceLoops
+               , filterIL clean
+               , applyIL ]
 
 showExpr :: Expr -> ShowS
 showExpr (Const c)            = shows c
