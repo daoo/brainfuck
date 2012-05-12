@@ -6,7 +6,7 @@ data Expr = Get Int
           | Const Int
           | Add Expr Expr
           | Mul Expr Expr
-  deriving (Eq, Show)
+  deriving (Ord, Eq, Show)
 
 instance Arbitrary Expr where
   arbitrary = do
@@ -26,9 +26,10 @@ instance Arbitrary Expr where
 modifyPtr :: (Int -> Int) -> Expr -> Expr
 modifyPtr _ (Const c)   = Const c
 modifyPtr f (Get d)     = Get $ f d
-modifyPtr f (Mul e1 e2) = modifyPtr f e1 `Mul` modifyPtr f e2
 modifyPtr f (Add e1 e2) = modifyPtr f e1 `Add` modifyPtr f e2
+modifyPtr f (Mul e1 e2) = modifyPtr f e1 `Mul` modifyPtr f e2
 
+-- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
 optimizeExpr = opt
   where
