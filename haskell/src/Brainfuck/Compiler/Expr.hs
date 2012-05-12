@@ -1,5 +1,6 @@
 module Brainfuck.Compiler.Expr where
 
+import Brainfuck.Ext
 import Test.QuickCheck
 
 data Expr = Get Int
@@ -31,33 +32,51 @@ modifyPtr f (Mul e1 e2) = modifyPtr f e1 `Mul` modifyPtr f e2
 
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
-optimizeExpr = opt
+optimizeExpr = finalize . whileModified (move . clean)
   where
-    opt e = case e of
-      Const _ -> e
-      Get _   -> e
+    finalize e = case e of
+      Mul (Const 2) e' -> Add e' e'
 
-      Add (Const 0) e' -> opt e'
-      Add e' (Const 0) -> opt e'
+      Add e1 e2 -> finalize e1 `Add` finalize e2
+      Mul e1 e2 -> finalize e1 `Mul` finalize e2
+
+      _ -> e
+
+    move e = case e of
+      Add e1@(Get _) e2@(Const _) -> Add e2 e1
+
+      Add (Add e1 e2) (Add e3 e4) -> move $ Add e1 (Add e2 (Add e3 e4))
+
+      Add e1@(Get _) (Add e2@(Const _) e3) -> move $ Add e2 (Add e1 e3)
+
+      Add (Add e1@(Const _) e2) e3 -> move $ Add e1 (Add e2 e3)
+
+      Add e1 e2 -> move e1 `Add` move e2
+      Mul e1 e2 -> move e1 `Mul` move e2
+
+      _ -> e
+
+    clean e = case e of
+      Add (Const 0) e' -> clean e'
+      Add e' (Const 0) -> clean e'
       Mul (Const 0) _  -> Const 0
       Mul _ (Const 0)  -> Const 0
-      Mul (Const 1) e' -> opt e'
-      Mul e' (Const 1) -> opt e'
+      Mul (Const 1) e' -> clean e'
+      Mul e' (Const 1) -> clean e'
 
       Add (Const c1) (Const c2) -> Const $ c1 + c2
       Mul (Const c1) (Const c2) -> Const $ c1 * c2
 
-      Add (Const c1) (Add (Const c2) e') -> opt $ Add (Const $ c1 + c2) e'
+      Add (Const c1) (Add (Const c2) e') -> clean $ Add (Const $ c1 + c2) e'
+      Mul (Const c1) (Mul (Const c2) e') -> clean $ Mul (Const $ c1 * c2) e'
 
-      Add e' (Const c)          -> opt $ Add (Const c) e'
-      Add (Add (Const c) e1) e2 -> opt $ Add (Const c) (Add e1 e2)
+      Add (Mul (Const c1) e1) (Mul (Const c2) e2) | e1 == e2 -> clean $ Mul (Const $ c1 + c2) e1
+      Add (Mul (Const c1) e1) e2                  | e1 == e2 -> clean $ Mul (Const $ c1 + 1) e2
 
-      Add e1 e2 -> optIf Add e1 e2
-      Mul e1 e2 -> optIf Mul e1 e2
+      Add e1 e2 -> clean e1 `Add` clean e2
+      Mul e1 e2 -> clean e1 `Mul` clean e2
 
-    optIf f e1 e2 = case (opt e1, opt e2) of
-      (e1', e2') | e1' /= e1 || e2' /= e2 -> opt $ e1' `f` e2'
-                 | otherwise              -> e1' `f` e2'
+      _ -> e
 
 inline :: Int -> Expr -> Expr -> Expr
 inline d1 e (Get d2) | d1 == d2  = e
