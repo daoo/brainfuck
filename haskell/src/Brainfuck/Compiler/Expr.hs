@@ -24,11 +24,27 @@ instance Arbitrary Expr where
   shrink (Mul e1 e2) = [e1, e2]
   shrink _           = []
 
+-- For easier testing
+instance Num Expr where
+  fromInteger = Const . fromInteger
+
+  (+) = Add
+  (*) = Mul
+
+  abs    = undefined
+  signum = undefined
+
 modifyPtr :: (Int -> Int) -> Expr -> Expr
 modifyPtr _ (Const c)   = Const c
 modifyPtr f (Get d)     = Get $ f d
 modifyPtr f (Add e1 e2) = modifyPtr f e1 `Add` modifyPtr f e2
 modifyPtr f (Mul e1 e2) = modifyPtr f e1 `Mul` modifyPtr f e2
+
+eval :: (Int -> Int) -> Expr -> Int
+eval _ (Const c)   = c
+eval f (Get d)     = f d
+eval f (Add e1 e2) = eval f e1 + eval f e2
+eval f (Mul e1 e2) = eval f e1 * eval f e2
 
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr

@@ -3,6 +3,7 @@ module Tests where
 import Data.Word
 
 import Test.QuickCheck
+import Test.QuickCheck.Modifiers
 
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
@@ -83,6 +84,16 @@ exNotCopyLoop1 =
 -- {{{ Expressions
 propOptimizeExprTwice :: Expr -> Bool
 propOptimizeExprTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
+
+propExprEval :: NonEmptyList Int -> Expr -> Bool
+propExprEval (NonEmpty xs) e = eval f e == eval f e'
+  where
+    e' = optimizeExpr e
+
+    l   = length xs
+
+    f :: Int -> Int
+    f i = xs !! (i `mod` l)
 -- }}}
 
 -- vim: set fdm=marker :
