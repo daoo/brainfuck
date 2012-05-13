@@ -4,6 +4,7 @@ import Data.List
 
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
+import Brainfuck.Ext
 
 -- |Count the number of instructions
 -- Descends into loops
@@ -31,8 +32,8 @@ exprDepends _ _           = False
 --   * The loop memory position is decremented by 1
 --   * Increment or decrement any other memory cell by any integer
 -- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: IL a -> Maybe [(Int, Int)]
-copyLoop (While (Get d) xs) = do
+copyLoop :: IL -> Maybe [(Int, Int)]
+copyLoop (While d xs) = do
   sets <- mapM f xs
   let (dec, copies) = partition (g d) sets
   onlyOne dec
