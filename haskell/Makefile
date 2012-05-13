@@ -27,6 +27,10 @@ flags   = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 build: parser
 	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
 
+test: build
+	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/test src/TestPrograms.hs
+	./build/test
+
 ghci: parser
 	ghci $(warnings) $(flags) $(sources)
 

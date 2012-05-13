@@ -1,10 +1,10 @@
-module Examples where
+module Main where
+
+import Test.QuickCheck
 
 import Data.Char
 import Data.Foldable (toList)
 import Data.Word
-
-import Test.QuickCheck
 
 import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.IL
@@ -14,7 +14,6 @@ import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
 
 -- {{{ Programs
-
 -- Prints "Hello World!\n"
 bfHello :: String
 bfHello = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
@@ -39,77 +38,68 @@ bfSquares = "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>
 bf30000 :: String
 bf30000 = "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
 
+-- Prints the fibonacci sequence
 bfFib :: String
 bfFib = ">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]"
+
+-- Prints "\n\EOT"
+bfIO :: String
+bfIO = ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
 -- }}}
 -- {{{ QuickCheck properties
 propReverse :: String -> Property
 propReverse s = notElem '\NUL' s ==> out == reverse s
   where
-    s' = s ++ "\NUL" -- bfReverse stops on 0
-    out = brainfuck bfReverse s'
+    s'  = s ++ "\NUL" -- bfReverse stops on 0
+    out = findOutput s' (compile $ parse bfReverse)
 
 propASCIIValues :: NonEmptyList Char -> Property
 propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
   where
     s'     = s ++ "\NUL" -- bfASCIIValues stops on 0
-    out    = brainfuck bfASCIIValues s'
+    out    = findOutput s' (compile $ parse bfASCIIValues)
     values = map length $ words out
+-- {{{ Checkers
+checkOutput :: String -> String -> [IL] -> Bool
+checkOutput inp out ils = out == findOutput inp ils
+
+data CheckRes  = Ok | UnOptFail | OptFail
+data Checker = Checker
+  { checkName :: String
+  , checkFunc :: ([IL] -> Bool)
+  , checkBf :: String }
+
+check :: Checker -> CheckRes
+check (Checker _ f bf) = case (f unopt, f opt) of
+  (False, _)    -> UnOptFail
+  (True, False) -> OptFail
+  (True, True)  -> Ok
+  where
+    unopt = compile $ parse bf
+    opt   = optimizeForC unopt
 -- }}}
--- {{{ Tests
-testSquares :: Bool
-testSquares = and $ zipWith (==) squares out
-  where
-    squares :: [Integer]
-    squares = map (^2) [0..100]
+-- {{{ Main
+handleResult :: Checker -> IO ()
+handleResult c = case check c of
+  Ok        -> return ()
+  UnOptFail -> putStrLn $ "Unoptimized code failed for test: " ++ checkName c
+  OptFail   -> putStrLn $ "Optimized code failed for test: " ++ checkName c
 
-    out :: [Integer]
-    out = map read $ lines $ brainfuck bfSquares ""
-
-testIO :: Bool
-testIO = length l == 2 && let [a, b] = l in a == b
-  where
-    l       = lines out
-    out     = brainfuck bfIO "\n\EOT"
-    bfIO    = ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
-
-testSize :: Bool
-testSize = out == "#\n"
-  where
-    out = brainfuck bf30000 ""
-
-programs :: Bool
-programs = all f bf
-  where
-    state = newState ""
-
-    f (p, o) = toList (getOutput $ run state p') == o
-      where
-        p' = compile $ parse p
-
-    bf :: [(String, [Word8])]
-    bf = [ ("+++++[>+++++[>+++++<-]<-]>>.", [125])
-         , ("++++++++++[>+++++++<-]>++.", [72])
-         , ("+++++[>>+++++<<-]>>.", [25])
-         , (bfHello, []) ]
+main :: IO ()
+main = mapM_ handleResult
+  [ Checker "30000" (checkOutput "" "#\n") bf30000
+  ]
 -- }}}
+-- {{{ Helpers
+prepareBf :: String -> ([IL], [IL])
+prepareBf bf = (il, optimizeForC il)
+  where il = compile $ parse bf
 
-brainfuck :: String -> String -> String
-brainfuck bf inp = runBF $ optimizeForC $ compile $ parse bf
+findOutput :: String -> [IL] -> String
+findOutput inp = map chrIntegral . toList . getOutput . run state
   where
-    runBF :: [IL] -> String
-    runBF = map chrIntegral . toList . getOutput . run state
-      where
-        state :: State Word8
-        state = newState inp
-
-compareOptimized :: String -> IO ()
-compareOptimized bf = do
-  putStrLn "Unoptimized:"
-  print il
-  putStrLn "Optimized:"
-  print $ optimizeForC il
-  where
-    il = compile $ parse bf
+    state :: State Word8
+    state = newState inp
+-- }}}
 
 -- vim: set fdm=marker :

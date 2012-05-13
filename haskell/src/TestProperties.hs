@@ -1,4 +1,4 @@
-module Tests where
+module TestProperties where
 
 import Data.Word
 
@@ -21,7 +21,6 @@ propShiftLength x = forAll gen $ \l -> forAll gen $ \r -> f (g l) == f (g r)
     gen      = choose (0, 1000)
     f (a, b) = length a + length b
     g i      = times shiftL i x
-
 
 propShiftToEmpty :: ([Int], [Int]) -> Property
 propShiftToEmpty x@(a, b) =

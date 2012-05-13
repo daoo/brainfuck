@@ -53,9 +53,9 @@ eval f (Mul e1 e2) = eval f e1 * eval f e2
 
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
-optimizeExpr = finalize . whileModified (clean . pipe (intersperse clean pipeline))
+optimizeExpr = finalize . whileModified (pipe pipeline)
   where
-    pipeline = [mult, sort, listify]
+    pipeline = clean : intersperse clean [mult, sort, listify]
 
     finalize e = case e of
       Mul (Const 2) e'@(Get _) -> Add e' e'
@@ -113,6 +113,7 @@ optimizeExpr = finalize . whileModified (clean . pipe (intersperse clean pipelin
 
       Add (Const c1) (Add (Const c2) e') -> clean $ Add (Const $ c1 + c2) e'
       Mul (Const c1) (Mul (Const c2) e') -> clean $ Mul (Const $ c1 * c2) e'
+      Mul (Const c1) (Add (Const c2) e') -> clean $ Add (Const $ c1 * c2) (Mul (Const c1) e')
 
       Add (Mul (Const c1) e1) (Mul (Const c2) e2) | e1 == e2 -> clean $ Mul (Const $ c1 + c2) e1
       Add (Mul (Const c1) e1) e2                  | e1 == e2 -> clean $ Mul (Const $ c1 + 1) e2
