@@ -44,7 +44,7 @@ parse :: String -> [Brainfuck]
 parse ""  = []
 parse str = parser str'
   where
-    str' = filter (flip elem valid) str
+    str' = filter (`elem` valid) str
     valid = "+-><.,[]"
 }
 

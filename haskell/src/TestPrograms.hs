@@ -66,7 +66,7 @@ checkOutput inp out ils = out == findOutput inp ils
 data CheckRes  = Ok | UnOptFail | OptFail
 data Checker = Checker
   { checkName :: String
-  , checkFunc :: ([IL] -> Bool)
+  , checkFunc :: [IL] -> Bool
   , checkBf :: String }
 
 check :: Checker -> CheckRes
