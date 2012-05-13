@@ -11,7 +11,7 @@ run :: (Integral a) => State a -> [IL] -> State a
 run = foldl evalOp
 
 evalOp :: (Integral a) => State a -> IL -> State a
-evalOp state (Loop i ops)     = until ((== 0) . offset i . getMemory) (`run` ops) state
+evalOp state (While i ops)    = until ((== 0) . offset i . getMemory) (`run` ops) state
 evalOp (State inp out mem) op = state'
   where
     state' = case op of
@@ -20,7 +20,7 @@ evalOp (State inp out mem) op = state'
       Set d e   -> State inp out $ modify (const $ evalExpr mem e) d mem
       Shift s   -> State inp out $ shift s mem
 
-      Loop _ _ -> error "Should not happen"
+      While _ _ -> error "Should not happen"
 
     shift s m | s < 0     = times shiftL (abs s) m
               | s > 0     = times shiftR s m

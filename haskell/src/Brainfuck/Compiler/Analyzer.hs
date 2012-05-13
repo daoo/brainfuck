@@ -10,13 +10,13 @@ import Brainfuck.Compiler.IL
 ilCount :: [IL] -> Int
 ilCount = sum . map f
   where
-    f (Loop _ ils) = 1 + ilCount ils
-    f _            = 1
+    f (While _ ils) = 1 + ilCount ils
+    f _             = 1
 
 -- |Calculate the depth of the loop tree
 loopDepth :: IL -> Int
-loopDepth (Loop _ ils) = (+1) $ maximum $ map loopDepth ils
-loopDepth _            = 0
+loopDepth (While _ ils) = (+1) $ maximum $ map loopDepth ils
+loopDepth _             = 0
 
 -- |Check if an expression uses the value of a certain memory offset
 exprDepends :: Int -> Expr -> Bool
@@ -31,26 +31,24 @@ exprDepends _ _           = False
 --   * The loop memory position is decremented by 1
 --   * Increment or decrement any other memory cell by any integer
 -- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: IL -> Maybe [(Int, Int)]
-copyLoop (Loop o loop) = helper
+copyLoop :: IL a -> Maybe [(Int, Int)]
+copyLoop (While (Get d) xs) = do
+  sets <- mapM f xs
+  let (dec, copies) = partition (g d) sets
+  onlyOne dec
+  mapM h copies
   where
-    helper | null a || not (null d) = Nothing
-           | otherwise              = Just $ map getConst c
-      where
-        (a, b) = partition (isDec o) loop
-        (c, d) = partition isConstAdd b
+    -- First filter, if a non-constant add is found, exit
+    f (Set d1 (Get d2 `Add` Const c)) = Just (d1, d2, c)
+    f (Set d1 (Const c `Add` Get d2)) = Just (d1, d2, c)
+    f _                                          = Nothing
 
-    getConst (Set d (Get _ `Add` Const v)) = (d, v)
-    getConst (Set d (Const v `Add` Get _)) = (d, v)
-    getConst _ = error "Not a const add"
+    -- Filter the decrement operation
+    g d1 (d2, d3, (-1)) = d1 == d2 && d1 == d3
+    g _ _               = False
 
-    isConstAdd (Set d1 (Get d2 `Add` Const _)) = d1 == d2
-    isConstAdd (Set d1 (Const _ `Add` Get d2)) = d1 == d2
-    isConstAdd _                               = False
-
-    isDec d1 (Set d2 (Get d3 `Add` Const (-1))) = d1 == d2 && d1 == d3
-    isDec d1 (Set d2 (Const (-1) `Add` Get d3)) = d1 == d2 && d1 == d3
-    isDec _ _                                   = False
+    h (d1, d2, c) | d1 == d2  = Just (d1, c)
+                  | otherwise = Nothing
 
 copyLoop _ = Nothing
 
@@ -58,7 +56,7 @@ copyLoop _ = Nothing
 hasShifts :: [IL] -> Bool
 hasShifts = any f
   where
-    f (Loop _ loop) = hasShifts loop
+    f (While _ loop) = hasShifts loop
     f (Shift _)     = True
     f _             = False
 
@@ -66,7 +64,7 @@ hasShifts = any f
 usesMemory :: [IL] -> Bool
 usesMemory = any f
   where
-    f (Loop _ loop) = usesMemory loop
+    f (While _ loop) = usesMemory loop
     f (Set _ e)     = g e
     f (PutChar e)   = g e
     f (GetChar _)   = False

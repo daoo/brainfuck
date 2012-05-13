@@ -1,5 +1,9 @@
 module Brainfuck.Ext where
 
+onlyOne :: [a] -> Maybe a
+onlyOne [a] = Just a
+onlyOne _   = Nothing
+
 -- |Move first element of second list to the beginning of first list
 shiftL :: ([a], [a]) -> ([a], [a])
 shiftL (as, b:bs) = (b:as, bs)

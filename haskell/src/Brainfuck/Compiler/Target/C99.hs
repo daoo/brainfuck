@@ -53,7 +53,7 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
         ptr   = (:) (indent 1 "char* ptr = mem;")
 
     code _ [] prep                 = prep
-    code i (Loop d loop : xs) prep = while $ body $ close $ code i xs prep
+    code i (While d loop : xs) prep = while $ body $ close $ code i xs prep
       where
         while = (:) (indent i $ showString "while (ptr[" $ shows d "]) {")
         close = (:) (indent i "}")
@@ -72,7 +72,7 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
       PutChar e -> showString "putchar(" $ showExpr e ");"
       GetChar p -> ptr (shows p) "=" (showString "getchar()")
 
-      Loop _ _ -> error "Should not happen"
+      While _ _ -> error "Should not happen"
 
       where
         ptr a op b = showString "ptr[" $ a $ showString "] " $ showString op $ showString " " $ b ";"

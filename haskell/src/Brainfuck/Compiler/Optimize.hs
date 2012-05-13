@@ -8,9 +8,9 @@ import Brainfuck.Compiler.IL
 
 -- Inline and apply instructions
 applyIL :: [IL] -> [IL]
-applyIL []                  = []
-applyIL (Loop i loop : ils) = Loop i (applyIL loop) : applyIL ils
-applyIL (il1 : il2 : ils)   = case (il1, il2) of
+applyIL []                   = []
+applyIL (While i loop : ils) = While i (applyIL loop) : applyIL ils
+applyIL (il1 : il2 : ils)    = case (il1, il2) of
   -- Inline sets
   (Set d1 e1, Set d2 e2) | d2 == d1                  -> applyIL $ Set d2 (inline d1 e1 e2) : ils
                          | not (d2 `exprDepends` e1) -> Set d2 (inline d1 e1 e2) : applyIL (il1 : ils)
@@ -18,10 +18,10 @@ applyIL (il1 : il2 : ils)   = case (il1, il2) of
   (Set d1 e1, PutChar e2) -> PutChar (inline d1 e1 e2) : applyIL (il1 : ils)
 
   -- Apply shifts
-  (Shift s1, Shift s2)   -> applyIL $ Shift (s1 + s2) : ils
-  (Shift s, Set d e)     -> Set (d + s) (modifyPtr (+s) e) : applyIL (il1 : ils)
-  (Shift s, Loop d loop) -> Loop (d + s) (mapIL (modifyOffset (+s)) loop) : applyIL (il1 : ils)
-  (Shift s, PutChar e)   -> PutChar (modifyPtr (+s) e) : applyIL (il1 : ils)
+  (Shift s1, Shift s2)    -> applyIL $ Shift (s1 + s2) : ils
+  (Shift s, Set d e)      -> Set (d + s) (modifyPtr (+s) e) : applyIL (il1 : ils)
+  (Shift s, While d loop) -> While (d + s) (mapIL (modifyOffset (+s)) loop) : applyIL (il1 : ils)
+  (Shift s, PutChar e)    -> PutChar (modifyPtr (+s) e) : applyIL (il1 : ils)
 
   _ -> il1 : applyIL (il2 : ils)
 
@@ -35,12 +35,12 @@ inlineZeros = go empty
     go :: Set Int -> [IL] -> [IL]
     go _ []         = []
     go s (il : ils) = case il of
-      Loop i loop | hasShifts loop -> il : ils
-                  | otherwise      -> Loop i (go s loop) : go s ils
-      Set i e                      -> Set i (inl s e) : go (insert i s) ils
-      PutChar e                    -> PutChar (inl s e) : go s ils
-      GetChar _                    -> il : go s ils
-      Shift _                      -> il : ils
+      While i loop | hasShifts loop -> il : ils
+                   | otherwise      -> While i (go s loop) : go s ils
+      Set i e                       -> Set i (inl s e) : go (insert i s) ils
+      PutChar e                     -> PutChar (inl s e) : go s ils
+      GetChar _                     -> il : go s ils
+      Shift _                       -> il : ils
 
     inl :: Set Int -> Expr -> Expr
     inl _ (Const c)            = Const c
@@ -51,9 +51,9 @@ inlineZeros = go empty
 
 -- Reduce multiplications and clear loops
 reduceLoops :: [IL] -> [IL]
-reduceLoops []                       = []
-reduceLoops (il@(Loop d loop) : ils) = case copyLoop il of
-  Nothing -> Loop d (reduceLoops loop) : reduceLoops ils
+reduceLoops []                        = []
+reduceLoops (il@(While d loop) : ils) = case copyLoop il of
+  Nothing -> While d (reduceLoops loop) : reduceLoops ils
   Just xs -> map f xs ++ [Set d $ Const 0] ++ reduceLoops ils
     where f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
 reduceLoops (il : ils) = il : reduceLoops ils
@@ -63,7 +63,7 @@ removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
   where
     sideEffect (PutChar _) = True
-    sideEffect (Loop _ _)  = True
+    sideEffect (While _ _) = True
     sideEffect _           = False
 
     helper []                         = []
