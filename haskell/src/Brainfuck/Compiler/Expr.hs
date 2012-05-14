@@ -39,17 +39,33 @@ instance Num Expr where
   abs    = undefined
   signum = undefined
 
+unfold :: (a -> a -> a) -> (a -> a -> a) -> (Expr -> a) -> Expr -> a
+unfold add mul f (Add e1 e2) = unfold add mul f e1 `add` unfold add mul f e2
+unfold add mul f (Mul e1 e2) = unfold add mul f e1 `mul` unfold add mul f e2
+unfold _ _ f e               = f e
+
+complexity :: Expr -> Int
+complexity = unfold (+) (+) (const 1)
+
+inline :: Int -> Expr -> Expr -> Expr
+inline d1 e = unfold Add Mul f
+  where
+    f (Get d2) | d1 == d2 = e
+    f e'                  = e'
+
 modifyPtr :: (Int -> Int) -> Expr -> Expr
-modifyPtr _ (Const c)   = Const c
-modifyPtr f (Get d)     = Get $ f d
-modifyPtr f (Add e1 e2) = modifyPtr f e1 `Add` modifyPtr f e2
-modifyPtr f (Mul e1 e2) = modifyPtr f e1 `Mul` modifyPtr f e2
+modifyPtr = unfold Add Mul . g
+  where
+    g _ (Const c) = Const c
+    g f (Get d)   = Get $ f d
+    g _ _         = error "unfold Expr error"
 
 eval :: (Int -> Int) -> Expr -> Int
-eval _ (Const c)   = c
-eval f (Get d)     = f d
-eval f (Add e1 e2) = eval f e1 + eval f e2
-eval f (Mul e1 e2) = eval f e1 * eval f e2
+eval = unfold (+) (*) . g
+  where
+    g _ (Const c) = c
+    g f (Get d)   = f d
+    g _ _         = error "unfold Expr error"
 
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
@@ -122,11 +138,3 @@ optimizeExpr = finalize . whileModified (pipe pipeline)
       Mul e1 e2 -> clean e1 `Mul` clean e2
 
       _ -> e
-
-inline :: Int -> Expr -> Expr -> Expr
-inline d1 e (Get d2) | d1 == d2  = e
-                     | otherwise = Get d2
-
-inline _ _ (Const c)   = Const c
-inline d e (Add e1 e2) = inline d e e1 `Add` inline d e e2
-inline d e (Mul e1 e2) = inline d e e1 `Mul` inline d e e2
