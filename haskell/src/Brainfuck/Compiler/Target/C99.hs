@@ -46,8 +46,8 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
       then alloc $ ptr $ newLine prep
       else prep
       where
-        alloc = (:) (indent 1 $ showString "char mem[" $ shows defaultMem "];")
-        ptr   = (:) (indent 1 "char* ptr = mem;")
+        alloc = (:) (indent 1 $ showString "unsigned char mem[" $ shows defaultMem "];")
+        ptr   = (:) (indent 1 "unsigned char* ptr = mem;")
 
     code _ [] prep                 = prep
     code i (While d loop : xs) prep = while $ body $ close $ code i xs prep
