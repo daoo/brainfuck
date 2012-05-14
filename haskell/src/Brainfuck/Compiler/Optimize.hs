@@ -52,11 +52,11 @@ inlineZeros = go empty
       Shift _   -> il : ils
 
     inl :: Set Int -> Expr -> Expr
-    inl _ (Const c)            = Const c
-    inl s (Get i) | member i s = Get i
-                  | otherwise  = Const 0
-    inl s (Add e1 e2)          = inl s e1 `Add` inl s e2
-    inl s (Mul e1 e2)          = inl s e1 `Mul` inl s e2
+    inl = unfold Add Mul . f
+      where
+        f s (Get i) | member i s = Get i
+                    | otherwise  = Const 0
+        f _ e = e
 
 -- Reduce multiplications and clear loops
 reduceLoops :: [IL] -> [IL]
