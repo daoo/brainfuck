@@ -58,20 +58,20 @@ hasShifts :: [IL] -> Bool
 hasShifts = any f
   where
     f (While _ loop) = hasShifts loop
-    f (Shift _)     = True
-    f _             = False
+    f (Shift _)      = True
+    f _              = False
 
 -- |Check if the list of ILs make use of the memory or the global pointer
 usesMemory :: [IL] -> Bool
 usesMemory = any f
   where
     f (While _ loop) = usesMemory loop
-    f (Set _ e)     = g e
-    f (PutChar e)   = g e
-    f (GetChar _)   = False
-    f (Shift _)     = False
+    f (Set _ e)      = g e
+    f (PutChar e)    = g e
+    f (GetChar _)    = False
+    f (Shift _)      = False
 
-    g (Const _) = False
-    g (Get _)   = True
+    g (Const _)   = False
+    g (Get _)     = True
     g (Add e1 e2) = g e1 || g e2
     g (Mul e1 e2) = g e1 || g e2
