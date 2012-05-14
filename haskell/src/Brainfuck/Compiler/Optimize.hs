@@ -45,12 +45,11 @@ inlineZeros = go empty
     go :: Set Int -> [IL] -> [IL]
     go _ []         = []
     go s (il : ils) = case il of
-      While i loop | hasShifts loop -> il : ils
-                   | otherwise      -> While i (go s loop) : go s ils
-      Set i e                       -> Set i (inl s e) : go (insert i s) ils
-      PutChar e                     -> PutChar (inl s e) : go s ils
-      GetChar _                     -> il : go s ils
-      Shift _                       -> il : ils
+      While _ _ -> il : ils
+      Set i e   -> Set i (inl s e) : go (insert i s) ils
+      PutChar e -> PutChar (inl s e) : go s ils
+      GetChar _ -> il : go s ils
+      Shift _   -> il : ils
 
     inl :: Set Int -> Expr -> Expr
     inl _ (Const c)            = Const c
