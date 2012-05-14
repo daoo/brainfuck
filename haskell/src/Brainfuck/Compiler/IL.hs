@@ -13,27 +13,22 @@ data IL = While Int [IL]
   deriving (Eq)
 
 instance Show IL where
-  show loop@(While _ _) = showList [loop] ""
-  show (Set d e)        = "Set " ++ show d ++ " " ++ show e
-  show (Shift i)        = "Shift " ++ show i
-  show (PutChar e)      = "PutChar " ++ show e
-  show (GetChar d)      = "GetChar " ++ show d
+  show x@(While _ _) = showList [x] ""
+  show (Set d e)     = "Set " ++ show d ++ " " ++ show e
+  show (Shift i)     = "Shift " ++ show i
+  show (PutChar e)   = "PutChar " ++ show e
+  show (GetChar d)   = "GetChar " ++ show d
 
-  showList = helper ""
+  showList = helper 0
     where
-      helper _ []                   = showString ""
-      helper s (While i loop : ils) = showString s
-                                    . showString "While "
-                                    . showString (show i)
-                                    . showString "\n"
-                                    . helper (indent s) loop
-                                    . helper s ils
-      helper s (il : ils) = showString s
-                          . shows il
-                          . showString "\n"
-                          . helper s ils
+      helper _ []                = showString ""
+      helper i (While d ys : xs) = indent i . showString "While " . shows d . showString "\n"
+                                 . helper (i + 1) ys
+                                 . helper i xs
+      helper i (x : xs) = indent i . shows x . showString "\n" . helper i xs
 
-      indent s = ' ' : ' ' : s
+      indent :: Int -> ShowS
+      indent i = (replicate (2 * i) ' ' ++)
 
 instance Arbitrary IL where
   arbitrary = do
