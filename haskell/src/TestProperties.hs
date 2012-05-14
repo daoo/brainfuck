@@ -49,14 +49,14 @@ propOptimize f il = comp (length il) (run state il) (run state opt)
     state = newState ""
     opt   = f il
 
--- TODO: propOptimizeRemoveFromEnd = propOptimize removeFromEnd
-propOptimizeInlineZeros   = propOptimize inlineZeros
-propOptimizeLoops         = propOptimize reduceLoops
-propOptimizeApply         = propOptimize applyIL
-propOptimizeClean         = propOptimize $ filterIL clean
-propOptimizeExpressions   = propOptimize $ mapIL optimizeExpressions
+propOptimizeInlineZeros = propOptimize inlineZeros
+propOptimizeCopies      = propOptimize reduceCopyLoops
+propOptimizeShifts      = propOptimize reduceShiftLoops
+propOptimizeApply       = propOptimize applyIL
+propOptimizeClean       = propOptimize $ filterIL clean
+propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
 -- }}}
--- {{{ Copy Loops
+-- {{{ Loops
 exCopyLoop1 :: IL
 exCopyLoop1 =
   While 0

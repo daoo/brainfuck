@@ -14,7 +14,7 @@ optimizeForC = removeFromEnd . times (mid . pipe pipeline') 100
   where
     mid = mapIL optimizeExpressions
     pipeline' = intersperse mid pipeline
-    pipeline = [inlineZeros, reduceLoops, filterIL clean, applyIL]
+    pipeline = [inlineZeros, reduceCopyLoops, filterIL clean, applyIL]
 
 showExpr :: Expr -> ShowS
 showExpr (Const c)            = shows c

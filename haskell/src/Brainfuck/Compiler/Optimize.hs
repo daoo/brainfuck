@@ -58,14 +58,14 @@ inlineZeros = go empty
                     | otherwise  = Const 0
         f _ e = e
 
--- Reduce multiplications and clear loops
-reduceLoops :: [IL] -> [IL]
-reduceLoops []                        = []
-reduceLoops (il@(While d loop) : ils) = case copyLoop il of
-  Nothing -> While d (reduceLoops loop) : reduceLoops ils
-  Just xs -> map f xs ++ [Set d $ Const 0] ++ reduceLoops ils
+-- |Reduce multiplications and clear loops
+reduceCopyLoops :: [IL] -> [IL]
+reduceCopyLoops []                        = []
+reduceCopyLoops (il@(While d loop) : ils) = case copyLoop il of
+  Nothing -> While d (reduceCopyLoops loop) : reduceCopyLoops ils
+  Just xs -> map f xs ++ [Set d $ Const 0] ++ reduceCopyLoops ils
     where f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
-reduceLoops (il : ils) = il : reduceLoops ils
+reduceCopyLoops (il : ils) = il : reduceCopyLoops ils
 
 -- Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
