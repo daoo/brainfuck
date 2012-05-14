@@ -1,6 +1,6 @@
 module Brainfuck.Compiler.Optimize where
 
-import Data.Set hiding (map)
+import Data.Set hiding (map, filter)
 
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
@@ -67,7 +67,20 @@ reduceCopyLoops (il@(While d loop) : ils) = case copyLoop il of
     where f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
 reduceCopyLoops (il : ils) = il : reduceCopyLoops ils
 
--- Remove side effect free instructions from the end
+-- |Reduce shift loops
+reduceShiftLoops :: [IL] -> [IL]
+reduceShiftLoops = go []
+  where
+    go :: [Int] -> [IL] -> [IL]
+    go _ []            = []
+    go zeroes (x : xs) = case x of
+      Set d (Const 0)                        -> x : go (d : zeroes) xs
+      Set d (Const _)                        -> x : go (filter (/= d) zeroes) xs
+      Shift d                                -> x : go (map ((-) d) zeroes) xs
+      While d1 [Shift d2] | d1 `elem` zeroes -> go zeroes $ While (d1 + d2) [Shift d2] : xs
+      _                                      -> x : go zeroes xs
+
+-- |Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
   where
