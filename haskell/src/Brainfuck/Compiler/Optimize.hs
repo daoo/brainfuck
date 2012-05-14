@@ -10,18 +10,27 @@ import Brainfuck.Compiler.IL
 applyIL :: [IL] -> [IL]
 applyIL []                   = []
 applyIL (While i loop : ils) = While i (applyIL loop) : applyIL ils
-applyIL (il1 : il2 : ils)    = case (il1, il2) of
-  -- Inline sets
-  (Set d1 e1, Set d2 e2) | d2 == d1                  -> applyIL $ Set d2 (inline d1 e1 e2) : ils
-                         | not (d2 `exprDepends` e1) -> Set d2 (inline d1 e1 e2) : applyIL (il1 : ils)
+applyIL (il1 : il2 : ils)    = case il1 of
+  Set d1 e1 -> case il2 of
 
-  (Set d1 e1, PutChar e2) -> PutChar (inline d1 e1 e2) : applyIL (il1 : ils)
+    Set d2 e2 | d2 == d1                        -> applyIL $ Set d2 (inline d1 e1 e2) : ils
+              | d1 > d2 && inlOk d2             -> Set d2 (inline d1 e1 e2)           : applyIL (il1 : ils)
+              | shouldInline occ e1 && inlOk d2 -> Set d2 (inline d1 e1 e2)           : applyIL (il1 : ils)
+    PutChar e2 | shouldInline occ e1            -> PutChar (inline d1 e1 e2)          : applyIL (il1 : ils)
+    GetChar d2 | d1 == d2                       -> applyIL $ GetChar d2               : ils
 
-  -- Apply shifts
-  (Shift s1, Shift s2)    -> applyIL $ Shift (s1 + s2) : ils
-  (Shift s, Set d e)      -> Set (d + s) (modifyPtr (+s) e) : applyIL (il1 : ils)
-  (Shift s, While d loop) -> While (d + s) (mapIL (modifyOffset (+s)) loop) : applyIL (il1 : ils)
-  (Shift s, PutChar e)    -> PutChar (modifyPtr (+s) e) : applyIL (il1 : ils)
+    _ -> il1 : applyIL (il2 : ils)
+    where
+      occ   = occurrs d1 ils
+      inlOk d = not (exprDepends d e1)
+
+  Shift s1 -> case il2 of
+
+    Shift s2     -> applyIL $ Shift (s1 + s2)                        : ils
+    Set d e      -> Set (d + s1) (modifyPtr (+s1) e)                 : applyIL (il1 : ils)
+    While d loop -> While (d + s1) (mapIL (modifyOffset (+s1)) loop) : applyIL (il1 : ils)
+    PutChar e    -> PutChar (modifyPtr (+s1) e)                      : applyIL (il1 : ils)
+    GetChar d2   -> GetChar (d2 + s1)                                : applyIL (il1 : ils)
 
   _ -> il1 : applyIL (il2 : ils)
 

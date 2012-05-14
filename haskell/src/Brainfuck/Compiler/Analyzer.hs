@@ -75,3 +75,25 @@ usesMemory = any f
     g (Get _)     = True
     g (Add e1 e2) = g e1 || g e2
     g (Mul e1 e2) = g e1 || g e2
+
+data Occurs = Nope | Once | SetTo | InLoop | Getted
+
+shouldInline :: Occurs -> Expr -> Bool
+shouldInline _ (Const _) = True
+shouldInline SetTo _     = True
+shouldInline _ _         = False
+
+occurrs :: Int -> [IL] -> Occurs
+occurrs _ []                 = Nope
+occurrs d (x : xs) = case x of
+  While d' ys | d == d'   -> InLoop
+              | otherwise -> case occurrs d ys of
+    Nope -> occurrs d xs
+    _    -> InLoop
+
+  Set d' e   | d == d'           -> SetTo
+             | d `exprDepends` e -> Once
+  PutChar e  | d `exprDepends` e -> Once
+  GetChar d' | d == d'           -> Getted
+
+  _ -> occurrs d xs
