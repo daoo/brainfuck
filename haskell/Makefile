@@ -41,6 +41,9 @@ clean:
 	rm -r $(outdir)/*
 	mkdir -p $(outdir)/Brainfuck/Parser/
 
+ctags:
+	echo ":ctags" | ghci -isrc/:build/ -v0 src/TestProperties.hs
+
 hlint:
 	hlint src -c
 
