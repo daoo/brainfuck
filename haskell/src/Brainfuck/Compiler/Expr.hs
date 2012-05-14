@@ -21,8 +21,8 @@ instance Arbitrary Expr where
 
       branch n s = oneof [ liftM2 Add (expr' (n - 1) s) (expr' (n - 1) s)
                          , liftM2 Mul (expr' (n - 1) s) (expr' (n - 1) s) ]
-      leaf s     = oneof [ liftM Const $ choose (-s, s)
-                         , liftM Get $ choose (-s `div` 10, s `div` 5) ]
+      leaf s = oneof [ liftM Const $ choose (-s, s)
+                     , liftM Get $ choose (-s `div` 10, s `div` 5) ]
 
 
   shrink (Add e1 e2) = [e1, e2] ++ shrink e1 ++ shrink e2

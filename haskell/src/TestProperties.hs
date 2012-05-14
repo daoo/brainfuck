@@ -59,12 +59,12 @@ propOptimizeExpressions   = propOptimize $ mapIL optimizeExpressions
 -- {{{ Copy Loops
 exCopyLoop1 :: IL
 exCopyLoop1 =
-  Loop 0
+  While 0
     [ Set 0 $ Get 0 `Add` Const (-1) ]
 
 exCopyLoop2 :: IL
 exCopyLoop2 =
-  Loop 5
+  While 5
     [ Set 5 $ Get 5 `Add` Const (-1)
     , Set 1 $ Get 1 `Add` Const 1
     , Set 2 $ Get 2 `Add` Const 5
@@ -72,7 +72,7 @@ exCopyLoop2 =
 
 exNotCopyLoop1 :: IL
 exNotCopyLoop1 =
-  Loop 5
+  While 5
     [ Set 5 $ Get 5 `Add` Const (-1)
     , Set 6 $ Get 5 `Add` Const 10 ]
 -- }}}

@@ -16,6 +16,7 @@ applyIL (il1 : il2 : ils)    = case il1 of
     Set d2 e2 | d2 == d1                        -> applyIL $ Set d2 (inline d1 e1 e2) : ils
               | d1 > d2 && inlOk d2             -> Set d2 (inline d1 e1 e2)           : applyIL (il1 : ils)
               | shouldInline occ e1 && inlOk d2 -> Set d2 (inline d1 e1 e2)           : applyIL (il1 : ils)
+              -- | otherwise                    -> il1 : Set d2 (inline d1 e1 e2)     : applyIL (il1 : ils)
     PutChar e2 | shouldInline occ e1            -> PutChar (inline d1 e1 e2)          : applyIL (il1 : ils)
     GetChar d2 | d1 == d2                       -> applyIL $ GetChar d2               : ils
 
