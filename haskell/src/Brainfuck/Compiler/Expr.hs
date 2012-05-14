@@ -69,7 +69,7 @@ optimizeExpr = finalize . whileModified (pipe pipeline)
       Add e1 e2          | e1 == e2 -> mult $ Mul (Const 2) e1
       Add e1 (Add e2 e3) | e1 == e2 -> mult $ Add (Mul (Const 2) e1) e3
 
-      Add e1 (Add (Mul (Const i) e2) e3) | e1 == e2 -> Add (Mul (Const i + 1) e2) e3
+      Add (Mul (Const c) e1) (Add e2 e3) | e1 == e2 -> mult $ Add (Mul (Const c + 1) e1) e3
 
       Add e1 e2 -> mult e1 `Add` mult e2
       Mul e1 e2 -> mult e1 `Mul` mult e2
