@@ -21,7 +21,6 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-sources = $(shell find src -type f -name '*.hs')
 flags   = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 
 build: parser
@@ -32,7 +31,7 @@ test: build
 	./build/test
 
 ghci: parser
-	ghci $(warnings) $(flags) $(sources)
+	ghci $(warnings) $(flags) src/TestProperties.hs
 
 parser: src/Brainfuck/Parser/Parser.y
 	happy -gc src/Brainfuck/Parser/Parser.y -o $(outdir)/Brainfuck/Parser/Parser.hs
