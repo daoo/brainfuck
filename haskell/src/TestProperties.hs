@@ -80,15 +80,17 @@ exNotCopyLoop1 =
 propExprOptimizeTwice :: Expr -> Bool
 propExprOptimizeTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
 
-propExprEval :: NonEmptyList Int -> Expr -> Bool
-propExprEval (NonEmpty xs) e = eval f e == eval f e'
+propExprEval :: Expr -> NonEmptyList Int -> Bool
+propExprEval e (NonEmpty xs) = eval f e == eval f e'
   where
     e' = optimizeExpr e
-
-    l   = length xs
+    l  = length xs
 
     f :: Int -> Int
     f i = xs !! (i `mod` l)
+
+propExprOptimizeSmaller :: Expr -> Bool
+propExprOptimizeSmaller expr = complexity expr >= complexity (optimizeExpr expr)
 -- }}}
 
 -- vim: set fdm=marker :
