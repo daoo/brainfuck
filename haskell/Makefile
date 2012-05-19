@@ -21,7 +21,7 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-flags   = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
+flags = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 
 build: parser
 	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
