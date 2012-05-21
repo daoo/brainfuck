@@ -8,12 +8,26 @@ import Test.QuickCheck
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
+import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Brainfuck
 import Brainfuck.Parser.Parser
 
 -- {{{ ListZipper
+-- }}}
+-- {{{ Misc
+propMapIndexEq :: Int -> NonEmptyList Int -> Property
+propMapIndexEq x (NonEmpty xs) = forAll (choose (0, length xs - 1)) $
+  \i -> (mapIndex (const x) i xs !! i) == x
+
+propMapIndexLength :: Int -> NonEmptyList Int -> Property
+propMapIndexLength x (NonEmpty xs) = forAll (choose (0, length xs - 1)) $
+  \i -> length (mapIndex (const x) i xs) == length xs
+
+propPipeAdd :: Property
+propPipeAdd = forAll (choose (0, 20000)) $
+  \i -> pipe (replicate i (+1)) 0 == i
 -- }}}
 -- {{{ Parser
 propParser :: [Brainfuck] -> Bool
