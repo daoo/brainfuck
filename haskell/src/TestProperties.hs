@@ -1,6 +1,7 @@
 module TestProperties where
 
 import Data.Word
+import Data.ListZipper
 
 import Test.QuickCheck
 import Test.QuickCheck.Modifiers
@@ -14,33 +15,17 @@ import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Brainfuck
 import Brainfuck.Parser.Parser
 
--- {{{ Memory operations
-propShiftLength :: ([Int], [Int]) -> Property
-propShiftLength x = forAll gen $ \l -> forAll gen $ \r -> f (g l) == f (g r)
-  where
-    gen      = choose (0, 1000)
-    f (a, b) = length a + length b
-    g i      = times shiftL i x
-
-propShiftToEmpty :: ([Int], [Int]) -> Property
-propShiftToEmpty x@(a, b) =
-  (null ae && null be) ==> (length af == lx && length bf == lx)
-  where
-    la = length a
-    lb = length b
-    lx = la + lb
-
-    (ae, bf) = times shiftR la x
-    (af, be) = times shiftL lb x
+-- {{{ ListZipper
 -- }}}
 -- {{{ Parser
 propParser :: [Brainfuck] -> Bool
-propParser bf = bf == parse (show bf)
+propParser bf = case parseBrainfuck (show bf) of
+  Left _    -> False
+  Right bf' -> bf == bf'
 -- }}}
 -- {{{ Optimization
 comp :: (Integral a) => Int -> State a -> State a -> Bool
-comp i (State _ out1 (ml1, mr1)) (State _ out2 (ml2, mr2)) =
-  take i ml1 == take i ml2 && take i mr1 == take i mr2 && out1 == out2
+comp i (State _ out1 m1) (State _ out2 m2) = cut i m1 == cut i m2 && out1 == out2
 
 propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
 propOptimize f il = comp (length il) (run state il) (run state opt)
