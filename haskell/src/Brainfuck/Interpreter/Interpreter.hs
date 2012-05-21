@@ -12,16 +12,17 @@ run :: (Integral a) => State a -> [IL] -> State a
 run = foldl evalOp
 
 evalOp :: (Integral a) => State a -> IL -> State a
-evalOp state (While i ops)    = until ((== 0) . peek i . getMemory) (`run` ops) state
-evalOp (State inp out mem) op = state'
-  where
-    state' = case op of
-      PutChar e -> State inp (out |> (evalExpr (`peek` mem) e)) mem
-      GetChar d -> State (tail inp) out $ applyIndex (const $ head inp) d mem
-      Set d e   -> State inp out $ applyIndex (const $ evalExpr (`peek` mem) e) d mem
-      Shift s   -> State inp out $ move s mem
+evalOp state@(State inp out mem) op = case op of
+  While d ops -> until ((== 0) . peek d . getMemory) (`run` ops) state
 
-      While _ _ -> error "Should not happen"
+  PutChar e   -> State inp        (out |> evalExpr' e) mem
+  GetChar d   -> State (tail inp) out                  (applyIndex' (head inp) d mem)
+  Set d e     -> State inp        out                  (applyIndex' (evalExpr' e) d mem)
+  Shift s     -> State inp        out                  (move s mem)
+
+  where
+    evalExpr' = evalExpr (`peek` mem)
+    applyIndex' = applyIndex . const
 
 evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
 evalExpr _ (Const v)   = fromIntegral v

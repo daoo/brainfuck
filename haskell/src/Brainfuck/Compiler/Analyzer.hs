@@ -45,7 +45,7 @@ copyLoop (While d xs) = do
     f _                                          = Nothing
 
     -- Filter the decrement operation
-    g d1 (d2, d3, (-1)) = d1 == d2 && d1 == d3
+    g d1 (d2, d3, -1) = d1 == d2 && d1 == d3
     g _ _               = False
 
     h (d1, d2, c) | d1 == d2  = Just (d1, c)

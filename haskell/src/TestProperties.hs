@@ -4,12 +4,10 @@ import Data.Word
 import Data.ListZipper
 
 import Test.QuickCheck
-import Test.QuickCheck.Modifiers
 
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
-import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Brainfuck
@@ -33,6 +31,9 @@ propOptimize f il = comp (length il) (run state il) (run state opt)
     state :: State Word8
     state = newState ""
     opt   = f il
+
+propOptimizeInlineZeros, propOptimizeCopies, propOptimizeShifts,
+  propOptimizeApply, propOptimizeClean, propOptimizeExpressions :: [IL] -> Bool
 
 propOptimizeInlineZeros = propOptimize inlineZeros
 propOptimizeCopies      = propOptimize reduceCopyLoops

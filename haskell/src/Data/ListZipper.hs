@@ -20,7 +20,7 @@ move (-1) (ListZipper (x : xs) y zs) = ListZipper xs x (y : zs)
 move   1  (ListZipper xs y (z : zs)) = ListZipper (y : xs) z zs
 move   0  lz                         = lz
 move   n  lz | n < 0                 = move (n + 1) (move (-1) lz)
-             | otherwise             = move (n - 1) (move (1) lz)
+             | otherwise             = move (n - 1) (move 1 lz)
 
 peek :: Int -> ListZipper a -> a
 peek 0 lz             = focus lz

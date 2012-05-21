@@ -82,7 +82,7 @@ reduceShiftLoops = go []
     go zeroes (x : xs) = case x of
       Set d (Const 0)                        -> x : go (d : zeroes) xs
       Set d (Const _)                        -> x : go (filter (/= d) zeroes) xs
-      Shift d                                -> x : go (map ((-) d) zeroes) xs
+      Shift d                                -> x : go (map (d -) zeroes) xs
       While d1 [Shift d2] | d1 `elem` zeroes -> go zeroes $ While (d1 + d2) [Shift d2] : xs
       _                                      -> x : go zeroes xs
 
