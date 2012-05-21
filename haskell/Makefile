@@ -23,28 +23,23 @@ warnings = -Wall \
 
 flags = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 
-build: parser
+build:
 	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
 
 test: build
 	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/test src/TestPrograms.hs
-	./build/test
+	./$(outdir)/test
 
-ghci: parser
+ghci:
 	ghci $(warnings) $(flags) src/TestProperties.hs
-
-parser: src/Brainfuck/Parser/Parser.y
-	happy -gc src/Brainfuck/Parser/Parser.y -o $(outdir)/Brainfuck/Parser/Parser.hs
-	ghc -O3 --make $(flags) $(outdir)/Brainfuck/Parser/Parser.hs
 
 clean:
 	rm -r $(outdir)/*
-	mkdir -p $(outdir)/Brainfuck/Parser/
 
 ctags:
-	echo ":ctags" | ghci -isrc/:build/ -v0 src/TestProperties.hs
+	echo ":ctags" | ghci -isrc/:$(outdir)/ -v0 src/TestProperties.hs
 
-hlint:
+lint:
 	hlint src -c
 
-.PHONY: clean hlint
+.PHONY: build clean lint

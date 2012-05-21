@@ -33,18 +33,19 @@ params p = code (concat p') >>= (\bf -> return (action, bf))
 
 main :: IO ()
 main = do
-  argv <- getArgs
-  p    <- params argv
-  inp  <- getContents
+  argv         <- getArgs
+  (what, code) <- params argv
+  inp          <- getContents
 
-  putStr $ case p of
-    (ToC, code)       -> makeC $ ilify code
-    (Interpret, code) -> runBF inp $ ilify code
+  il <- case parseBrainfuck code of
+    Left err -> error $ show err
+    Right bf -> return $ compile bf
+
+  putStrLn $ case what of
+    ToC       -> makeC il
+    Interpret -> runBF inp il
 
   where
-    ilify :: String -> [IL]
-    ilify = compile . parse
-
     makeC :: [IL] -> String
     makeC = showC . optimizeForC
 
