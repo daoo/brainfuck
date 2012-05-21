@@ -15,13 +15,13 @@ evalOp :: (Integral a) => State a -> IL -> State a
 evalOp state@(State inp out mem) op = case op of
   While d ops -> until ((== 0) . peek d . getMemory) (`run` ops) state
 
-  PutChar e   -> State inp        (out |> evalExpr' e) mem
-  GetChar d   -> State (tail inp) out                  (applyIndex' (head inp) d mem)
-  Set d e     -> State inp        out                  (applyIndex' (evalExpr' e) d mem)
-  Shift s     -> State inp        out                  (move s mem)
+  PutChar e -> State inp        (out |> evalExpr' e) mem
+  GetChar d -> State (tail inp) out                  (applyIndex' (head inp) d mem)
+  Set d e   -> State inp        out                  (applyIndex' (evalExpr' e) d mem)
+  Shift s   -> State inp        out                  (move s mem)
 
   where
-    evalExpr' = evalExpr (`peek` mem)
+    evalExpr'   = evalExpr (`peek` mem)
     applyIndex' = applyIndex . const
 
 evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
