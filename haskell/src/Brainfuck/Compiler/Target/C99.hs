@@ -10,7 +10,7 @@ import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
 
 optimizeForC :: [IL] -> [IL]
-optimizeForC = removeFromEnd . times (mid . pipe pipeline') 100
+optimizeForC = removeFromEnd . whileModified (mid . pipe pipeline')
   where
     mid = mapIL optimizeExpressions
     pipeline' = intersperse mid pipeline
