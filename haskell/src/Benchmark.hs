@@ -26,13 +26,10 @@ pipelines :: [Pipeline]
 pipelines = map (dedupBy compFst) $ permutations
   [ optExpr
   , ("Inline Zeroes", inlineZeros)
-  , optExpr
   , ("Reduce Copy Loops", reduceCopyLoops)
-  , optExpr
   , ("Clean Up", filterIL clean)
-  , optExpr
   , ("Apply IL", applyIL)
-  , optExpr ]
+  ]
   where
     optExpr = ("Optimize Expressions", mapIL optimizeExpressions)
 
@@ -44,6 +41,6 @@ main = do
   str <- getContents
   let Right bf = parseBrainfuck str
   let il = compile bf
-  defaultMain $ map (f il) $ take 10 pipelines
+  defaultMain $ map (f il) $ [head pipelines]
   where
     f il pipeline = bench (showPipeline pipeline) $ whnf (testPipeLine pipeline) il
