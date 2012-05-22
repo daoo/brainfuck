@@ -24,6 +24,9 @@ warnings = -Wall \
 flags = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
 
 build:
+	ghc -rtsopts --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
+
+release:
 	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
 
 test: build
