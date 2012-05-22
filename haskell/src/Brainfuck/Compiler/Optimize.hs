@@ -8,9 +8,10 @@ import Brainfuck.Compiler.IL
 
 -- Inline and apply instructions
 applyIL :: [IL] -> [IL]
-applyIL []                   = []
-applyIL (While i loop : ils) = While i (applyIL loop) : applyIL ils
-applyIL (il1 : il2 : ils)    = case il1 of
+applyIL []                = []
+applyIL (While d ys : xs) = While d (applyIL ys) : applyIL xs
+applyIL (If e ys : xs)    = If e (applyIL ys) : applyIL xs
+applyIL (il1 : il2 : ils) = case il1 of
   Set d1 e1 -> case il2 of
 
     Set d2 _   | d2 == d1                        -> applyIL $ il2' : ils
@@ -31,11 +32,12 @@ applyIL (il1 : il2 : ils)    = case il1 of
 
   Shift s1 -> case il2 of
 
-    Shift s2     -> applyIL $ Shift (s1 + s2)                        : ils
-    Set d e      -> Set (d + s1) (modifyPtr (+s1) e)                 : applyIL (il1 : ils)
-    While d loop -> While (d + s1) (mapIL (modifyOffset (+s1)) loop) : applyIL (il1 : ils)
-    PutChar e    -> PutChar (modifyPtr (+s1) e)                      : applyIL (il1 : ils)
-    GetChar d2   -> GetChar (d2 + s1)                                : applyIL (il1 : ils)
+    Shift s2   -> applyIL $ Shift (s1 + s2)                              : ils
+    Set d e    -> Set (d + s1) (modifyPtr (+s1) e)                       : applyIL (il1 : ils)
+    While d ys -> While (d + s1) (mapIL (modifyOffset (+s1)) ys)         : applyIL (il1 : ils)
+    If e ys    -> If (modifyPtr (+s1) e) (mapIL (modifyOffset (+s1)) ys) : applyIL (il1 : ils)
+    PutChar e  -> PutChar (modifyPtr (+s1) e)                            : applyIL (il1 : ils)
+    GetChar d2 -> GetChar (d2 + s1)                                      : applyIL (il1 : ils)
 
   _ -> il1 : applyIL (il2 : ils)
 
@@ -50,6 +52,7 @@ inlineZeros = go empty
     go _ []         = []
     go s (il : ils) = case il of
       While _ _ -> il : ils
+      If _ _    -> il : ils -- FIXME: We could maybe inline zeroes into ifs
       Set i e   -> Set i (inl s e) : go (insert i s) ils
       PutChar e -> PutChar (inl s e) : go s ils
       GetChar _ -> il : go s ils

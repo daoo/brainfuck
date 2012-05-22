@@ -72,6 +72,7 @@ memorySize = fmap (\xs -> (min' xs, max' xs)) . sequence . go 0
 
     go _ []               = []
     go _ (While _ _ : _)  = [Nothing]
+    go i (If _ _    : xs) = go i xs -- FIXME: Don't just skip ifs
     go i (Shift s   : xs) = Just (i + s) : go (i + s) xs
     go i (Set d _   : xs) = Just (i + d) : go i xs
     go i (PutChar _ : xs) = Just 0       : go i xs
@@ -81,11 +82,12 @@ memorySize = fmap (\xs -> (min' xs, max' xs)) . sequence . go 0
 usesMemory :: [IL] -> Bool
 usesMemory = any f
   where
-    f (While _ loop) = usesMemory loop
-    f (Set _ e)      = g e
-    f (PutChar e)    = g e
-    f (GetChar _)    = False
-    f (Shift _)      = False
+    f (While _ ys) = usesMemory ys
+    f (If _ ys)    = usesMemory ys
+    f (Set _ e)    = g e
+    f (PutChar e)  = g e
+    f (GetChar _)  = False
+    f (Shift _)    = False
 
     g (Const _)   = False
     g (Get _)     = True
