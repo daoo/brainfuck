@@ -19,7 +19,7 @@ instance Arbitrary IL where
     frequency [ (2, return $ Set i e)
               , (1, return $ Shift i) ]
 
-  shrink (While i loop) = map (While i) $ tails loop
+  shrink (While i loop) = map (While i) $ tail $ tails loop
   shrink (Set d e)      = map (Set d) $ shrink e
   shrink (Shift i)      = map Shift [0 .. i - 1]
   shrink (PutChar e)    = map PutChar $ shrink e
