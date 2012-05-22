@@ -1,4 +1,3 @@
-outdir  = build
 exename = brainfuck
 
 warnings = -Wall \
@@ -21,26 +20,31 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-flags = -isrc:$(outdir) -odir $(outdir) -hidir $(outdir)
+flags = -isrc:build -odir build -hidir build
+
+make_main = --make $(flags) $(warnings) -o build/$(exename) src/Main.hs
 
 build:
-	ghc -rtsopts --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
+	ghc -rtsopts $(make_main)
 
 release:
-	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/$(exename) src/Main.hs
+	ghc -O3 $(make_main)
 
-test: build
-	ghc -O3 --make $(warnings) $(flags) -o $(outdir)/test src/TestPrograms.hs
-	./$(outdir)/test
+test:
+	ghc -O3 --make $(warnings) $(flags) -o build/test src/TestPrograms.hs
+	./build/test
+
+bench:
+	ghc -O3 --make $(warnings) $(flags) -o build/bench src/Benchmark.hs
 
 ghci:
 	ghci $(warnings) $(flags) src/TestProperties.hs
 
 clean:
-	rm -r $(outdir)/*
+	rm -r build/*
 
 ctags:
-	echo ":ctags" | ghci -isrc/:$(outdir)/ -v0 src/TestProperties.hs
+	echo ":ctags" | ghci -isrc/:build/ -v0 src/TestProperties.hs
 
 lint:
 	hlint src -c
