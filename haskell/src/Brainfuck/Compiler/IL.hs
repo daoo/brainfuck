@@ -10,25 +10,7 @@ data IL = While Int [IL]
         | Shift Int
         | PutChar Expr
         | GetChar Int
-  deriving (Eq)
-
-instance Show IL where
-  show x@(While _ _) = showList [x] ""
-  show (Set d e)     = "Set " ++ show d ++ " " ++ show e
-  show (Shift i)     = "Shift " ++ show i
-  show (PutChar e)   = "PutChar " ++ show e
-  show (GetChar d)   = "GetChar " ++ show d
-
-  showList = helper 0
-    where
-      helper _ []                = showString ""
-      helper i (While d ys : xs) = indent i . showString "While " . shows d . showString "\n"
-                                 . helper (i + 1) ys
-                                 . helper i xs
-      helper i (x : xs) = indent i . shows x . showString "\n" . helper i xs
-
-      indent :: Int -> ShowS
-      indent i = (replicate (2 * i) ' ' ++)
+  deriving (Eq, Show)
 
 instance Arbitrary IL where
   arbitrary = do

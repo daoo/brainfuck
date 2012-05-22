@@ -40,7 +40,7 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
     begin prep = "#include <stdio.h>" : ("" : ("int main() {" : prep))
 
     end :: [String]
-    end = [ indent 1 "return 0;", "}" ]
+    end = [indent 1 "return 0;", "}"]
 
     mem xs prep = if usesMemory xs
       then alloc $ ptr $ newLine prep

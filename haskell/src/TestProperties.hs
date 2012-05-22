@@ -1,7 +1,8 @@
 module TestProperties where
 
-import Data.Word
 import Data.ListZipper
+import Data.Maybe
+import Data.Word
 
 import Test.QuickCheck
 
