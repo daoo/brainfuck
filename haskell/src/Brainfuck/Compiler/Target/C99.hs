@@ -48,17 +48,15 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
 
     code _ [] prep                 = prep
     code i (x : xs) prep = case x of
-      While d ys -> while $ body $ close $ code i xs prep
-        where
-          while = (:) (indent i $ showString "while (ptr[" $ shows d "]) {")
-          close = (:) (indent i "}")
-          body  = code (i + 1) ys
-      If e ys -> open $ body $ close $ code i xs prep
-        where
-          open  = (:) (indent i $ showString "if (" $ showExpr e ") {")
-          close = (:) (indent i "}")
-          body  = code (i + 1) ys
-      _ -> indent i (line x) : code i xs prep
+      While d ys -> block i "while" (shows d) ys $ code i xs prep
+      If e ys    -> block i "if" (showExpr e) ys $ code i xs prep
+      _          -> indent i (line x) : code i xs prep
+
+    block i word cond ys prep = open $ body $ close prep
+      where
+        open  = (:) (indent i $ showString word $ showString " (" $ cond ") {")
+        body  = code (i + 1) ys
+        close = (:) (indent i "}")
 
     line x = case x of
       Set d1 (Get d2 `Add` Const c) | d1 == d2 -> ptr (shows d1) "+=" (shows c)

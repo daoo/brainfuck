@@ -67,11 +67,12 @@ inlineZeros = go empty
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: [IL] -> [IL]
-reduceCopyLoops []                        = []
-reduceCopyLoops (il@(While d loop) : ils) = case copyLoop il of
-  Nothing -> While d (reduceCopyLoops loop) : reduceCopyLoops ils
-  Just xs -> map f xs ++ [Set d $ Const 0] ++ reduceCopyLoops ils
-    where f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
+reduceCopyLoops []                = []
+reduceCopyLoops (While d ys : xs) = case copyLoop d ys of
+  Nothing  -> While d (reduceCopyLoops ys) : reduceCopyLoops xs
+  Just ys' -> map f ys' ++ [Set d $ Const 0] ++ reduceCopyLoops xs
+    where
+      f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
 reduceCopyLoops (il : ils) = il : reduceCopyLoops ils
 
 -- |Reduce shift loops

@@ -32,8 +32,8 @@ exprDepends _ _           = False
 --   * The loop memory position is decremented by 1
 --   * Increment or decrement any other memory cell by any integer
 -- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: IL -> Maybe [(Int, Int)]
-copyLoop (While d xs) = do
+copyLoop :: Int -> [IL] -> Maybe [(Int, Int)]
+copyLoop d xs = do
   sets <- mapM f xs
   let (dec, copies) = partition (g d) sets
   onlyOne dec
@@ -50,8 +50,6 @@ copyLoop (While d xs) = do
 
     h (d1, d2, c) | d1 == d2  = Just (d1, c)
                   | otherwise = Nothing
-
-copyLoop _ = Nothing
 
 -- |Returns True if the list of ILs has any shifts.
 hasShifts :: [IL] -> Bool
