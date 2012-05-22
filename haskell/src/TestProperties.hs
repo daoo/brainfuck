@@ -94,13 +94,9 @@ propExprOptimizeTwice :: Expr -> Bool
 propExprOptimizeTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
 
 propExprEval :: Expr -> NonEmptyList Int -> Bool
-propExprEval e (NonEmpty xs) = eval f e == eval f e'
+propExprEval e (NonEmpty xs) = eval f e == eval f (optimizeExpr e)
   where
-    e' = optimizeExpr e
-    l  = length xs
-
-    f :: Int -> Int
-    f i = xs !! (i `mod` l)
+    f = (!!) xs . (`mod` length xs)
 
 propExprOptimizeSmaller :: Expr -> Bool
 propExprOptimizeSmaller expr = complexity expr >= complexity (optimizeExpr expr)
