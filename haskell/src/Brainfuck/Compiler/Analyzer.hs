@@ -96,7 +96,7 @@ data Occurs = Nope | Once | SetTo | InLoop
 
 shouldInline :: Occurs -> Expr -> Bool
 shouldInline SetTo e  = complexity e <= 4
-shouldInline Once e   = complexity e <= 3
+shouldInline Once e   = complexity e <= 1
 shouldInline Nope _   = False
 shouldInline InLoop _ = False
 

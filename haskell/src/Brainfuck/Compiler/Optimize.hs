@@ -13,12 +13,10 @@ applyIL (While i loop : ils) = While i (applyIL loop) : applyIL ils
 applyIL (il1 : il2 : ils)    = case il1 of
   Set d1 e1 -> case il2 of
 
-    Set d2 _   | d2 == d1                 -> applyIL $ il2' : ils
-               | d1 > d2 && inlOk d2      -> il2'           : applyIL (il1  : ils)
-               | inlWin && inlOk d2       -> il2'           : applyIL (il1  : ils)
-               | inlWin && not (inlOk d2) -> il1            : applyIL (il2' : ils)
-    PutChar _  | inlWin                   -> il2'           : applyIL (il1  : ils)
-    GetChar d2 | d1 == d2                 -> GetChar d2     : applyIL ils
+    Set d2 _   | d2 == d1                        -> applyIL $ il2' : ils
+               | (inlWin || d1 > d2) && inlOk d2 -> il2'           : applyIL (il1  : ils)
+    PutChar _  | inlWin                          -> il2'           : applyIL (il1  : ils)
+    GetChar d2 | d1 == d2                        -> GetChar d2     : applyIL ils
 
     _ -> il1 : applyIL (il2 : ils)
     where
