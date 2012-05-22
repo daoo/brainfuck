@@ -61,6 +61,22 @@ hasShifts = any f
     f (Shift _)      = True
     f _              = False
 
+-- |Analyze how much memory is needed
+memorySize :: [IL] -> Maybe (Int, Int)
+memorySize = fmap (\xs -> (min' xs, max' xs)) . sequence . go 0
+  where
+    min' [] = 0
+    min' xs = minimum xs
+    max' [] = 0
+    max' xs = maximum xs
+
+    go _ []               = []
+    go _ (While _ _ : _)  = [Nothing]
+    go i (Shift s   : xs) = Just (i + s) : go (i + s) xs
+    go i (Set d _   : xs) = Just (i + d) : go i xs
+    go i (PutChar _ : xs) = Just 0       : go i xs
+    go i (GetChar d : xs) = Just (i + d) : go i xs
+
 -- |Check if the list of ILs make use of the memory or the global pointer
 usesMemory :: [IL] -> Bool
 usesMemory = any f

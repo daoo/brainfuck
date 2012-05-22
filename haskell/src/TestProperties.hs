@@ -5,6 +5,7 @@ import Data.ListZipper
 
 import Test.QuickCheck
 
+import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
@@ -39,15 +40,17 @@ propParser bf = case parseBrainfuck (show bf) of
 comp :: (Integral a) => Int -> State a -> State a -> Bool
 comp i (State _ out1 m1) (State _ out2 m2) = cut i m1 == cut i m2 && out1 == out2
 
-propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
-propOptimize f il = comp (length il) (run state il) (run state opt)
+propOptimize :: ([IL] -> [IL]) -> [IL] -> Property
+propOptimize f ils = isJust s ==>
+  comp (fromJust s) (run state ils) (run state (f ils))
   where
+    s = (\(mn, mx) -> abs mn + abs mx) `fmap` memorySize ils
+
     state :: State Word8
     state = newState ""
-    opt   = f il
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeShifts,
-  propOptimizeApply, propOptimizeClean, propOptimizeExpressions :: [IL] -> Bool
+  propOptimizeApply, propOptimizeClean, propOptimizeExpressions :: [IL] -> Property
 
 propOptimizeInlineZeros = propOptimize inlineZeros
 propOptimizeCopies      = propOptimize reduceCopyLoops
