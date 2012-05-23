@@ -6,7 +6,21 @@ import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
--- Inline and apply instructions
+-- Optimize expressions
+optimizeExpressions :: IL -> IL
+optimizeExpressions il = case il of
+  Set d e   -> Set d $ optimizeExpr e
+  PutChar e -> PutChar $ optimizeExpr e
+  _         -> il
+
+-- Remove instructions that does not do anything
+clean :: IL -> Bool
+clean il = case il of
+  Shift s         -> s /= 0
+  Set o1 (Get o2) -> o1 /= o2
+  _               -> True
+
+-- |Inline set instructions
 inlineIL :: [IL] -> [IL]
 inlineIL []                = []
 inlineIL (While d ys : xs) = While d (inlineIL ys) : inlineIL xs
@@ -23,6 +37,7 @@ inlineIL (x1 : x2 : xs)    = case (x1, x2) of
 
 inlineIL (x : xs) = x : inlineIL xs
 
+-- |Move shift instructions
 moveShifts :: [IL] -> [IL]
 moveShifts []                = []
 moveShifts (While d ys : xs) = While d (moveShifts ys) : moveShifts xs
@@ -50,8 +65,7 @@ mergeKind (x1 : x2 : xs)    = case (x1, x2) of
 
 mergeKind (x : xs) = x : mergeKind xs
 
--- |Inline instructions
--- Inline initial zeros
+-- |Inline initial zeroes
 inlineZeros :: [IL] -> [IL]
 inlineZeros = go empty
   where
@@ -100,24 +114,11 @@ removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
   where
     sideEffect (PutChar _) = True
-    sideEffect (While _ _) = True
+    sideEffect (While _ _) = True -- TODO: Not always a side effect
+    sideEffect (If _ _)    = True -- TODO: Not always a side effect
     sideEffect _           = False
 
     helper []                         = []
     helper (il : ils) | sideEffect il = il : ils
                       | otherwise     = helper ils
-
--- Optimize expressions
-optimizeExpressions :: IL -> IL
-optimizeExpressions il = case il of
-  Set d e   -> Set d $ optimizeExpr e
-  PutChar e -> PutChar $ optimizeExpr e
-  _         -> il
-
--- Remove instructions that does not do anything
-clean :: IL -> Bool
-clean il = case il of
-  Shift s         -> s /= 0
-  Set o1 (Get o2) -> o1 /= o2
-  _               -> True
 

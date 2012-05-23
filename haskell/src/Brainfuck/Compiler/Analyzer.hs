@@ -106,7 +106,7 @@ shouldInline Nope _   = False
 shouldInline InLoop _ = False
 
 occurrs :: Int -> [IL] -> Occurs
-occurrs _ []                 = Nope
+occurrs _ []       = Nope
 occurrs d (x : xs) = case x of
   While d' ys | d == d'   -> InLoop
               | otherwise -> case occurrs d ys of
@@ -117,5 +117,6 @@ occurrs d (x : xs) = case x of
              | d `exprDepends` e -> Once
   PutChar e  | d `exprDepends` e -> Once
   GetChar d' | d == d'           -> SetTo
+  Shift _                        -> Nope -- Shift breaks offsets
 
   _ -> occurrs d xs

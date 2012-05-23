@@ -9,6 +9,7 @@ import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
+import Brainfuck.Compiler.Target.C99
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
@@ -64,6 +65,13 @@ propOptimizeShifts      = propOptimize reduceShiftLoops
 
 propOptimizeMoveShifts :: [IL] -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
+
+propOptimizeForC :: [IL] -> Bool
+propOptimizeForC xs = getOutput (run state xs) == getOutput (run state (optimizeForC xs))
+  where
+    state :: State Word8
+    state = newState ""
+
 -- }}}
 -- {{{ Loops
 exCopyLoop1 :: IL
