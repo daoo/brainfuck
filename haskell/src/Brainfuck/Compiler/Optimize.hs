@@ -9,7 +9,6 @@ import Brainfuck.Compiler.IL
 -- Inline and apply instructions
 inlineIL :: [IL] -> [IL]
 inlineIL []                = []
-inlineIL [x]               = [x]
 inlineIL (While d ys : xs) = While d (inlineIL ys) : inlineIL xs
 inlineIL (If e ys : xs)    = If e (inlineIL ys) : inlineIL xs
 inlineIL (x1 : x2 : xs)    = case (x1, x2) of
@@ -21,6 +20,8 @@ inlineIL (x1 : x2 : xs)    = case (x1, x2) of
   where
     inlWin d e ys = shouldInline (occurrs d ys) e
     inlOk d e     = not (exprDepends d e)
+
+inlineIL (x : xs) = x : inlineIL xs
 
 moveShifts :: [IL] -> [IL]
 moveShifts []                = []
