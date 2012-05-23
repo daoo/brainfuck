@@ -122,3 +122,9 @@ removeFromEnd = reverse . helper . reverse
     helper (il : ils) | sideEffect il = il : ils
                       | otherwise     = helper ils
 
+whileToIf :: [IL] -> [IL]
+whileToIf []                = []
+whileToIf (While d ys : xs) = case setToZero d ys of
+  Nothing  -> While d (whileToIf ys) : whileToIf xs
+  Just ys' -> If (Get d) ys' : Set d (Const 0) : whileToIf xs
+whileToIf (x : xs) = x : whileToIf xs

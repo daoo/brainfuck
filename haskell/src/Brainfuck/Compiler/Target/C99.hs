@@ -13,6 +13,7 @@ optimizeForC = removeFromEnd . whileModified (pipe pipeline)
   where
     pipeline = [ mapIL optimizeExpressions
                , inlineZeros
+               , whileToIf
                , reduceCopyLoops
                , filterIL clean
                , inlineIL

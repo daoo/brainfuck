@@ -97,7 +97,19 @@ usesMemory = any f
     g (Add e1 e2) = g e1 || g e2
     g (Mul e1 e2) = g e1 || g e2
 
+setToZero :: Int -> [IL] -> Maybe [IL]
+setToZero d1 xs = fmap reverse $ go $ reverse xs
+  where
+    go []                                 = Just []
+    go (While _ _ : _)                    = Nothing
+    go (If _ _ : _)                       = Nothing
+    go (GetChar d2 : _)        | d1 == d2 = Nothing
+    go (Set d2 (Const 0) : ys) | d1 == d2 = Just ys
+    go (Set d2 _ : _)          | d1 == d2 = Nothing
+    go (y : ys)                           = fmap (y :) $ go ys
+
 data Occurs = Nope | Once | SetTo | InLoop
+  deriving (Show)
 
 shouldInline :: Occurs -> Expr -> Bool
 shouldInline SetTo e  = complexity e <= 4
