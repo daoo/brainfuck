@@ -17,15 +17,16 @@ instance Arbitrary IL where
   arbitrary = do
     i <- choose (-4, 10)
     e <- arbitrary
-    frequency [ (2, return $ Set i e)
-              , (1, return $ Shift i) ]
+    frequency [ (4, return $ Set i e)
+              , (2, return $ Shift i)
+              , (1, return $ PutChar e) ]
 
   shrink (While d ys) = map (While d) $ tail $ tails ys
   shrink (If e ys)    = [If e' ys' | e' <- shrink e, ys' <- tail (tails ys)]
-  shrink (Set d e)    = map (Set d) $ shrink e
-  shrink (Shift i)    = map Shift [0 .. i - 1]
-  shrink (PutChar e)  = map PutChar $ shrink e
-  shrink (GetChar _)  = []
+  shrink (Set d e)    = [Set d' e' | e' <- shrink e, d' <- shrink d]
+  shrink (Shift i)    = [Shift i' | i' <- shrink i]
+  shrink (PutChar e)  = [PutChar e' | e' <- shrink e]
+  shrink (GetChar d)  = [GetChar d' | d' <- shrink d]
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                          = []
