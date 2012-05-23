@@ -41,11 +41,17 @@ mapIL = map . g
     g f (If e ys)    = f $ If e (map (g f) ys)
     g f il           = f il
 
-modifyOffset :: (Int -> Int) -> IL -> IL
-modifyOffset f x = case x of
-  While d ys -> While (f d) ys
-  If e ys    -> If (modifyPtr f e) ys
-  Set d e    -> Set (f d) $ modifyPtr f e
+modifyPtr :: (Int -> Int) -> IL -> IL
+modifyPtr f x = case x of
+  While d ys -> While (f d) (map (modifyPtr f) ys)
+  If e ys    -> If (h e) (map (modifyPtr f) ys)
+  Set d e    -> Set (f d) (h e)
   Shift s    -> Shift s
-  GetChar d  -> GetChar $ f d
-  PutChar e  -> PutChar $ modifyPtr f e
+  PutChar e  -> PutChar (h e)
+  GetChar d  -> GetChar (f d)
+
+  where
+    g (Get d) = Get $ f d
+    g e       = e
+
+    h = modifyLeafs g

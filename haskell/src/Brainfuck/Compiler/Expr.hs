@@ -53,12 +53,8 @@ inline d1 e = unfold Add Mul f
     f (Get d2) | d1 == d2 = e
     f e'                  = e'
 
-modifyPtr :: (Int -> Int) -> Expr -> Expr
-modifyPtr = unfold Add Mul . g
-  where
-    g _ (Const c) = Const c
-    g f (Get d)   = Get $ f d
-    g _ _         = error "unfold Expr error"
+modifyLeafs :: (Expr -> Expr) -> Expr -> Expr
+modifyLeafs = unfold Add Mul
 
 eval :: (Int -> Int) -> Expr -> Int
 eval = unfold (+) (*) . g

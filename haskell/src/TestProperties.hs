@@ -1,7 +1,6 @@
 module TestProperties where
 
 import Data.ListZipper
-import Data.Maybe
 import Data.Word
 
 import Test.QuickCheck
@@ -41,24 +40,30 @@ propParser bf = case parseBrainfuck (show bf) of
 comp :: (Integral a) => Int -> State a -> State a -> Bool
 comp i (State _ out1 m1) (State _ out2 m2) = cut i m1 == cut i m2 && out1 == out2
 
-propOptimize :: ([IL] -> [IL]) -> [IL] -> Property
-propOptimize f ils = isJust s ==>
-  comp (fromJust s) (run state ils) (run state (f ils))
+propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
+propOptimize f ils = comp s (run state ils) (run state (f ils))
   where
-    s = (\(mn, mx) -> abs mn + abs mx) `fmap` memorySize ils
+    s = let (mn, mx) = memorySize ils in abs mn + abs mx
 
     state :: State Word8
     state = newState ""
 
-propOptimizeInlineZeros, propOptimizeCopies, propOptimizeShifts,
-  propOptimizeApply, propOptimizeClean, propOptimizeExpressions :: [IL] -> Property
+-- TODO: Better testing
 
-propOptimizeInlineZeros = propOptimize inlineZeros
-propOptimizeCopies      = propOptimize reduceCopyLoops
-propOptimizeShifts      = propOptimize reduceShiftLoops
-propOptimizeApply       = propOptimize applyIL
+propOptimizeInlineZeros, propOptimizeCopies, propOptimizeShifts,
+  propOptimizeInlineIL, propOptimizeClean, propOptimizeExpressions,
+  propOptimizeMergeKind :: [IL] -> Bool
+
 propOptimizeClean       = propOptimize $ filterIL clean
+propOptimizeCopies      = propOptimize reduceCopyLoops
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
+propOptimizeInlineIL    = propOptimize inlineIL
+propOptimizeInlineZeros = propOptimize inlineZeros
+propOptimizeMergeKind   = propOptimize mergeKind
+propOptimizeShifts      = propOptimize reduceShiftLoops
+
+propOptimizeMoveShifts :: [IL] -> Bool
+propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
 -- }}}
 -- {{{ Loops
 exCopyLoop1 :: IL

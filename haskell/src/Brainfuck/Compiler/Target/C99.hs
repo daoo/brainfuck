@@ -11,7 +11,14 @@ import Brainfuck.Ext
 optimizeForC :: [IL] -> [IL]
 optimizeForC = removeFromEnd . whileModified (pipe pipeline)
   where
-    pipeline = [mapIL optimizeExpressions, inlineZeros, reduceCopyLoops, filterIL clean, applyIL]
+    pipeline = [ mapIL optimizeExpressions
+               , inlineZeros
+               , reduceCopyLoops
+               , filterIL clean
+               , inlineIL
+               , moveShifts
+               , mergeKind
+               ]
 
 showExpr :: Expr -> ShowS
 showExpr (Const c)            = shows c
@@ -48,7 +55,7 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
 
     code _ [] prep                 = prep
     code i (x : xs) prep = case x of
-      While d ys -> block i "while" (shows d) ys $ code i xs prep
+      While d ys -> block i "while" (showString "ptr[" . shows d . showString "]") ys $ code i xs prep
       If e ys    -> block i "if" (showExpr e) ys $ code i xs prep
       _          -> indent i (line x) : code i xs prep
 

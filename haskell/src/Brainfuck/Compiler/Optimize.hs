@@ -7,41 +7,47 @@ import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
 -- Inline and apply instructions
-applyIL :: [IL] -> [IL]
-applyIL []                = []
-applyIL (While d ys : xs) = While d (applyIL ys) : applyIL xs
-applyIL (If e ys : xs)    = If e (applyIL ys) : applyIL xs
-applyIL (il1 : il2 : ils) = case il1 of
-  Set d1 e1 -> case il2 of
+inlineIL :: [IL] -> [IL]
+inlineIL []                = []
+inlineIL [x]               = [x]
+inlineIL (While d ys : xs) = While d (inlineIL ys) : inlineIL xs
+inlineIL (If e ys : xs)    = If e (inlineIL ys) : inlineIL xs
+inlineIL (x1 : x2 : xs)    = case (x1, x2) of
+  (Set d1 e1, Set d2 e2)  | d1 == d2                                    -> inlineIL (Set d2 (inline d1 e1 e2) : xs)
+                          | (inlWin d1 e1 xs || d1 > d2) && inlOk d2 e1 -> Set d2 (inline d1 e1 e2)  : inlineIL (x1 : xs)
+  (Set d1 e1, PutChar e2) | inlWin d1 e1 xs                             -> PutChar (inline d1 e1 e2) : inlineIL (x1 : xs)
+  (_, _)                                                                -> x1                        : inlineIL (x2 : xs)
 
-    Set d2 _   | d2 == d1                        -> applyIL $ il2' : ils
-               | (inlWin || d1 > d2) && inlOk d2 -> il2'           : applyIL (il1  : ils)
-    PutChar _  | inlWin                          -> il2'           : applyIL (il1  : ils)
-    GetChar d2 | d1 == d2                        -> GetChar d2     : applyIL ils
+  where
+    inlWin d e ys = shouldInline (occurrs d ys) e
+    inlOk d e     = not (exprDepends d e)
 
-    _ -> il1 : applyIL (il2 : ils)
-    where
-      inlWin  = shouldInline (occurrs d1 ils) e1
-      inlOk d = not (exprDepends d e1)
+moveShifts :: [IL] -> [IL]
+moveShifts []                = []
+moveShifts (While d ys : xs) = While d (moveShifts ys) : moveShifts xs
+moveShifts (If e ys : xs)    = If e (moveShifts ys)    : moveShifts xs
+moveShifts (x1 : x2 : xs)    = case (x1, x2) of
+  (Shift s1, While d ys) -> modifyPtr (+s1) (While d (moveShifts ys)) : moveShifts (x1 : xs)
+  (Shift s1, If e ys)    -> modifyPtr (+s1) (If e (moveShifts ys)) : moveShifts (x1 : xs)
+  (Shift s1, Shift s2)   -> moveShifts (Shift (s1 + s2) : xs)
+  (Shift s1, _)          -> modifyPtr (+s1) x2 : moveShifts (x1 : xs)
+  (_, _)                 -> x1 : moveShifts (x2 : xs)
 
-      il2' = inl il2
+moveShifts (x : xs) = x : moveShifts xs
 
-      inl (Set d2 e2)  = Set d2 (inline d1 e1 e2)
-      inl (PutChar e2) = PutChar (inline d1 e1 e2)
-      inl il           = il
+-- |Merge equal instructions
+mergeKind :: [IL] -> [IL]
+mergeKind []                = []
+mergeKind (While d ys : xs) = While d (mergeKind ys) : mergeKind xs
+mergeKind (If e ys : xs)    = If e (mergeKind ys) : mergeKind xs
+mergeKind (x1 : x2 : xs)    = case (x1, x2) of
+  (Shift s1, Shift s2)                                          -> mergeKind (Shift (s1 + s2) : xs)
+  (Set d1 e1, Set d2 e2)  | d1 == d2                            -> mergeKind (Set d2 (inline d1 e1 e2) : xs)
+  (GetChar d1, Set d2 e2) | d1 == d2 && not (exprDepends d1 e2) -> mergeKind (Set d2 e2 : xs)
 
-  Shift s1 -> case il2 of
+  (_, _) -> x1 : mergeKind (x2 : xs)
 
-    Shift s2   -> applyIL $ Shift (s1 + s2)                              : ils
-    Set d e    -> Set (d + s1) (modifyPtr (+s1) e)                       : applyIL (il1 : ils)
-    While d ys -> While (d + s1) (mapIL (modifyOffset (+s1)) ys)         : applyIL (il1 : ils)
-    If e ys    -> If (modifyPtr (+s1) e) (mapIL (modifyOffset (+s1)) ys) : applyIL (il1 : ils)
-    PutChar e  -> PutChar (modifyPtr (+s1) e)                            : applyIL (il1 : ils)
-    GetChar d2 -> GetChar (d2 + s1)                                      : applyIL (il1 : ils)
-
-  _ -> il1 : applyIL (il2 : ils)
-
-applyIL (il : ils) = il : applyIL ils
+mergeKind (x : xs) = x : mergeKind xs
 
 -- |Inline instructions
 -- Inline initial zeros

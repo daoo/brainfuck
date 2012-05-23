@@ -46,7 +46,7 @@ copyLoop d xs = do
 
     -- Filter the decrement operation
     g d1 (d2, d3, -1) = d1 == d2 && d1 == d3
-    g _ _               = False
+    g _ _             = False
 
     h (d1, d2, c) | d1 == d2  = Just (d1, c)
                   | otherwise = Nothing
@@ -59,22 +59,27 @@ hasShifts = any f
     f (Shift _)      = True
     f _              = False
 
--- |Analyze how much memory is needed
-memorySize :: [IL] -> Maybe (Int, Int)
-memorySize = fmap (\xs -> (min' xs, max' xs)) . sequence . go 0
+memoryAccess :: [IL] -> [[Int]]
+memoryAccess = go 0
   where
-    min' [] = 0
-    min' xs = minimum xs
-    max' [] = 0
-    max' xs = maximum xs
-
     go _ []               = []
-    go _ (While _ _ : _)  = [Nothing]
-    go i (If _ _    : xs) = go i xs -- FIXME: Don't just skip ifs
-    go i (Shift s   : xs) = Just (i + s) : go (i + s) xs
-    go i (Set d _   : xs) = Just (i + d) : go i xs
-    go i (PutChar _ : xs) = Just 0       : go i xs
-    go i (GetChar d : xs) = Just (i + d) : go i xs
+    go _ (While _ _ : _)  = error "FIXME: While"
+    go _ (If _ _    : _)  = error "FIXME: If"
+    go i (Shift s   : xs) = go (i + s) xs
+    go i (Set d e   : xs) = ((i + d) : expr i e) : go i xs
+    go i (PutChar e : xs) = expr i e             : go i xs
+    go i (GetChar d : xs) = [i + d]              : go i xs
+
+    expr i = map (+i) . unfold (++) (++) f
+      where
+        f (Get d) = [d]
+        f _       = []
+
+-- |Analyze how much memory is needed
+memorySize :: [IL] -> (Int, Int)
+memorySize xs = case concat $ memoryAccess xs of
+  []  -> (0, 0)
+  xs' -> (minimum xs', maximum xs')
 
 -- |Check if the list of ILs make use of the memory or the global pointer
 usesMemory :: [IL] -> Bool
@@ -96,7 +101,7 @@ data Occurs = Nope | Once | SetTo | InLoop
 
 shouldInline :: Occurs -> Expr -> Bool
 shouldInline SetTo e  = complexity e <= 4
-shouldInline Once e   = complexity e <= 1
+shouldInline Once e   = complexity e <= 2
 shouldInline Nope _   = False
 shouldInline InLoop _ = False
 
