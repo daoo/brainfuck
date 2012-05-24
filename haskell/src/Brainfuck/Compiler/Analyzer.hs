@@ -6,19 +6,6 @@ import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Ext
 
--- |Count the number of instructions
--- Descends into loops
-ilCount :: [IL] -> Int
-ilCount = sum . map f
-  where
-    f (While _ ils) = 1 + ilCount ils
-    f _             = 1
-
--- |Calculate the depth of the loop tree
-loopDepth :: IL -> Int
-loopDepth (While _ ils) = (+1) $ maximum $ map loopDepth ils
-loopDepth _             = 0
-
 -- |Check if an expression uses the value of a certain memory offset
 exprDepends :: Int -> Expr -> Bool
 exprDepends i (Get d)     = i == d
@@ -50,14 +37,6 @@ copyLoop d xs = do
 
     h (d1, d2, c) | d1 == d2  = Just (d1, c)
                   | otherwise = Nothing
-
--- |Returns True if the list of ILs has any shifts.
-hasShifts :: [IL] -> Bool
-hasShifts = any f
-  where
-    f (While _ loop) = hasShifts loop
-    f (Shift _)      = True
-    f _              = False
 
 memoryAccess :: [IL] -> [[Int]]
 memoryAccess = go 0
@@ -98,7 +77,7 @@ usesMemory = any f
     g (Mul e1 e2) = g e1 || g e2
 
 setToZero :: Int -> [IL] -> Maybe [IL]
-setToZero d1 xs = fmap reverse $ go $ reverse xs
+setToZero d1 = fmap reverse . go . reverse
   where
     go []       = Just []
     go (x : xs) = case x of
