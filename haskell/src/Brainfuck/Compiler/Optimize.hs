@@ -32,7 +32,7 @@ inlineIL (x1 : x2 : xs)    = case (x1, x2) of
   (_, _)                                                                -> x1                        : inlineIL (x2 : xs)
 
   where
-    inlWin d e ys = shouldInline (occurrs d ys) e
+    inlWin d e ys = shouldInline (occurs d ys) e
     inlOk d e     = not (exprDepends d e)
 
 inlineIL (x : xs) = x : inlineIL xs

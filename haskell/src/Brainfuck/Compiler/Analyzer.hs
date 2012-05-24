@@ -108,27 +108,33 @@ setToZero d1 xs = fmap reverse $ go $ reverse xs
     go (Set d2 _ : _)          | d1 == d2 = Nothing
     go (y : ys)                           = fmap (y :) $ go ys
 
-data Occurs = Nope | Once | SetTo | InLoop
+data Occurs = Once | SetTo | InLoop [Occurs] | InIf [Occurs]
   deriving (Show)
 
-shouldInline :: Occurs -> Expr -> Bool
-shouldInline SetTo e  = complexity e <= 4
-shouldInline Once e   = complexity e <= 2
-shouldInline Nope _   = False
-shouldInline InLoop _ = False
+shouldInline :: [Occurs] -> Expr -> Bool
+shouldInline [SetTo] e = complexity e <= 4
+shouldInline [Once] e  = complexity e <= 2
+shouldInline _ _       = False
 
-occurrs :: Int -> [IL] -> Occurs
-occurrs _ []       = Nope
-occurrs d (x : xs) = case x of
-  While d' ys | d == d'   -> InLoop
-              | otherwise -> case occurrs d ys of
-    Nope -> occurrs d xs
-    _    -> InLoop
+occurs :: Int -> [IL] -> [Occurs]
+occurs _ []       = []
+occurs d (x : xs) = case x of
+  While d' ys | d == d'   -> InLoop (Once : occurs d ys) : occurs d xs
+              | otherwise -> case occurs d ys of
+    [] -> occurs d xs
+    os -> InLoop os : occurs d xs
 
-  Set d' e   | d == d'           -> SetTo
-             | d `exprDepends` e -> Once
-  PutChar e  | d `exprDepends` e -> Once
-  GetChar d' | d == d'           -> SetTo
-  Shift _                        -> Nope -- Shift breaks offsets
+  If e ys -> occursExpr e ++ InIf (occurs d ys) : occurs d xs
 
-  _ -> occurrs d xs
+  Set d' e | d == d'     -> SetTo : occursExpr e ++ occurs d xs
+           | otherwise   -> occursExpr e ++ occurs d xs
+  PutChar e              -> occursExpr e ++ occurs d xs
+  GetChar d' | d == d'   -> SetTo : occurs d xs
+             | otherwise -> occurs d xs
+  Shift s                -> occurs (d - s) xs
+
+  where
+    occursExpr = unfold (++) (++) f
+
+    f (Get d') | d == d' = [Once]
+    f _                  = []
