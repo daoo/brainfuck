@@ -51,7 +51,7 @@ propOptimize f ils = comp s (run state ils) (run state (f ils))
 
 -- TODO: Better testing
 
-propOptimizeInlineZeros, propOptimizeCopies, propOptimizeShifts,
+propOptimizeInlineZeros, propOptimizeCopies,
   propOptimizeInlineIL, propOptimizeClean, propOptimizeExpressions,
   propOptimizeMergeKind :: [IL] -> Bool
 
@@ -61,7 +61,6 @@ propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
 propOptimizeInlineIL    = propOptimize inlineIL
 propOptimizeInlineZeros = propOptimize inlineZeros
 propOptimizeMergeKind   = propOptimize mergeKind
-propOptimizeShifts      = propOptimize reduceShiftLoops
 
 propOptimizeMoveShifts :: [IL] -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
