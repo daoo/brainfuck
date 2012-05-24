@@ -100,13 +100,14 @@ usesMemory = any f
 setToZero :: Int -> [IL] -> Maybe [IL]
 setToZero d1 xs = fmap reverse $ go $ reverse xs
   where
-    go []                                 = Just []
-    go (While _ _ : _)                    = Nothing
-    go (If _ _ : _)                       = Nothing
-    go (GetChar d2 : _)        | d1 == d2 = Nothing
-    go (Set d2 (Const 0) : ys) | d1 == d2 = Just ys
-    go (Set d2 _ : _)          | d1 == d2 = Nothing
-    go (y : ys)                           = fmap (y :) $ go ys
+    go []       = Just []
+    go (x : xs) = case x of
+      While _ _                   -> Nothing
+      If _ _                      -> Nothing
+      GetChar d2       | d1 == d2 -> Nothing
+      Set d2 (Const 0) | d1 == d2 -> Just xs
+      Set d2 _         | d1 == d2 -> Nothing
+      _                           -> fmap (x :) $ go xs
 
 data Occurs = Once | SetTo | InLoop [Occurs] | InIf [Occurs]
   deriving (Show)
@@ -119,12 +120,8 @@ shouldInline _ _       = False
 occurs :: Int -> [IL] -> [Occurs]
 occurs _ []       = []
 occurs d (x : xs) = case x of
-  While d' ys | d == d'   -> InLoop (Once : occurs d ys) : occurs d xs
-              | otherwise -> case occurs d ys of
-    [] -> occurs d xs
-    os -> InLoop os : occurs d xs
-
-  If e ys -> occursExpr e ++ InIf (occurs d ys) : occurs d xs
+  While e ys -> InLoop (occursExpr e ++ occurs d ys) : occurs d xs
+  If e ys    -> occursExpr e ++ InIf (occurs d ys) : occurs d xs
 
   Set d' e | d == d'     -> SetTo : occursExpr e ++ occurs d xs
            | otherwise   -> occursExpr e ++ occurs d xs

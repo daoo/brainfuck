@@ -56,7 +56,7 @@ showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
 
     code _ [] prep                 = prep
     code i (x : xs) prep = case x of
-      While d ys -> block i "while" (showString "ptr[" . shows d . showString "]") ys $ code i xs prep
+      While e ys -> block i "while" (showExpr e) ys $ code i xs prep
       If e ys    -> block i "if" (showExpr e) ys $ code i xs prep
       _          -> indent i (line x) : code i xs prep
 

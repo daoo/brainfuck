@@ -6,7 +6,7 @@ import Brainfuck.Parser.Brainfuck
 
 compile :: [Brainfuck] -> [IL]
 compile []               = []
-compile (Repeat l : bs)  = While 0 (compile l) : compile bs
+compile (Repeat l : bs)  = While (Get 0) (compile l) : compile bs
 compile (Token tok : bs) = tok' : compile bs
   where
     tok' = case tok of

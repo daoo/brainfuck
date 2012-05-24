@@ -5,7 +5,7 @@ import Test.QuickCheck
 
 import Brainfuck.Compiler.Expr
 
-data IL = While Int [IL]
+data IL = While Expr [IL]
         | If Expr [IL]
         | Set Int Expr
         | Shift Int
@@ -21,7 +21,7 @@ instance Arbitrary IL where
               , (2, return $ Shift i)
               , (1, return $ PutChar e) ]
 
-  shrink (While d ys) = map (While d) $ tail $ tails ys
+  shrink (While e ys) = map (While e) $ tail $ tails ys
   shrink (If e ys)    = [If e' ys' | e' <- shrink e, ys' <- tail (tails ys)]
   shrink (Set d e)    = [Set d' e' | e' <- shrink e, d' <- shrink d]
   shrink (Shift i)    = [Shift i' | i' <- shrink i]
@@ -30,7 +30,7 @@ instance Arbitrary IL where
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                          = []
-filterIL f (x@(While d ys) : xs) | f x = While d (filterIL f ys) : filterIL f xs
+filterIL f (x@(While e ys) : xs) | f x = While e (filterIL f ys) : filterIL f xs
 filterIL f (x@(If e ys) : xs)    | f x = If e (filterIL f ys) : filterIL f xs
 filterIL f (x : xs)              | f x = x : filterIL f xs
 filterIL f (_ : xs)                    = filterIL f xs
@@ -38,13 +38,13 @@ filterIL f (_ : xs)                    = filterIL f xs
 mapIL :: (IL -> IL) -> [IL] -> [IL]
 mapIL = map . g
   where
-    g f (While d ys) = f $ While d (map (g f) ys)
+    g f (While e ys) = f $ While e (map (g f) ys)
     g f (If e ys)    = f $ If e (map (g f) ys)
     g f il           = f il
 
 modifyPtr :: (Int -> Int) -> IL -> IL
 modifyPtr f x = case x of
-  While d ys -> While (f d) (map (modifyPtr f) ys)
+  While e ys -> While (h e) (map (modifyPtr f) ys)
   If e ys    -> If (h e) (map (modifyPtr f) ys)
   Set d e    -> Set (f d) (h e)
   Shift s    -> Shift s

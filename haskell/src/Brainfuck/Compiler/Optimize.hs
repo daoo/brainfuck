@@ -23,7 +23,7 @@ clean il = case il of
 -- |Inline set instructions
 inlineIL :: [IL] -> [IL]
 inlineIL []                = []
-inlineIL (While d ys : xs) = While d (inlineIL ys) : inlineIL xs
+inlineIL (While e ys : xs) = While e (inlineIL ys) : inlineIL xs
 inlineIL (If e ys : xs)    = If e (inlineIL ys) : inlineIL xs
 inlineIL (x1 : x2 : xs)    = case (x1, x2) of
   (Set d1 e1, Set d2 e2)  | d1 == d2                                    -> inlineIL (Set d2 (inline d1 e1 e2) : xs)
@@ -40,10 +40,10 @@ inlineIL (x : xs) = x : inlineIL xs
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]
 moveShifts []                = []
-moveShifts (While d ys : xs) = While d (moveShifts ys) : moveShifts xs
+moveShifts (While e ys : xs) = While e (moveShifts ys) : moveShifts xs
 moveShifts (If e ys : xs)    = If e (moveShifts ys)    : moveShifts xs
 moveShifts (x1 : x2 : xs)    = case (x1, x2) of
-  (Shift s1, While d ys) -> modifyPtr (+s1) (While d (moveShifts ys)) : moveShifts (x1 : xs)
+  (Shift s1, While e ys) -> modifyPtr (+s1) (While e (moveShifts ys)) : moveShifts (x1 : xs)
   (Shift s1, If e ys)    -> modifyPtr (+s1) (If e (moveShifts ys)) : moveShifts (x1 : xs)
   (Shift s1, Shift s2)   -> moveShifts (Shift (s1 + s2) : xs)
   (Shift s1, _)          -> modifyPtr (+s1) x2 : moveShifts (x1 : xs)
@@ -54,7 +54,7 @@ moveShifts (x : xs) = x : moveShifts xs
 -- |Merge equal instructions
 mergeKind :: [IL] -> [IL]
 mergeKind []                = []
-mergeKind (While d ys : xs) = While d (mergeKind ys) : mergeKind xs
+mergeKind (While e ys : xs) = While e (mergeKind ys) : mergeKind xs
 mergeKind (If e ys : xs)    = If e (mergeKind ys) : mergeKind xs
 mergeKind (x1 : x2 : xs)    = case (x1, x2) of
   (Shift s1, Shift s2)                                          -> mergeKind (Shift (s1 + s2) : xs)
@@ -88,26 +88,13 @@ inlineZeros = go empty
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: [IL] -> [IL]
-reduceCopyLoops []                = []
-reduceCopyLoops (While d ys : xs) = case copyLoop d ys of
-  Nothing  -> While d (reduceCopyLoops ys) : reduceCopyLoops xs
+reduceCopyLoops []                      = []
+reduceCopyLoops (While (Get d) ys : xs) = case copyLoop d ys of
+  Nothing  -> While (Get d) (reduceCopyLoops ys) : reduceCopyLoops xs
   Just ys' -> map f ys' ++ [Set d $ Const 0] ++ reduceCopyLoops xs
     where
       f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
 reduceCopyLoops (il : ils) = il : reduceCopyLoops ils
-
--- |Reduce shift loops
-reduceShiftLoops :: [IL] -> [IL]
-reduceShiftLoops = go []
-  where
-    go :: [Int] -> [IL] -> [IL]
-    go _ []            = []
-    go zeroes (x : xs) = case x of
-      Set d (Const 0)                        -> x : go (d : zeroes) xs
-      Set d (Const _)                        -> x : go (filter (/= d) zeroes) xs
-      Shift d                                -> x : go (map (d -) zeroes) xs
-      While d1 [Shift d2] | d1 `elem` zeroes -> go zeroes $ While (d1 + d2) [Shift d2] : xs
-      _                                      -> x : go zeroes xs
 
 -- |Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
@@ -123,8 +110,8 @@ removeFromEnd = reverse . helper . reverse
                       | otherwise     = helper ils
 
 whileToIf :: [IL] -> [IL]
-whileToIf []                = []
-whileToIf (While d ys : xs) = case setToZero d ys of
-  Nothing  -> While d (whileToIf ys) : whileToIf xs
+whileToIf []                      = []
+whileToIf (While (Get d) ys : xs) = case setToZero d ys of
+  Nothing  -> While (Get d) (whileToIf ys) : whileToIf xs
   Just ys' -> If (Get d) ys' : Set d (Const 0) : whileToIf xs
 whileToIf (x : xs) = x : whileToIf xs
