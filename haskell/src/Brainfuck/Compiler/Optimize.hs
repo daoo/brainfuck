@@ -3,6 +3,7 @@ module Brainfuck.Compiler.Optimize where
 import Data.Set hiding (map, filter)
 
 import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Analyzer.Occurrence
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
@@ -26,16 +27,21 @@ inlineIL []                = []
 inlineIL (While e ys : xs) = While e (inlineIL ys) : inlineIL xs
 inlineIL (If e ys : xs)    = If e (inlineIL ys) : inlineIL xs
 inlineIL (x1 : x2 : xs)    = case (x1, x2) of
-  (Set d1 e1, Set d2 e2)  | d1 == d2                                    -> inlineIL (Set d2 (inline d1 e1 e2) : xs)
-                          | (inlWin d1 e1 xs || d1 > d2) && inlOk d2 e1 -> Set d2 (inline d1 e1 e2)  : inlineIL (x1 : xs)
-  (Set d1 e1, PutChar e2) | inlWin d1 e1 xs                             -> PutChar (inline d1 e1 e2) : inlineIL (x1 : xs)
-  (_, _)                                                                -> x1                        : inlineIL (x2 : xs)
+  (Set d1 (Get d2), Set d3 (Get d4)) | d1 == d4 && d2 == d3                        -> inlineIL (Set d1 (Get d2) : xs)
+  (Set d1 e1, Set d2 e2)             | d1 == d2                                    -> inlineIL (Set d2 (inlineExpr d1 e1 e2) : xs)
+                                     | (inlWin d1 e1 xs || d1 > d2) && inlOk d2 e1 -> Set d2 (inlineExpr d1 e1 e2) : inlineIL (x1 : xs)
+  (Set d1 e1, PutChar e2)            | inlWin d1 e1 xs                             -> PutChar (inlineExpr d1 e1 e2) : inlineIL (x1 : xs)
+  (_, _)                                                                           -> x1 : inlineIL (x2 : xs)
 
   where
     inlWin d e ys = shouldInline (occurs d ys) e
     inlOk d e     = not (exprDepends d e)
 
 inlineIL (x : xs) = x : inlineIL xs
+
+inline :: Int -> Expr -> IL -> IL
+inline d e1 x = case x of
+  If e2 ys -> undefined
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]
@@ -58,7 +64,7 @@ mergeKind (While e ys : xs) = While e (mergeKind ys) : mergeKind xs
 mergeKind (If e ys : xs)    = If e (mergeKind ys) : mergeKind xs
 mergeKind (x1 : x2 : xs)    = case (x1, x2) of
   (Shift s1, Shift s2)                                          -> mergeKind (Shift (s1 + s2) : xs)
-  (Set d1 e1, Set d2 e2)  | d1 == d2                            -> mergeKind (Set d2 (inline d1 e1 e2) : xs)
+  (Set d1 e1, Set d2 e2)  | d1 == d2                            -> mergeKind (Set d2 (inlineExpr d1 e1 e2) : xs)
   (GetChar d1, Set d2 e2) | d1 == d2 && not (exprDepends d1 e2) -> mergeKind (Set d2 e2 : xs)
 
   (_, _) -> x1 : mergeKind (x2 : xs)

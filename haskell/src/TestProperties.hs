@@ -6,6 +6,7 @@ import Data.Word
 import Test.QuickCheck
 
 import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Analyzer.Occurrence
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize

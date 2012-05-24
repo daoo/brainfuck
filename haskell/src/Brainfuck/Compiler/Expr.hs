@@ -48,8 +48,8 @@ unfold _ _ f e               = f e
 complexity :: Expr -> Int
 complexity = unfold (+) (+) (const 1)
 
-inline :: Int -> Expr -> Expr -> Expr
-inline d1 e = unfold Add Mul f
+inlineExpr :: Int -> Expr -> Expr -> Expr
+inlineExpr d1 e = unfold Add Mul f
   where
     f (Get d2) | d1 == d2 = e
     f e'                  = e'

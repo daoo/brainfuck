@@ -83,34 +83,8 @@ setToZero d1 = fmap reverse . go . reverse
     go (x : xs) = case x of
       While _ _                   -> Nothing
       If _ _                      -> Nothing
+      Shift _                     -> Nothing
       GetChar d2       | d1 == d2 -> Nothing
       Set d2 (Const 0) | d1 == d2 -> Just xs
       Set d2 _         | d1 == d2 -> Nothing
       _                           -> fmap (x :) $ go xs
-
-data Occurs = Once | SetTo | InLoop [Occurs] | InIf [Occurs]
-  deriving (Show)
-
-shouldInline :: [Occurs] -> Expr -> Bool
-shouldInline [SetTo] e = complexity e <= 4
-shouldInline [Once] e  = complexity e <= 2
-shouldInline _ _       = False
-
-occurs :: Int -> [IL] -> [Occurs]
-occurs _ []       = []
-occurs d (x : xs) = case x of
-  While e ys -> InLoop (occursExpr e ++ occurs d ys) : occurs d xs
-  If e ys    -> occursExpr e ++ InIf (occurs d ys) : occurs d xs
-
-  Set d' e | d == d'     -> SetTo : occursExpr e ++ occurs d xs
-           | otherwise   -> occursExpr e ++ occurs d xs
-  PutChar e              -> occursExpr e ++ occurs d xs
-  GetChar d' | d == d'   -> SetTo : occurs d xs
-             | otherwise -> occurs d xs
-  Shift s                -> occurs (d - s) xs
-
-  where
-    occursExpr = unfold (++) (++) f
-
-    f (Get d') | d == d' = [Once]
-    f _                  = []
