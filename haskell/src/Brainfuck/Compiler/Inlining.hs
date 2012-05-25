@@ -46,7 +46,7 @@ heursticInlining d e xs =
   let xs' = inline d e xs
       m   = 1 + complexity e + measure xs
       m'  = measure xs'
-   in if (m' - m) < 5000 then Nothing else Just xs'
+   in if m < m' then Nothing else Just xs'
 
 measure :: [IL] -> Int
 measure = foldr ((+) . f) 0
