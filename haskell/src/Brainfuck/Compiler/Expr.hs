@@ -25,8 +25,8 @@ instance Arbitrary Expr where
                      , liftM Get $ choose (-s `div` 10, s `div` 5) ]
 
 
-  shrink (Add e1 e2) = [e1, e2] ++ [Add e1' e2' | e1' <- shrink e1, e2' <- shrink e2]
-  shrink (Mul e1 e2) = [e1, e2] ++ [Mul e1' e2' | e1' <- shrink e1, e2' <- shrink e2]
+  shrink (Add e1 e2) = [Add e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
+  shrink (Mul e1 e2) = [Mul e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
   shrink (Const i)   = map Const $ shrink i
   shrink (Get d)     = map Const $ shrink d
 

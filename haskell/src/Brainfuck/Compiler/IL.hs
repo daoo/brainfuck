@@ -22,11 +22,11 @@ instance Arbitrary IL where
               , (1, return $ PutChar e) ]
 
   shrink (While e ys) = map (While e) $ tail $ tails ys
-  shrink (If e ys)    = [If e' ys' | e' <- shrink e, ys' <- tail (tails ys)]
-  shrink (Set d e)    = [Set d' e' | e' <- shrink e, d' <- shrink d]
-  shrink (Shift i)    = [Shift i' | i' <- shrink i]
-  shrink (PutChar e)  = [PutChar e' | e' <- shrink e]
-  shrink (GetChar d)  = [GetChar d' | d' <- shrink d]
+  shrink (If e ys)    = map (If e) $ tail $ tails ys
+  shrink (Set d e)    = map (Set d) $ shrink e
+  shrink (Shift i)    = map Shift $ shrink i
+  shrink (PutChar e)  = map PutChar $ shrink e
+  shrink (GetChar d)  = map GetChar $ shrink d
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
 filterIL _ []                          = []
