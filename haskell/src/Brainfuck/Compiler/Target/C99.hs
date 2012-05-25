@@ -16,7 +16,6 @@ optimizeForC = removeFromEnd . whileModified (pipe pipeline)
                , whileToIf
                , reduceCopyLoops
                , filterIL clean
-               , inlineIL
                , moveShifts
                , mergeKind
                ]
