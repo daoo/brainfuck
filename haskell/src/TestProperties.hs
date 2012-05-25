@@ -6,9 +6,9 @@ import Data.Word
 import Test.QuickCheck
 
 import Brainfuck.Compiler.Analyzer
-import Brainfuck.Compiler.Analyzer.Occurrence
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
+import Brainfuck.Compiler.Inlining
 import Brainfuck.Compiler.Optimize
 import Brainfuck.Compiler.Target.C99
 import Brainfuck.Ext
@@ -52,14 +52,12 @@ propOptimize f ils = comp s (run state ils) (run state (f ils))
 
 -- TODO: Better testing
 
-propOptimizeInlineZeros, propOptimizeCopies,
-  propOptimizeInlineIL, propOptimizeClean, propOptimizeExpressions,
-  propOptimizeMergeKind :: [IL] -> Bool
+propOptimizeInlineZeros, propOptimizeCopies, propOptimizeClean,
+  propOptimizeExpressions, propOptimizeMergeKind :: [IL] -> Bool
 
 propOptimizeClean       = propOptimize $ filterIL clean
 propOptimizeCopies      = propOptimize reduceCopyLoops
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
-propOptimizeInlineIL    = propOptimize inlineIL
 propOptimizeInlineZeros = propOptimize inlineZeros
 propOptimizeMergeKind   = propOptimize mergeKind
 

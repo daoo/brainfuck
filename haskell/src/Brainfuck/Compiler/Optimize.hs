@@ -5,6 +5,7 @@ import Data.Set hiding (map, filter)
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
+import Brainfuck.Compiler.Inlining
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
@@ -19,6 +20,16 @@ clean il = case il of
   Shift s         -> s /= 0
   Set o1 (Get o2) -> o1 /= o2
   _               -> True
+
+inlining :: [IL] -> [IL]
+inlining []       = []
+inlining (x : xs) = case x of
+  While e ys -> While e (inlining ys) : inlining xs
+  If e ys    -> If e (inlining ys) : inlining xs
+  Set d e    -> case heursticInlining d e xs of
+    Nothing  -> x : inlining xs
+    Just xs' -> inlining xs'
+  _          -> x : inlining xs   
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]
@@ -57,7 +68,7 @@ inlineZeros = go empty
     go _ []         = []
     go s (il : ils) = case il of
       While _ _ -> il : ils
-      If _ _    -> il : ils -- FIXME: We could maybe inline zeroes into ifs
+      If _ _    -> error "FIXME: Inlining zeroes into Ifs"
       Set i e   -> Set i (inl s e) : go (insert i s) ils
       PutChar e -> PutChar (inl s e) : go s ils
       GetChar _ -> il : go s ils

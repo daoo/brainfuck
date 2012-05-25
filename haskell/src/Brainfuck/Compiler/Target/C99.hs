@@ -2,8 +2,8 @@ module Brainfuck.Compiler.Target.C99 (showC, optimizeForC) where
 
 import Data.Char
 
-import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
@@ -16,6 +16,7 @@ optimizeForC = removeFromEnd . whileModified (pipe pipeline)
                , whileToIf
                , reduceCopyLoops
                , filterIL clean
+               , inlining
                , moveShifts
                , mergeKind
                ]

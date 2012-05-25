@@ -25,9 +25,6 @@ occurs d (x : xs) = case x of
     f (Get d') | d == d' = [GetOnce]
     f _                  = []
 
-inline :: Int -> Expr -> [IL] -> [IL]
-inline = undefined
-
 allowedComplexity :: [Occurs] -> Int
 allowedComplexity [] = 0
 allowedComplexity oc = getCount oc + 2 * setCount oc
@@ -43,3 +40,31 @@ allowedComplexity oc = getCount oc + 2 * setCount oc
     getCount (InIf ys : xs) = getCount ys + getCount xs
     getCount (GetOnce : xs) = 1 + getCount xs
     getCount (_ : xs)       = getCount xs
+
+heursticInlining :: Int -> Expr -> [IL] -> Maybe [IL]
+heursticInlining d e xs =
+  let xs' = inline d e xs
+      m   = 1 + complexity e + measure xs
+      m'  = measure xs'
+   in if (m' - m) < 5000 then Nothing else Just xs'
+
+measure :: [IL] -> Int
+measure = foldr ((+) . f) 0
+  where
+    f x = case x of
+      While e ys -> 1 + complexity e + measure ys
+      If e ys    -> 1 + complexity e + measure ys
+      Set _ e    -> 1 + complexity e
+      Shift _    -> 1
+      PutChar e  -> 1 + complexity e
+      GetChar _  -> 1
+
+inline :: Int -> Expr -> [IL] -> [IL]
+inline d e []       = [Set d e]
+inline d e (x : xs) = case x of
+  -- While e ys
+  -- If e ys
+  Set d' e' | d /= d'  -> Set d' (inlineExpr d e e') : inline d e xs
+  PutChar e'           -> PutChar (inlineExpr d e e') : inline d e xs
+  GetChar d' | d /= d' -> x : inline d e xs
+  _                    -> x : Set d e : xs
