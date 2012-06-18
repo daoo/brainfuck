@@ -28,19 +28,18 @@ pipelines = map (dedupBy compFst) $ permutations
   , ("Inline Zeroes", inlineZeros)
   , ("Reduce Copy Loops", reduceCopyLoops)
   , ("Clean Up", filterIL clean)
-  , ("Apply IL", applyIL)
   ]
   where
     optExpr = ("Optimize Expressions", mapIL optimizeExpressions)
 
 testPipeLine :: Pipeline -> [IL] -> [IL]
-testPipeLine pipeline ils = whileModified (pipe $ map snd pipeline) ils
+testPipeLine = whileModified . pipe . map snd
 
 main :: IO ()
 main = do
   str <- getContents
   let Right bf = parseBrainfuck str
   let il = compile bf
-  defaultMain $ map (f il) $ [head pipelines]
+  defaultMain $ map (f il) [head pipelines]
   where
     f il pipeline = bench (showPipeline pipeline) $ whnf (testPipeLine pipeline) il

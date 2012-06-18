@@ -13,8 +13,8 @@ run = foldl evalOp
 
 evalOp :: (Integral a) => State a -> IL -> State a
 evalOp state@(State inp out mem) x = case x of
-  While e ys -> until ((== 0) . evalExpr e . (flip peek . getMemory)) (`run` ys) state
-  If e ys    -> if (0 == evalExpr e (`peek` mem)) then (`run` ys) state else state
+  While e ys -> until ((== 0) . evalExpr e . flip peek . getMemory) (`run` ys) state
+  If e ys    -> if 0 == evalExpr e (`peek` mem) then run state ys else state
 
   PutChar e -> State inp        (out |> evalExpr' e) mem
   GetChar d -> State (tail inp) out                  (applyIndex' (head inp) d mem)

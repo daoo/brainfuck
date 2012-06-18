@@ -47,6 +47,6 @@ ctags:
 	echo ":ctags" | ghci -isrc/:build/ -v0 src/TestProperties.hs
 
 lint:
-	hlint src -c
+	hlint src -xc
 
 .PHONY: build clean lint
