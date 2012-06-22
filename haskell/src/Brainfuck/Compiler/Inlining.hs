@@ -1,5 +1,8 @@
 module Brainfuck.Compiler.Inlining where
 
+import Debug.Trace
+
+import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 
@@ -60,11 +63,18 @@ measure = foldr ((+) . f) 0
       GetChar _  -> 1
 
 inline :: Int -> Expr -> [IL] -> [IL]
-inline d e []       = [Set d e]
-inline d e (x : xs) = case x of
+inline d e []                           = [Set d e]
+inline d e (x : xs) | inlineValid d e x = case x of
   -- While e ys
   -- If e ys
-  Set d' e' | d /= d'  -> Set d' (inlineExpr d e e') : inline d e xs
-  PutChar e'           -> PutChar (inlineExpr d e e') : inline d e xs
-  GetChar d' | d /= d' -> x : inline d e xs
-  _                    -> x : Set d e : xs
+  Set d' e'  -> Set d' (inlineExpr d e e') : inline d e xs
+  PutChar e' -> PutChar (inlineExpr d e e') : inline d e xs
+  GetChar d' -> x : inline d e xs
+  _          -> undefined
+
+inline d e xs = (Set d e) : xs
+
+inlineValid :: Int -> Expr -> IL -> Bool
+inlineValid d e x = case x of
+  Set d' e' -> d /= d' && not (exprDepends d e') && not (exprDepends d' e)
+  _         -> False
