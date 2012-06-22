@@ -8,10 +8,10 @@ import Brainfuck.Ext
 
 -- |Check if an expression uses the value of a certain memory offset
 exprDepends :: Int -> Expr -> Bool
-exprDepends i (Get d)     = i == d
-exprDepends i (Add e1 e2) = exprDepends i e1 || exprDepends i e2
-exprDepends i (Mul e1 e2) = exprDepends i e1 || exprDepends i e2
-exprDepends _ _           = False
+exprDepends d = unfold (||) (||) f
+  where
+    f (Get d') = d == d'
+    f _        = False
 
 -- |Analyze a IL Loop for copies
 -- A copy loop is a loop that follow these criteria:

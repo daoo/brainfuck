@@ -1,6 +1,7 @@
 module TestProperties where
 
 import Data.ListZipper
+import Data.Sequence (empty)
 import Data.Word
 
 import Test.QuickCheck
@@ -55,10 +56,10 @@ compareCode xs ys = comp s (run state xs) (run state ys)
   where
     s = let (xsMin, xsMax) = memorySize xs
             (ysMin, ysMax) = memorySize ys
-         in abs xsMin + abs xsMax + abs ysMin + abs ysMax
+         in 1 + abs xsMin + abs xsMax + abs ysMin + abs ysMax
 
     state :: State Word8
-    state = newState ""
+    state = State [1..] empty newMemory
 
 propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
 propOptimize f xs = compareCode xs (f xs)
@@ -69,12 +70,13 @@ propInline :: Int -> Expr -> [IL] -> Bool
 propInline d e xs = inline d e xs `compareCode` (Set d e : xs)
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeClean,
-  propOptimizeExpressions, propOptimizeMergeKind :: [IL] -> Bool
+  propOptimizeExpressions, propOptimizeMergeKind, propOptimizeInlining :: [IL] -> Bool
 
 propOptimizeClean       = propOptimize $ filterIL clean
 propOptimizeCopies      = propOptimize reduceCopyLoops
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
 propOptimizeInlineZeros = propOptimize inlineZeros
+propOptimizeInlining    = propOptimize inlining
 propOptimizeMergeKind   = propOptimize mergeKind
 
 propOptimizeMoveShifts :: [IL] -> Bool
