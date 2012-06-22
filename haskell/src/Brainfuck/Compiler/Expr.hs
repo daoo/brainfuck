@@ -66,17 +66,9 @@ eval = unfold (+) (*) . g
 
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
-optimizeExpr = finalize . whileModified (pipe pipeline)
+optimizeExpr = whileModified (pipe pipeline)
   where
     pipeline = clean : intersperse clean [mult, sort, listify]
-
-    finalize e = case e of
-      Mul (Const 2) e'@(Get _) -> Add e' e'
-
-      Add e1 e2 -> finalize e1 `Add` finalize e2
-      Mul e1 e2 -> finalize e1 `Mul` finalize e2
-
-      _ -> e
 
     mult e = case e of
       Add e1 e2          | e1 == e2 -> mult $ Mul (Const 2) e1
