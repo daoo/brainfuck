@@ -9,17 +9,18 @@ import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
 
 optimizeForC :: [IL] -> [IL]
-optimizeForC = removeFromEnd . whileModified (pipe pipeline)
+optimizeForC = removeFromEnd . whileModified pipeline
   where
-    pipeline = [ mapIL optimizeExpressions
-               , inlineZeros
-               , whileToIf
-               , reduceCopyLoops
-               , filterIL clean
-               , inlining
-               , moveShifts
-               , mergeKind
-               ]
+    pipeline = pipe
+      [ mapIL optimizeExpressions
+      , inlineZeros
+      , whileToIf
+      , reduceCopyLoops
+      , filterIL clean
+      , inlining
+      , moveShifts
+      , mergeKind
+      ]
 
 showExpr :: Expr -> ShowS
 showExpr (Const c)            = shows c

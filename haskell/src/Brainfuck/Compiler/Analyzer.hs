@@ -29,7 +29,7 @@ copyLoop d xs = do
     -- First filter, if a non-constant add is found, exit
     f (Set d1 (Get d2 `Add` Const c)) = Just (d1, d2, c)
     f (Set d1 (Const c `Add` Get d2)) = Just (d1, d2, c)
-    f _                                          = Nothing
+    f _                               = Nothing
 
     -- Filter the decrement operation
     g d1 (d2, d3, -1) = d1 == d2 && d1 == d3
