@@ -28,7 +28,7 @@ instance Arbitrary Expr where
   shrink (Add e1 e2) = [Add e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
   shrink (Mul e1 e2) = [Mul e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
   shrink (Const i)   = map Const $ shrink i
-  shrink (Get d)     = map Const $ shrink d
+  shrink (Get d)     = map Get $ shrink d
 
 -- For easier testing
 instance Num Expr where
