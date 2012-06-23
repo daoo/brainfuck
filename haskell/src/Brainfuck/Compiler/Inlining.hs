@@ -47,7 +47,7 @@ heursticInlining d e xs =
   let xs' = inline d e xs
       m   = 1 + complexity e + measure xs
       m'  = measure xs'
-   in if m < m' then Nothing else Just xs'
+   in if m <= m' then Nothing else Just xs'
 
 measure :: [IL] -> Int
 measure = foldr ((+) . f) 0
@@ -62,14 +62,8 @@ measure = foldr ((+) . f) 0
 
 inline :: Int -> Expr -> [IL] -> [IL]
 inline d e []       = [Set d e]
-inline d e (x : xs) = if inlineValid d e x
-  then case x of
-    Set d' e' -> Set d' (inlineExpr d e e') : inline d e xs
-    _         -> undefined
+inline d e (x : xs) = case x of
+  Set d' e' | d == d'                -> x : xs
+            | not (exprDepends d' e) -> Set d' (inlineExpr d e e') : inline d e xs
 
-  else Set d e : x : xs
-
-inlineValid :: Int -> Expr -> IL -> Bool
-inlineValid d e x = case x of
-  Set d' e' -> d /= d' && not (exprDepends d e') && not (exprDepends d' e)
-  _         -> False
+  _ -> Set d e : x : xs
