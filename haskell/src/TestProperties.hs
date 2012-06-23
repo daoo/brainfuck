@@ -48,11 +48,17 @@ propParser bf = case parseBrainfuck (show bf) of
   Right bf' -> bf == bf'
 -- }}}
 -- {{{ Optimization
-comp :: (Integral a) => Int -> State a -> State a -> Bool
-comp i (State _ out1 m1) (State _ out2 m2) = cut i m1 == cut i m2 && out1 == out2
+compareFull :: (Integral a) => Int -> State a -> State a -> Bool
+compareFull i (State _ out1 m1) (State _ out2 m2) = cut i m1 == cut i m2 && out1 == out2
 
-compareCode :: [IL] -> [IL] -> Bool
-compareCode xs ys = comp s (run state xs) (run state ys)
+compareOutput :: [IL] -> [IL] -> Bool
+compareOutput xs ys = getOutput (run state xs) == getOutput (run state ys)
+  where
+    state :: State Word8
+    state = State [1..] empty newMemory
+
+testCode :: [IL] -> [IL] -> Bool
+testCode xs ys = compareFull s (run state xs) (run state ys)
   where
     s = let (xsMin, xsMax) = memorySize xs
             (ysMin, ysMax) = memorySize ys
@@ -62,12 +68,12 @@ compareCode xs ys = comp s (run state xs) (run state ys)
     state = State [1..] empty newMemory
 
 propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
-propOptimize f xs = compareCode xs (f xs)
+propOptimize f xs = testCode xs (f xs)
 
 -- TODO: Better testing
 
 propInline :: Int -> Expr -> [IL] -> Bool
-propInline d e xs = inline d e xs `compareCode` (Set d e : xs)
+propInline d e xs = inline d e xs `testCode` (Set d e : xs)
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeClean,
   propOptimizeExpressions, propOptimizeMergeKind, propOptimizeInlining :: [IL] -> Bool
@@ -83,10 +89,7 @@ propOptimizeMoveShifts :: [IL] -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
 
 propOptimizeForC :: [IL] -> Bool
-propOptimizeForC xs = getOutput (run state xs) == getOutput (run state (optimizeForC xs))
-  where
-    state :: State Word8
-    state = newState ""
+propOptimizeForC xs = compareOutput xs (optimizeForC xs)
 
 -- }}}
 -- {{{ Loops
