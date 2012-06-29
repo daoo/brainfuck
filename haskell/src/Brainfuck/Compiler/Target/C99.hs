@@ -102,7 +102,7 @@ showC ils = execWriter $ execStateT (go ils) 0
       Set d1 (Get d2 `Add` Const c) | d1 == d2 -> ptr d1 "+=" (show c)
       Set d1 (Const c `Add` Get d2) | d1 == d2 -> ptr d1 "+=" (show c)
 
-      PutChar (Const c) -> tell "putchar('" >> tell (show $ chr c) >> tell "')"
+      PutChar (Const c) -> tell "putchar(" >> tell (show $ chr c) >> tell ")"
 
       Set d e   -> ptr d "=" (showExpr e "")
       Shift s   -> tell "ptr += " >> tell (show s)
