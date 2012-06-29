@@ -1,5 +1,8 @@
 module Brainfuck.Compiler.Target.C99 (showC, optimizeForC) where
 
+import Control.Monad.Writer
+import Control.Monad.State
+
 import Data.Char
 
 import Brainfuck.Compiler.Analyzer
@@ -30,56 +33,90 @@ showExpr (Mul (Add e1 e2) e3) = showString "(" . showExpr e1 . showString " + " 
 showExpr (Mul e1 (Add e2 e3)) = showExpr e1 . showString " * (" . showExpr e2 . showString " + " . showExpr e3 . showString ")"
 showExpr (Mul e1 e2)          = showExpr e1 . showString " * " . showExpr e2
 
+type CodeWriter = StateT Int (Writer String) ()
+
+indent :: Int -> String
+indent i = replicate (2 * i) ' '
+
+line :: String -> CodeWriter
+line str = do
+  i <- get
+  tell $ indent i
+  tell str
+  tell "\n"
+
+lineM :: CodeWriter -> CodeWriter
+lineM f = do
+  i <- get
+  tell $ indent i
+  f
+  tell "\n"
+
+incIndent :: CodeWriter
+incIndent = modify (+1)
+
+decIndent :: CodeWriter
+decIndent = modify (subtract 1)
+
 showC :: [IL] -> String
-showC ils = unlines $ begin $ mem ils $ code 1 ils $ newLine end
+showC ils = execWriter $ execStateT (go ils) 0
   where
+    go :: [IL] -> CodeWriter
+    go ils' = do
+      line "#include <stdio.h>"
+      line ""
+      line "int main() {"
+      incIndent
+      when (usesMemory ils') $ do
+        line $ "unsigned char mem[" ++ show defaultMem ++ "];"
+        line "unsigned char* ptr = mem;"
+
+      code ils'
+
+      line "return 0;"
+      decIndent
+      line "}"
+
     defaultMem :: Int
     defaultMem = 30001
 
-    newLine :: [String] -> [String]
-    newLine = ("" :)
+    code :: [IL] -> CodeWriter
+    code []       = return ()
+    code (x : xs) = case x of
+      While e ys -> block "while" e ys >> code xs
+      If e ys    -> block "if" e ys >> code xs
+      _          -> lineM (asdf x >> tell ";") >> code xs
 
-    indent :: Int -> ShowS
-    indent i = (replicate (2 * i) ' ' ++)
+    block :: String -> Expr -> [IL] -> CodeWriter
+    block word e ys = do
+      lineM $ do
+        tell word
+        tell " ("
+        tell $ showExpr e ") {"
+      incIndent
+      code ys
+      decIndent
+      line "}"
 
-    begin :: [String] -> [String]
-    begin prep = "#include <stdio.h>" : ("" : ("int main() {" : prep))
+    asdf x = case x of
+      Set d1 (Get d2 `Add` Const c) | d1 == d2 -> ptr d1 "+=" (show c)
+      Set d1 (Const c `Add` Get d2) | d1 == d2 -> ptr d1 "+=" (show c)
 
-    end :: [String]
-    end = [indent 1 "return 0;", "}"]
+      PutChar (Const c) -> tell "putchar('" >> tell (show $ chr c) >> tell "')"
 
-    mem xs prep = if usesMemory xs
-      then alloc $ ptr $ newLine prep
-      else prep
-      where
-        alloc = (:) (indent 1 $ showString "unsigned char mem[" $ shows defaultMem "];")
-        ptr   = (:) (indent 1 "unsigned char* ptr = mem;")
+      Set d e   -> ptr d "=" (showExpr e "")
+      Shift s   -> tell "ptr += " >> tell (show s)
+      PutChar e -> tell "putchar(" >> tell (showExpr e ")")
+      GetChar p -> ptr p "=" "getchar()"
 
-    code _ [] prep                 = prep
-    code i (x : xs) prep = case x of
-      While e ys -> block i "while" (showExpr e) ys $ code i xs prep
-      If e ys    -> block i "if" (showExpr e) ys $ code i xs prep
-      _          -> indent i (line x) : code i xs prep
+      While _ _ -> error "While can not be composed into a single line"
+      If _ _    -> error "If can not be composed into a single line"
 
-    block i word cond ys prep = open $ body $ close prep
-      where
-        open  = (:) (indent i $ showString word $ showString " (" $ cond ") {")
-        body  = code (i + 1) ys
-        close = (:) (indent i "}")
-
-    line x = case x of
-      Set d1 (Get d2 `Add` Const c) | d1 == d2 -> ptr (shows d1) "+=" (shows c)
-      Set d1 (Const c `Add` Get d2) | d1 == d2 -> ptr (shows d1) "+=" (shows c)
-
-      PutChar (Const c) -> showString "putchar(" $ shows (chr c) ");"
-
-      Set d e   -> ptr (shows d) "=" (showExpr e)
-      Shift s   -> showString "ptr += " $ shows s ";"
-      PutChar e -> showString "putchar(" $ showExpr e ");"
-      GetChar p -> ptr (shows p) "=" (showString "getchar()")
-
-      While _ _ -> error "Should not happen"
-      If _ _    -> error "Should not happen"
-
-      where
-        ptr a op b = showString "ptr[" $ a $ showString "] " $ showString op $ showString " " $ b ";"
+    ptr :: Int -> String -> String -> CodeWriter
+    ptr d op b = do
+      tell "ptr["
+      tell $ show d
+      tell "] "
+      tell op
+      tell " "
+      tell b
