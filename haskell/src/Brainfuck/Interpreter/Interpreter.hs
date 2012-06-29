@@ -33,5 +33,5 @@ evalExpr (Mul e1 e2) f = evalExpr e1 f * evalExpr e2 f
 
 applyIndex :: (a -> a) -> Int -> ListZipper a -> ListZipper a
 applyIndex f 0 (ListZipper xs y zz)             = ListZipper xs (f y) zz
-applyIndex f n (ListZipper xs y zz) | n < 0     = ListZipper (mapIndex f (abs n) xs) y zz
-                                    | otherwise = ListZipper xs y (mapIndex f n zz)
+applyIndex f n (ListZipper xs y zz) | n < 0     = ListZipper (mapIndex f (abs n - 1) xs) y zz
+                                    | otherwise = ListZipper xs y (mapIndex f (n - 1) zz)
