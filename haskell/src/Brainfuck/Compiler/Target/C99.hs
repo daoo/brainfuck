@@ -61,6 +61,9 @@ decIndent = modify (subtract 1)
 showC :: [IL] -> String
 showC ils = execWriter $ execStateT (go ils) 0
   where
+    defaultMem :: Int
+    defaultMem = 30001
+
     go :: [IL] -> CodeWriter
     go ils' = do
       line "#include <stdio.h>"
@@ -77,15 +80,12 @@ showC ils = execWriter $ execStateT (go ils) 0
       decIndent
       line "}"
 
-    defaultMem :: Int
-    defaultMem = 30001
-
     code :: [IL] -> CodeWriter
     code []       = return ()
     code (x : xs) = case x of
       While e ys -> block "while" e ys >> code xs
       If e ys    -> block "if" e ys >> code xs
-      _          -> lineM (asdf x >> tell ";") >> code xs
+      _          -> lineM (statement x >> tell ";") >> code xs
 
     block :: String -> Expr -> [IL] -> CodeWriter
     block word e ys = do
@@ -98,7 +98,7 @@ showC ils = execWriter $ execStateT (go ils) 0
       decIndent
       line "}"
 
-    asdf x = case x of
+    statement x = case x of
       Set d1 (Get d2 `Add` Const c) | d1 == d2 -> ptr d1 "+=" (show c)
       Set d1 (Const c `Add` Get d2) | d1 == d2 -> ptr d1 "+=" (show c)
 
