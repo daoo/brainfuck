@@ -64,6 +64,10 @@ inline :: Int -> Expr -> [IL] -> [IL]
 inline d e []       = [Set d e]
 inline d e (x : xs) = case x of
   Set d' e' | d == d'                -> x : xs
-            | not (exprDepends d' e) -> Set d' (inlineExpr d e e') : inline d e xs
+            | not (exprDepends d' e) -> Set d' (ie e') : inline d e xs
+  PutChar e'                         -> PutChar (ie e') : inline d e xs
 
   _ -> Set d e : x : xs
+
+  where
+    ie = inlineExpr d e
