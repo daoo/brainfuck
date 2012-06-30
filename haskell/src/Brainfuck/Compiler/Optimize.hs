@@ -6,6 +6,21 @@ import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Inlining
+import Brainfuck.Ext
+
+optimizeAll :: [IL] -> [IL]
+optimizeAll = removeFromEnd . whileModified pipeline
+  where
+    pipeline = pipe
+      [ mapIL optimizeExpressions
+      , inlineZeros
+      , whileToIf
+      , reduceCopyLoops
+      , filterIL clean
+      , inlining
+      , moveShifts
+      , mergeKind
+      ]
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL

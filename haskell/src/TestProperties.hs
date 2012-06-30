@@ -11,7 +11,6 @@ import Brainfuck.Compiler.Expr
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Inlining
 import Brainfuck.Compiler.Optimize
-import Brainfuck.Compiler.Target.C99
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
@@ -90,8 +89,8 @@ propOptimizeMergeKind   = propOptimize mergeKind
 propOptimizeMoveShifts :: [IL] -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
 
-propOptimizeForC :: [IL] -> Bool
-propOptimizeForC xs = compareOutput xs (optimizeForC xs)
+propOptimizeAll :: [IL] -> Bool
+propOptimizeAll xs = compareOutput xs (optimizeAll xs)
 
 -- }}}
 -- {{{ Loops

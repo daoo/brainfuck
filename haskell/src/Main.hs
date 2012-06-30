@@ -8,8 +8,9 @@ import System.Environment
 import System.Directory
 
 import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Target.C99
 import Brainfuck.Compiler.IL
+import Brainfuck.Compiler.Optimize
+import Brainfuck.Compiler.Target.C99
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
@@ -47,7 +48,7 @@ main = do
 
   where
     makeC :: [IL] -> String
-    makeC = showC . optimizeForC
+    makeC = showC . optimizeAll
 
     runBF :: String -> [IL] -> String
     runBF inp = map chrIntegral . toList . getOutput . run state
