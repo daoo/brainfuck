@@ -19,6 +19,8 @@ import Brainfuck.Parser.Brainfuck
 import Brainfuck.Parser.Parser
 
 -- {{{ ListZipper
+propZipperMoveSize :: Int -> ListZipper a -> Bool
+propZipperMoveSize i a = size a == size (move i a)
 -- }}}
 -- {{{ Misc
 propMapIndexEq :: Int -> NonEmptyList Int -> Property

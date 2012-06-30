@@ -16,6 +16,9 @@ instance (Arbitrary a) => Arbitrary (ListZipper a) where
     zs <- arbitrary
     return $ ListZipper xs y zs
 
+size :: ListZipper a -> Int
+size (ListZipper xs _ zs) = length xs + 1 + length zs
+
 move :: Int -> ListZipper a -> ListZipper a
 move (-1) (ListZipper (x : xs) y zs) = ListZipper xs x (y : zs)
 move   1  (ListZipper xs y (z : zs)) = ListZipper (y : xs) z zs
