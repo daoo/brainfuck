@@ -66,15 +66,13 @@ usesMemory = any f
   where
     f (While _ ys) = usesMemory ys
     f (If _ ys)    = usesMemory ys
-    f (Set _ e)    = g e
-    f (PutChar e)  = g e
-    f (GetChar _)  = False
-    f (Shift _)    = False
+    f (Set _ _)    = True
+    f (PutChar e)  = unfold (||) (||) g e
+    f (GetChar _)  = True
+    f (Shift _)    = True
 
-    g (Const _)   = False
-    g (Get _)     = True
-    g (Add e1 e2) = g e1 || g e2
-    g (Mul e1 e2) = g e1 || g e2
+    g (Get _) = True
+    g _       = False
 
 setToZero :: Int -> [IL] -> Maybe [IL]
 setToZero d1 = fmap reverse . go . reverse
