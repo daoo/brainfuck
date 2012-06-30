@@ -133,7 +133,7 @@ propExprEval e (NonEmpty xs) = eval f e == eval f (optimizeExpr e)
     f = (!!) xs . (`mod` length xs)
 
 propExprOptimizeSmaller :: Expr -> Bool
-propExprOptimizeSmaller expr = complexity expr >= complexity (optimizeExpr expr)
+propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (optimizeExpr expr)
 -- }}}
 
 -- vim: set fdm=marker :
