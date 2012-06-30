@@ -11,6 +11,7 @@ import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Target.C99
 import Brainfuck.Interpreter.Interpreter
 import Brainfuck.Interpreter.State
+import Brainfuck.Parser.Brainfuck
 import Brainfuck.Parser.Parser
 
 -- {{{ Programs
@@ -91,6 +92,11 @@ main = mapM_ handleResult
   ]
 -- }}}
 -- {{{ Helpers
+parse :: String -> [Brainfuck]
+parse str = case parseBrainfuck str of
+  Left err -> error $ show err
+  Right bf -> bf
+
 prepareBf :: String -> ([IL], [IL])
 prepareBf bf = (il, optimizeForC il)
   where il = compile $ parse bf

@@ -45,9 +45,6 @@ unfold add mul f (Add e1 e2) = unfold add mul f e1 `add` unfold add mul f e2
 unfold add mul f (Mul e1 e2) = unfold add mul f e1 `mul` unfold add mul f e2
 unfold _ _ f e               = f e
 
-complexity :: Expr -> Int
-complexity = unfold (+) (+) (const 1)
-
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d1 e = unfold Add Mul f
   where

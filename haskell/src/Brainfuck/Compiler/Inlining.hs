@@ -45,19 +45,26 @@ allowedComplexity oc = getCount oc + 2 * setCount oc
 heursticInlining :: Int -> Expr -> [IL] -> Maybe [IL]
 heursticInlining d e xs =
   let xs' = inline d e xs
-      m   = 1 + complexity e + measure xs
-      m'  = measure xs'
-   in if m <= m' then Nothing else Just xs'
+      c1  = 1 + exprComplexity e + ilComplexity xs
+      c2  = ilComplexity xs'
+   in if c1 <= c2 then Nothing else Just xs'
 
-measure :: [IL] -> Int
-measure = foldr ((+) . f) 0
+exprComplexity :: Expr -> Int
+exprComplexity = unfold (+) (+) f
+  where
+    f (Const _) = 0
+    f (Get _)   = 1
+    f _         = error "unfold Expr error"
+
+ilComplexity :: [IL] -> Int
+ilComplexity = foldr ((+) . f) 0
   where
     f x = case x of
-      While e ys -> 1 + complexity e + measure ys
-      If e ys    -> 1 + complexity e + measure ys
-      Set _ e    -> 1 + complexity e
+      While e ys -> 1 + exprComplexity e + ilComplexity ys
+      If e ys    -> 1 + exprComplexity e + ilComplexity ys
+      Set _ e    -> 1 + exprComplexity e
       Shift _    -> 1
-      PutChar e  -> 1 + complexity e
+      PutChar e  -> 1 + exprComplexity e
       GetChar _  -> 1
 
 inline :: Int -> Expr -> [IL] -> [IL]
