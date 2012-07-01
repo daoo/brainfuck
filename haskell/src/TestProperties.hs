@@ -94,12 +94,12 @@ propOptimizeAll xs = compareOutput xs (optimizeAll xs)
 -- {{{ Loops
 exCopyLoop1 :: IL
 exCopyLoop1 =
-  While 0
+  While (Get 0)
     [ Set 0 $ Get 0 `Add` Const (-1) ]
 
 exCopyLoop2 :: IL
 exCopyLoop2 =
-  While 5
+  While (Get 5)
     [ Set 5 $ Get 5 `Add` Const (-1)
     , Set 1 $ Get 1 `Add` Const 1
     , Set 2 $ Get 2 `Add` Const 5
@@ -107,7 +107,7 @@ exCopyLoop2 =
 
 exNotCopyLoop1 :: IL
 exNotCopyLoop1 =
-  While 5
+  While (Get 5)
     [ Set 5 $ Get 5 `Add` Const (-1)
     , Set 6 $ Get 5 `Add` Const 10 ]
 
@@ -117,7 +117,7 @@ exShiftLoop1 =
   , Set 1 $ Const 0
   , Set 2 $ Get 2 `Add` Const 4 `Add` Get 0
   , Set 3 $ Get 3 `Add` Const 5
-  , While 3 [ Shift (-1) ] ]
+  , While (Get 3) [ Shift (-1) ] ]
 
 -- }}}
 -- {{{ Expressions
