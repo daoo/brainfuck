@@ -1,18 +1,16 @@
 module Main where
 
-import Test.QuickCheck
-
+import Brainfuck.Compiler.Brainfuck
+import Brainfuck.Compiler.Target.C99
+import Brainfuck.Data.Brainfuck
+import Brainfuck.Data.IL
+import Brainfuck.Data.State
+import Brainfuck.Interpreter
+import Brainfuck.Parser
 import Data.Char
 import Data.Foldable (toList)
 import Data.Word
-
-import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.Target.C99
-import Brainfuck.Interpreter.Interpreter
-import Brainfuck.Interpreter.State
-import Brainfuck.Parser.Brainfuck
-import Brainfuck.Parser.Parser
+import Test.QuickCheck
 
 -- {{{ Programs
 -- Prints "Hello World!\n"

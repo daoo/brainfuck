@@ -1,9 +1,8 @@
-module Brainfuck.Compiler.IL where
+module Brainfuck.Data.IL where
 
+import Brainfuck.Data.Expr
 import Data.List
 import Test.QuickCheck
-
-import Brainfuck.Compiler.Expr
 
 data IL = While Expr [IL]
         | If Expr [IL]

@@ -1,7 +1,7 @@
 module Brainfuck.Compiler.Target.Indented (showIndented) where
 
+import Brainfuck.Data.IL
 import Text.CodeWriter
-import Brainfuck.Compiler.IL
 
 showIndented :: [IL] -> String
 showIndented = writeCode . go

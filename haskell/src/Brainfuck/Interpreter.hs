@@ -1,11 +1,10 @@
-module Brainfuck.Interpreter.Interpreter where
+module Brainfuck.Interpreter where
 
-import Data.Sequence
+import Brainfuck.Data.Expr
+import Brainfuck.Data.IL
+import Brainfuck.Data.State
 import Data.ListZipper
-
-import Brainfuck.Compiler.Expr
-import Brainfuck.Compiler.IL
-import Brainfuck.Interpreter.State
+import Data.Sequence
 
 run :: (Integral a) => State a -> [IL] -> State a
 run = foldl evalOp

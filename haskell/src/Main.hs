@@ -1,20 +1,18 @@
 module Main where
 
-import Data.Foldable (toList)
-
-import System.Console.GetOpt
-import System.Environment
-
 import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
 import Brainfuck.Compiler.Target.C99
 import Brainfuck.Compiler.Target.Haskell
 import Brainfuck.Compiler.Target.Indented
+import Brainfuck.Data.IL
+import Brainfuck.Data.State
 import Brainfuck.Ext
-import Brainfuck.Interpreter.Interpreter
-import Brainfuck.Interpreter.State
-import Brainfuck.Parser.Parser
+import Brainfuck.Interpreter
+import Brainfuck.Parser
+import Data.Foldable (toList)
+import System.Console.GetOpt
+import System.Environment
 
 data Action = Compile | Interpret deriving (Show, Read)
 data Target = Indented | C99 | Haskell deriving (Show, Read)

@@ -1,8 +1,8 @@
 module Brainfuck.Compiler.Brainfuck (compile) where
 
-import Brainfuck.Compiler.Expr
-import Brainfuck.Compiler.IL
-import Brainfuck.Parser.Brainfuck
+import Brainfuck.Data.Brainfuck
+import Brainfuck.Data.Expr
+import Brainfuck.Data.IL
 
 compile :: [Brainfuck] -> [IL]
 compile []               = []

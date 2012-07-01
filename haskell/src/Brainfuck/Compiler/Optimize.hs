@@ -1,12 +1,11 @@
 module Brainfuck.Compiler.Optimize where
 
-import Data.Set hiding (map, filter)
-
 import Brainfuck.Compiler.Analyzer
-import Brainfuck.Compiler.Expr
-import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Inlining
+import Brainfuck.Data.Expr
+import Brainfuck.Data.IL
 import Brainfuck.Ext
+import Data.Set hiding (map, filter)
 
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline

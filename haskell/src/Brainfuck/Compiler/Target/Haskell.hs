@@ -1,8 +1,7 @@
 module Brainfuck.Compiler.Target.Haskell where
 
+import Brainfuck.Data.IL
 import Text.CodeWriter
-
-import Brainfuck.Compiler.IL
 
 showHaskell :: [IL] -> String
 showHaskell ils = writeCode $ do

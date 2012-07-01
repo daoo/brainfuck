@@ -1,12 +1,11 @@
 module Brainfuck.Interpreter.IOMemory where
 
+import Brainfuck.Compiler.Expr
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Control.Monad.State
 import Data.Array.IO
 import Data.Char
-
-import Brainfuck.Compiler.Expr
 
 type IOMemory a = StateT Int IO a
 type Memory = IOArray Int Int

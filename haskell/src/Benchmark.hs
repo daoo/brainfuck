@@ -1,13 +1,12 @@
 module Main where
 
-import Criterion.Main
-import Data.List
-
 import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
 import Brainfuck.Ext
 import Brainfuck.Parser.Parser
+import Criterion.Main
+import Data.List
 
 compFst :: Eq a => (a, b) -> (a, b) -> Bool
 compFst a b = fst a == fst b

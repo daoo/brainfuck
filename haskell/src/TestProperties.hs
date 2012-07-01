@@ -1,21 +1,19 @@
 module TestProperties where
 
+import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Inlining
+import Brainfuck.Compiler.Optimize
+import Brainfuck.Data.Brainfuck
+import Brainfuck.Data.Expr
+import Brainfuck.Data.IL
+import Brainfuck.Data.State
+import Brainfuck.Ext
+import Brainfuck.Interpreter
+import Brainfuck.Parser
 import Data.ListZipper
 import Data.Sequence (empty)
 import Data.Word
-
 import Test.QuickCheck
-
-import Brainfuck.Compiler.Analyzer
-import Brainfuck.Compiler.Expr
-import Brainfuck.Compiler.IL
-import Brainfuck.Compiler.Inlining
-import Brainfuck.Compiler.Optimize
-import Brainfuck.Ext
-import Brainfuck.Interpreter.Interpreter
-import Brainfuck.Interpreter.State
-import Brainfuck.Parser.Brainfuck
-import Brainfuck.Parser.Parser
 
 -- {{{ ListZipper
 propZipperMoveSize :: Int -> ListZipper a -> Bool

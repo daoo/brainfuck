@@ -1,10 +1,9 @@
 module Brainfuck.Compiler.Analyzer where
 
-import Data.List
-
-import Brainfuck.Compiler.Expr
-import Brainfuck.Compiler.IL
+import Brainfuck.Data.Expr
+import Brainfuck.Data.IL
 import Brainfuck.Ext
+import Data.List
 
 -- |Check if an expression uses the value of a certain memory offset
 exprDepends :: Int -> Expr -> Bool

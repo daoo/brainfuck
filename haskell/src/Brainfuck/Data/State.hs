@@ -1,4 +1,4 @@
-module Brainfuck.Interpreter.State where
+module Brainfuck.Data.State where
 
 import Data.Char
 import Data.ListZipper

@@ -1,4 +1,4 @@
-module Brainfuck.Parser.Brainfuck where
+module Brainfuck.Data.Brainfuck where
 
 import Data.List
 import Test.QuickCheck

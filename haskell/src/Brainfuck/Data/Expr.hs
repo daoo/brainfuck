@@ -1,4 +1,4 @@
-module Brainfuck.Compiler.Expr where
+module Brainfuck.Data.Expr where
 
 import Brainfuck.Ext
 import Control.Monad

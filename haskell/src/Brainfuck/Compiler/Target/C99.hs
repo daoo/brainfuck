@@ -1,12 +1,11 @@
 module Brainfuck.Compiler.Target.C99 (showC) where
 
+import Brainfuck.Compiler.Analyzer
+import Brainfuck.Data.Expr
+import Brainfuck.Data.IL
 import Control.Monad
 import Data.Char
 import Text.CodeWriter
-
-import Brainfuck.Compiler.Analyzer
-import Brainfuck.Compiler.Expr
-import Brainfuck.Compiler.IL
 
 showExpr :: Expr -> ShowS
 showExpr (Const c)            = shows c

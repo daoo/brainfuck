@@ -1,8 +1,8 @@
 module Brainfuck.Compiler.Inlining where
 
 import Brainfuck.Compiler.Analyzer
-import Brainfuck.Compiler.Expr
-import Brainfuck.Compiler.IL
+import Brainfuck.Data.Expr
+import Brainfuck.Data.IL
 
 data Occurs = GetOnce | SetOnce | InLoop [Occurs] | InIf [Occurs]
   deriving (Show)
