@@ -1,6 +1,6 @@
-module Brainfuck.Interpreter.IOMemory where
+module Brainfuck.Data.IOMemory where
 
-import Brainfuck.Compiler.Expr
+import Brainfuck.Data.Expr
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
 import Control.Monad.State

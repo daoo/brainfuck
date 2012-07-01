@@ -5,8 +5,8 @@ import Text.CodeWriter
 
 showHaskell :: [IL] -> String
 showHaskell ils = writeCode $ do
-  line "import Brainfuck.Compiler.Expr"
-  line "import Brainfuck.Interpreter.IOMemory"
+  line "import Brainfuck.Data.Expr"
+  line "import Brainfuck.Data.IOMemory"
   line ""
   line "main :: IO ()"
   line "main = do"
