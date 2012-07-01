@@ -9,6 +9,7 @@ import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.IL
 import Brainfuck.Compiler.Optimize
 import Brainfuck.Compiler.Target.C99
+import Brainfuck.Compiler.Target.Haskell
 import Brainfuck.Compiler.Target.Indented
 import Brainfuck.Ext
 import Brainfuck.Interpreter.Interpreter
@@ -16,7 +17,7 @@ import Brainfuck.Interpreter.State
 import Brainfuck.Parser.Parser
 
 data Action = Compile | Interpret deriving (Show, Read)
-data Target = Indented | C99 deriving (Show, Read)
+data Target = Indented | C99 | Haskell deriving (Show, Read)
 
 data Options = Options
   { optAction :: Action
@@ -34,7 +35,7 @@ data Flag = Do Action | Target Target
 options :: [OptDescr (Options -> Options)]
 options =
   [ Option "c" ["compile"] (NoArg (\opt -> opt { optAction = Compile })) "compile input"
-  , Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg })  "C99 | Indented") "target language"
+  , Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg })  "Indented | C99 | Haskell") "target language"
   ]
 
 main :: IO ()
@@ -56,8 +57,9 @@ main = do
 
   case optAction opts of
     Compile    -> case optTarget opts of
-      C99      -> putStrLn $ showC optimized
       Indented -> putStrLn $ showIndented optimized
+      C99      -> putStrLn $ showC optimized
+      Haskell  -> putStrLn $ showHaskell optimized
     Interpret  -> getContents >>= putStrLn . (`runBF` optimized)
 
   where
