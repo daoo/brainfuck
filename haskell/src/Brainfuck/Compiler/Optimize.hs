@@ -17,7 +17,6 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . whileToIf
              . reduceCopyLoops
              . moveShifts
-             . mergeKind
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
@@ -56,21 +55,6 @@ moveShifts (x1 : x2 : xs)    = case (x1, x2) of
   (_, _)                 -> x1 : moveShifts (x2 : xs)
 
 moveShifts (x : xs) = x : moveShifts xs
-
--- |Merge equal instructions
-mergeKind :: [IL] -> [IL]
-mergeKind []                = []
-mergeKind (While e ys : xs) = While e (mergeKind ys) : mergeKind xs
-mergeKind (If e ys : xs)    = If e (mergeKind ys) : mergeKind xs
-mergeKind (x1 : x2 : xs)    = case (x1, x2) of
-  (Shift s1, Shift s2)                                          -> mergeKind (Shift (s1 + s2) : xs)
-  (Set d1 e1, Set d2 e2)  | d1 == d2                            -> mergeKind (Set d2 (inlineExpr d1 e1 e2) : xs)
-  (GetChar d1, Set d2 e2) | d1 == d2 && not (exprDepends d1 e2) -> mergeKind (Set d2 e2 : xs)
-  (Set d1 _, GetChar d2)  | d1 == d2                            -> mergeKind (GetChar d2 : xs)
-
-  (_, _) -> x1 : mergeKind (x2 : xs)
-
-mergeKind (x : xs) = x : mergeKind xs
 
 -- |Inline initial zeroes
 inlineZeros :: [IL] -> [IL]
