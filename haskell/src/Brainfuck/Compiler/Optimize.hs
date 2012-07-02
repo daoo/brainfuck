@@ -10,16 +10,14 @@ import Data.Set hiding (map, filter)
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
   where
-    pipeline = pipe
-      [ mapIL optimizeExpressions
-      , inlineZeros
-      , whileToIf
-      , reduceCopyLoops
-      , filterIL clean
-      , inlining
-      , moveShifts
-      , mergeKind
-      ]
+    pipeline = mapIL optimizeExpressions
+             . inlineZeros
+             . whileToIf
+             . reduceCopyLoops
+             . filterIL clean
+             . inlining
+             . moveShifts
+             . mergeKind
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
