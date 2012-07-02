@@ -11,12 +11,12 @@ optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
   where
     pipeline = filterIL clean
-             . mapIL optimizeExpressions
-             . inlining
-             . inlineZeros
              . whileToIf
              . reduceCopyLoops
              . moveShifts
+             . mapIL optimizeExpressions
+             . inlining
+             . inlineZeros
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
