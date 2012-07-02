@@ -44,15 +44,14 @@ inlining (x : xs) = case x of
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]
-moveShifts []                = []
-moveShifts (While e ys : xs) = While e (moveShifts ys) : moveShifts xs
-moveShifts (If e ys : xs)    = If e (moveShifts ys)    : moveShifts xs
-moveShifts (x1 : x2 : xs)    = case (x1, x2) of
-  (Shift s1, While e ys) -> modifyPtr (+s1) (While e (moveShifts ys)) : moveShifts (x1 : xs)
-  (Shift s1, If e ys)    -> modifyPtr (+s1) (If e (moveShifts ys)) : moveShifts (x1 : xs)
-  (Shift s1, Shift s2)   -> moveShifts (Shift (s1 + s2) : xs)
-  (Shift s1, _)          -> modifyPtr (+s1) x2 : moveShifts (x1 : xs)
-  (_, _)                 -> x1 : moveShifts (x2 : xs)
+moveShifts []                        = []
+moveShifts (While e ys : xs)         = While e (moveShifts ys) : moveShifts xs
+moveShifts (If e ys : xs)            = If e (moveShifts ys)    : moveShifts xs
+moveShifts (x1@(Shift s1) : x2 : xs) = case x2 of
+  While e ys -> modifyPtr (+s1) (While e (moveShifts ys)) : moveShifts (x1 : xs)
+  If e ys    -> modifyPtr (+s1) (If e (moveShifts ys)) : moveShifts (x1 : xs)
+  Shift s2   -> moveShifts (Shift (s1 + s2) : xs)
+  _          -> modifyPtr (+s1) x2 : moveShifts (x1 : xs)
 
 moveShifts (x : xs) = x : moveShifts xs
 
