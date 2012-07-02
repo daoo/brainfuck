@@ -10,7 +10,7 @@ import Data.Set hiding (map, filter)
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
   where
-    pipeline = filterIL clean
+    pipeline = cleanUp
              . whileToIf
              . reduceCopyLoops
              . moveShifts
@@ -26,11 +26,19 @@ optimizeExpressions il = case il of
   _         -> il
 
 -- Remove instructions that does not do anything
-clean :: IL -> Bool
-clean il = case il of
-  Shift s         -> s /= 0
-  Set o1 (Get o2) -> o1 /= o2
-  _               -> True
+cleanUp :: [IL] -> [IL]
+cleanUp []       = []
+cleanUp (x : xs) = case x of
+  While e ys | e == Const 0 -> cleanUp xs
+             | otherwise    -> While e (cleanUp ys) : cleanUp xs
+
+  If e ys | e == Const 0 -> cleanUp xs
+          | otherwise    -> If e (cleanUp ys) : cleanUp xs
+
+  Set d1 (Get d2) | d1 == d2 -> cleanUp xs
+  Shift s | s == 0           -> cleanUp xs
+
+  _ -> x : cleanUp xs
 
 inlining :: [IL] -> [IL]
 inlining []       = []
