@@ -29,11 +29,13 @@ optimizeExpressions il = case il of
 cleanUp :: [IL] -> [IL]
 cleanUp []       = []
 cleanUp (x : xs) = case x of
-  While e ys | e == Const 0 -> cleanUp xs
-             | otherwise    -> While e (cleanUp ys) : cleanUp xs
+  While (Const i) ys | i == 0 -> cleanUp xs
+                     | True   -> While (Const 1) (cleanUp ys) : cleanUp xs -- never ending loop
+  While e ys                  -> While e (cleanUp ys) : cleanUp xs
 
-  If e ys | e == Const 0 -> cleanUp xs
-          | otherwise    -> If e (cleanUp ys) : cleanUp xs
+  If (Const i) ys | i == 0 -> cleanUp xs
+                  | True   -> cleanUp ys ++ cleanUp xs
+  If e ys                  -> If e (cleanUp ys) : cleanUp xs
 
   Set d1 (Get d2) | d1 == d2 -> cleanUp xs
   Shift s | s == 0           -> cleanUp xs
