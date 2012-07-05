@@ -31,14 +31,14 @@ release:
 	ghc -O3 $(make_main)
 
 test:
-	ghc -O3 --make $(warnings) $(flags) -o build/test src/TestPrograms.hs
+	ghc -O3 --make $(warnings) $(flags) -o build/test src/Programs.hs
 	./build/test
 
 bench:
-	ghc -O3 --make $(warnings) $(flags) -o build/bench src/Benchmark.hs
+	ghc -O3 --make $(warnings) $(flags) -o build/bench tests/Benchmark.hs
 
 ghci:
-	ghci $(warnings) $(flags) src/TestProperties.hs
+	ghci $(warnings) $(flags) tests/Properties.hs
 
 clean:
 	rm -r build/*

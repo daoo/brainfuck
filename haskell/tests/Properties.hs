@@ -1,4 +1,4 @@
-module TestProperties where
+module Properties where
 
 import Brainfuck.Compiler.Analyzer
 import Brainfuck.Compiler.Inlining
@@ -74,15 +74,14 @@ propOptimize f xs = testCode xs (f xs)
 propInline :: Int -> Expr -> [IL] -> Bool
 propInline d e xs = inline d e xs `testCode` (Set d e : xs)
 
-propOptimizeInlineZeros, propOptimizeCopies, propOptimizeClean,
-  propOptimizeExpressions, propOptimizeMergeKind, propOptimizeInlining :: [IL] -> Bool
+propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
+  propOptimizeExpressions, propOptimizeInlining :: [IL] -> Bool
 
-propOptimizeClean       = propOptimize $ filterIL clean
+propOptimizeCleanUp     = propOptimize cleanUp
 propOptimizeCopies      = propOptimize reduceCopyLoops
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
 propOptimizeInlineZeros = propOptimize inlineZeros
 propOptimizeInlining    = propOptimize inlining
-propOptimizeMergeKind   = propOptimize mergeKind
 
 propOptimizeMoveShifts :: [IL] -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
