@@ -47,10 +47,10 @@ inlining []       = []
 inlining (x : xs) = case x of
   While e ys -> While e (inlining ys) : inlining xs
   If e ys    -> If e (inlining ys) : inlining xs
-  Set d e    -> case heursticInlining d e xs of
+  Set d e    -> case optimisticInlining d e xs of
     Nothing  -> x : inlining xs
     Just xs' -> inlining xs'
-  _          -> x : inlining xs   
+  _          -> x : inlining xs
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]

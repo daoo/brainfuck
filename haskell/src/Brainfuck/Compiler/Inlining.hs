@@ -42,12 +42,13 @@ allowedComplexity oc = getCount oc + 2 * setCount oc
     getCount (GetOnce : xs) = 1 + getCount xs
     getCount (_ : xs)       = getCount xs
 
-heursticInlining :: Int -> Expr -> [IL] -> Maybe [IL]
-heursticInlining d e xs =
-  let xs' = inline d e xs
-      c1  = 1 + exprComplexity e + ilComplexity xs
-      c2  = ilComplexity xs'
-   in if c1 <= c2 then Nothing else Just xs'
+optimisticInlining :: Int -> Expr -> [IL] -> Maybe [IL]
+optimisticInlining d e xs | c1 <= c2 = Nothing
+                          | otherwise = Just xs'
+  where
+    xs' = inline d e xs
+    c1  = 1 + exprComplexity e + ilComplexity xs
+    c2  = ilComplexity xs'
 
 exprComplexity :: Expr -> Int
 exprComplexity = unfold (+) (+) f
