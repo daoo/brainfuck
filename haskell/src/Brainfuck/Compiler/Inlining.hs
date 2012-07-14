@@ -83,6 +83,8 @@ inline d e (x : xs) = case x of
 
   PutChar e' -> PutChar (ie e') : inline d e xs
 
+  If e' ys -> Set d e : If (ie e') (inline d e ys) : xs
+
   _ -> Set d e : x : xs
 
   where
