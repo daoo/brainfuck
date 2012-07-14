@@ -83,6 +83,11 @@ inline d e (x : xs) = case x of
 
   PutChar e' -> PutChar (ie e') : inline d e xs
 
+  -- Inline into If
+  -- Inlining into the condition is safe, we keep the set before the if since
+  -- the value has to change even if the condition evaluates to false.
+  -- But we also inline into each expression within the if, this can reduce
+  -- some += expressions to constant assigns.
   If e' ys -> Set d e : If (ie e') (inline d e ys) : xs
 
   _ -> Set d e : x : xs
