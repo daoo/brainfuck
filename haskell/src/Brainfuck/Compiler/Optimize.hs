@@ -5,7 +5,7 @@ import Brainfuck.Compiler.Inlining
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 import Brainfuck.Ext
-import Data.Set hiding (map, filter)
+import qualified Data.Set as S
 
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
@@ -47,10 +47,12 @@ inlining []       = []
 inlining (x : xs) = case x of
   While e ys -> While e (inlining ys) : inlining xs
   If e ys    -> If e (inlining ys) : inlining xs
+
   Set d e    -> case optimisticInlining d e xs of
     Nothing  -> x : inlining xs
-    Just xs' -> inlining xs'
-  _          -> x : inlining xs
+    Just xs' -> xs'
+
+  _ -> x : inlining xs
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]
@@ -67,24 +69,24 @@ moveShifts (x : xs) = x : moveShifts xs
 
 -- |Inline initial zeroes
 inlineZeros :: [IL] -> [IL]
-inlineZeros = go empty
+inlineZeros = go S.empty
   where
-    go :: Set Int -> [IL] -> [IL]
+    go :: S.Set Int -> [IL] -> [IL]
     go _ []         = []
     go s (il : ils) = case il of
       While _ _ -> il : ils
       If _ _    -> error "FIXME: Inlining zeroes into Ifs"
-      Set i e   -> Set i (inl s e) : go (insert i s) ils
+      Set i e   -> Set i (inl s e) : go (S.insert i s) ils
       PutChar e -> PutChar (inl s e) : go s ils
       GetChar _ -> il : go s ils
       Shift _   -> il : ils
 
-    inl :: Set Int -> Expr -> Expr
+    inl :: S.Set Int -> Expr -> Expr
     inl = unfold Add Mul . f
       where
-        f s (Get i) | member i s = Get i
-                    | otherwise  = Const 0
-        f _ e = e
+        f s (Get i) | S.member i s = Get i
+                    | otherwise    = Const 0
+        f _ e                      = e
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: [IL] -> [IL]

@@ -18,7 +18,8 @@ instance Arbitrary IL where
     e <- arbitrary
     frequency [ (4, return $ Set i e)
               , (2, return $ Shift i)
-              , (1, return $ PutChar e) ]
+              , (1, return $ PutChar e)
+              ]
 
   shrink (While e ys) = map (While e) $ tail $ tails ys
   shrink (If e ys)    = map (If e) $ tail $ tails ys

@@ -42,6 +42,13 @@ allowedComplexity oc = getCount oc + 2 * setCount oc
     getCount (GetOnce : xs) = 1 + getCount xs
     getCount (_ : xs)       = getCount xs
 
+heuristicInlining :: Int -> Expr -> [IL] -> Maybe [IL]
+heuristicInlining d e xs | c1 <= c2  = Just $ inline d e xs
+                         | otherwise = Nothing
+  where
+    c1 = exprComplexity e
+    c2 = allowedComplexity $ occurs d xs
+
 optimisticInlining :: Int -> Expr -> [IL] -> Maybe [IL]
 optimisticInlining d e xs | c1 <= c2 = Nothing
                           | otherwise = Just xs'
@@ -73,7 +80,8 @@ inline d e []       = [Set d e]
 inline d e (x : xs) = case x of
   Set d' e' | d == d'                -> Set d' (ie e') : xs
             | not (exprDepends d' e) -> Set d' (ie e') : inline d e xs
-  PutChar e'                         -> PutChar (ie e') : inline d e xs
+
+  PutChar e' -> PutChar (ie e') : inline d e xs
 
   _ -> Set d e : x : xs
 

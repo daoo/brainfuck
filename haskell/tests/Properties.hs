@@ -74,6 +74,11 @@ propOptimize f xs = testCode xs (f xs)
 propInline :: Int -> Expr -> [IL] -> Bool
 propInline d e xs = inline d e xs `testCode` (Set d e : xs)
 
+propHeuristicInlining :: Int -> Expr -> [IL] -> Bool
+propHeuristicInlining d e xs = case heuristicInlining d e xs of
+  Just xs' -> (Set d e : xs) `testCode` xs'
+  Nothing  -> True
+
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
   propOptimizeExpressions, propOptimizeInlining :: [IL] -> Bool
 
