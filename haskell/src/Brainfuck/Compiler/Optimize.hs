@@ -38,7 +38,7 @@ cleanUp (x : xs) = case x of
   If e ys                  -> If e (cleanUp ys) : cleanUp xs
 
   Set d1 (Get d2) | d1 == d2 -> cleanUp xs
-  Shift s | s == 0           -> cleanUp xs
+  Shift s         | s == 0   -> cleanUp xs
 
   _ -> x : cleanUp xs
 
@@ -56,14 +56,16 @@ inlining (x : xs) = case x of
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]
-moveShifts []                        = []
-moveShifts (While e ys : xs)         = While e (moveShifts ys) : moveShifts xs
-moveShifts (If e ys : xs)            = If e (moveShifts ys)    : moveShifts xs
-moveShifts (x1@(Shift s1) : x2 : xs) = case x2 of
-  While e ys -> modifyPtr (+s1) (While e (moveShifts ys)) : moveShifts (x1 : xs)
-  If e ys    -> modifyPtr (+s1) (If e (moveShifts ys)) : moveShifts (x1 : xs)
-  Shift s2   -> moveShifts (Shift (s1 + s2) : xs)
-  _          -> modifyPtr (+s1) x2 : moveShifts (x1 : xs)
+moveShifts []             = []
+moveShifts (x1 : x2 : xs) = case x1 of
+  While e ys -> While e (moveShifts ys) : moveShifts (x2 : xs)
+  If e ys    -> If e (moveShifts ys)    : moveShifts (x2 : xs)
+
+  Shift s1 -> case x2 of
+    Shift s2 -> moveShifts $ Shift (s1 + s2) : xs
+    _        -> moveShifts $ modifyPtr (+s1) x2 : x1 : xs
+
+  _ -> x1 : moveShifts (x2 : xs)
 
 moveShifts (x : xs) = x : moveShifts xs
 
@@ -75,7 +77,7 @@ inlineZeros = go S.empty
     go _ []         = []
     go s (il : ils) = case il of
       While _ _ -> il : ils
-      If _ _    -> error "FIXME: Inlining zeroes into Ifs"
+      If _ _    -> error "FIXME: inlineZeros If _ _"
       Set i e   -> Set i (inl s e) : go (S.insert i s) ils
       PutChar e -> PutChar (inl s e) : go s ils
       GetChar _ -> il : go s ils
