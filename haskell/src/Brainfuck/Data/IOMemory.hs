@@ -16,8 +16,8 @@ newMemory i = newArray (0, i) 0
 evalMemory :: Memory -> Expr -> IOMemory Int
 evalMemory _ (Const i)   = return i
 evalMemory m (Get d)     = get >>= (\p -> liftIO $ readArray m (p + d))
-evalMemory m (Add e1 e2) = (+) <$> (evalMemory m e1) <*> (evalMemory m e2)
-evalMemory m (Mul e1 e2) = (*) <$> (evalMemory m e1) <*> (evalMemory m e2)
+evalMemory m (Add e1 e2) = (+) <$> evalMemory m e1 <*> evalMemory m e2
+evalMemory m (Mul e1 e2) = (*) <$> evalMemory m e1 <*> evalMemory m e2
 
 setMemory :: Memory -> Int -> Expr -> IOMemory ()
 setMemory m d e = do

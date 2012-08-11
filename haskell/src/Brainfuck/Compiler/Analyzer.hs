@@ -2,8 +2,8 @@ module Brainfuck.Compiler.Analyzer where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
-import Brainfuck.Ext
 import Data.List
+import Data.Maybe
 
 -- |Check if an expression uses the value of a certain memory offset
 exprDepends :: Int -> Expr -> Bool
@@ -22,7 +22,7 @@ copyLoop :: Int -> [IL] -> Maybe [(Int, Int)]
 copyLoop d xs = do
   sets <- mapM f xs
   let (dec, copies) = partition (g d) sets
-  onlyOne dec
+  listToMaybe dec
   mapM h copies
   where
     -- First filter, if a non-constant add is found, exit

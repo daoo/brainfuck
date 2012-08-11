@@ -11,7 +11,7 @@ showHaskell ils = writeCode $ do
   line "main :: IO ()"
   line "main = do"
   incIndent
-  line $ "m <- newMemory " ++ show defaultMem
+  line "m <- newMemory 30001"
   line "program (setMemory m) (putMemory m) (getMemory m) (evalMemory m) (whileMemory m) (ifMemory m)"
   decIndent
   line ""
@@ -21,9 +21,6 @@ showHaskell ils = writeCode $ do
   code ils
 
   where
-    defaultMem :: Int
-    defaultMem = 30001
-
     code :: [IL] -> CodeWriter
     code [] = return ()
     code (x : xs) = case x of
@@ -40,6 +37,4 @@ showHaskell ils = writeCode $ do
         string " ("
         string $ show e
         string ") $ do"
-      incIndent
-      code ys
-      decIndent
+      indentedM $ code ys

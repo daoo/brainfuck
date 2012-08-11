@@ -22,7 +22,7 @@ showC ils = writeCode $ do
   line "int main() {"
   incIndent
   when (usesMemory ils) $ do
-    line $ "unsigned char mem[" ++ show defaultMem ++ "];"
+    line "unsigned char mem[30001];"
     line "unsigned char* ptr = mem;"
 
   code ils
@@ -31,9 +31,6 @@ showC ils = writeCode $ do
   decIndent
   line "}"
   where
-    defaultMem :: Int
-    defaultMem = 30001
-
     code :: [IL] -> CodeWriter
     code []       = return ()
     code (x : xs) = case x of
@@ -47,9 +44,7 @@ showC ils = writeCode $ do
         string word
         string " ("
         string $ showExpr e ") {"
-      incIndent
-      code ys
-      decIndent
+      indentedM $ code ys
       line "}"
 
     statement x = case x of

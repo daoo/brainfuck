@@ -30,6 +30,9 @@ lineM f = do
   f
   tell "\n"
 
+indentedM :: CodeWriter -> CodeWriter
+indentedM f = incIndent >> f >> decIndent
+
 incIndent :: CodeWriter
 incIndent = modify (+1)
 

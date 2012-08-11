@@ -29,13 +29,13 @@ optimizeExpressions il = case il of
 cleanUp :: [IL] -> [IL]
 cleanUp []       = []
 cleanUp (x : xs) = case x of
-  While (Const i) ys | i == 0 -> cleanUp xs
-                     | True   -> While (Const 1) (cleanUp ys) : cleanUp xs -- never ending loop
-  While e ys                  -> While e (cleanUp ys) : cleanUp xs
+  While (Const i) ys | i == 0    -> cleanUp xs
+                     | otherwise -> While (Const 1) (cleanUp ys) : cleanUp xs -- never ending loop
+  While e ys                     -> While e (cleanUp ys) : cleanUp xs
 
-  If (Const i) ys | i == 0 -> cleanUp xs
-                  | True   -> cleanUp ys ++ cleanUp xs
-  If e ys                  -> If e (cleanUp ys) : cleanUp xs
+  If (Const i) ys | i == 0    -> cleanUp xs
+                  | otherwise -> cleanUp ys ++ cleanUp xs
+  If e ys                     -> If e (cleanUp ys) : cleanUp xs
 
   Set d1 (Get d2) | d1 == d2 -> cleanUp xs
   Shift s         | s == 0   -> cleanUp xs
@@ -47,12 +47,8 @@ inlining []       = []
 inlining (x : xs) = case x of
   While e ys -> While e (inlining ys) : inlining xs
   If e ys    -> If e (inlining ys) : inlining xs
-
-  Set d e    -> case optimisticInlining d e xs of
-    Nothing  -> x : inlining xs
-    Just xs' -> xs'
-
-  _ -> x : inlining xs
+  Set d e    -> fromMaybe (x : inlining xs) (optimisticInlining d e xs)
+  _          -> x : inlining xs
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]

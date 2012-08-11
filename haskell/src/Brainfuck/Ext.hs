@@ -1,9 +1,5 @@
 module Brainfuck.Ext where
 
-onlyOne :: [a] -> Maybe a
-onlyOne [a] = Just a
-onlyOne _   = Nothing
-
 -- |Repeat a function a certain ammount of times
 times :: (a -> a) -> Int -> a -> a
 times f i a | i < 0     = error "Negative number"
