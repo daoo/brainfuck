@@ -2,9 +2,10 @@ module Brainfuck.Ext where
 
 -- |Repeat a function a certain ammount of times
 times :: (a -> a) -> Int -> a -> a
-times f i a | i < 0     = error "Negative number"
-            | i == 0    = a
-            | otherwise = go i a
+times f i a = case compare i 0 of
+  LT -> error "Negative number"
+  EQ -> a
+  GT -> go i a
   where
     go 0 b = b
     go j b = times f (j - 1) (f b)

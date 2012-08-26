@@ -17,9 +17,7 @@ ordIntegral :: (Integral a) => Char -> a
 ordIntegral = fromIntegral . ord
 
 newMemory :: (Integral a) => ListZipper a
-newMemory = ListZipper zeros 0 zeros
-  where
-    zeros = iterate id 0
+newMemory = let zeros = repeat 0 in ListZipper zeros 0 zeros
 
 newState :: (Integral a) => String -> State a
 newState inp = State (map ordIntegral inp) empty newMemory
