@@ -59,7 +59,7 @@ main = do
       Indented -> putStrLn $ showIndented optimized
       C99      -> putStrLn $ showC optimized
       Haskell  -> putStrLn $ showHaskell optimized
-    Interpret  -> getContents >>= putStrLn . (`runBF` optimized)
+    Interpret  -> getContents >>= putStr . (`runBF` optimized)
 
   where
     runBF :: String -> [IL] -> String
