@@ -4,6 +4,7 @@ module Text.CodeWriter
   , incIndent
   , line
   , lineM
+  , indentedM
   , string
   , writeCode
   ) where

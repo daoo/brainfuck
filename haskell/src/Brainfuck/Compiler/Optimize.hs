@@ -5,6 +5,7 @@ import Brainfuck.Compiler.Inlining
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 import Brainfuck.Ext
+import Data.Maybe
 import qualified Data.Set as S
 
 optimizeAll :: [IL] -> [IL]
