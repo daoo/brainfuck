@@ -11,6 +11,7 @@ import Brainfuck.Ext
 import Brainfuck.Interpreter
 import Brainfuck.Parser
 import Data.Foldable (toList)
+import Data.Word
 import System.Console.GetOpt
 import System.Environment
 
@@ -62,4 +63,4 @@ main = do
 
   where
     runBF :: String -> [IL] -> String
-    runBF inp = map chrIntegral . toList . getOutput . run (newState inp)
+    runBF inp = map chrIntegral . toList . getOutput . run (newState inp :: State Word8)

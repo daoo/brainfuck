@@ -22,9 +22,10 @@ size (ListZipper xs _ zs) = length xs + 1 + length zs
 move :: Int -> ListZipper a -> ListZipper a
 move (-1) (ListZipper (x : xs) y zs) = ListZipper xs x (y : zs)
 move   1  (ListZipper xs y (z : zs)) = ListZipper (y : xs) z zs
-move   0  lz                         = lz
-move   n  lz | n < 0                 = move (n + 1) (move (-1) lz)
-             | otherwise             = move (n - 1) (move 1 lz)
+move   n  lz = case n `compare` 0 of
+  EQ -> lz
+  LT -> move (n + 1) (move (-1) lz)
+  GT -> move (n - 1) (move 1 lz)
 
 peek :: Int -> ListZipper a -> a
 peek 0 lz             = focus lz
