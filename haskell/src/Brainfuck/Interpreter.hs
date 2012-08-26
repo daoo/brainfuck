@@ -11,8 +11,8 @@ run = foldl evalOp
 
 evalOp :: (Integral a) => State a -> IL -> State a
 evalOp state@(State inp out mem) x = case x of
-  While e ys -> until ((== 0) . evalExpr e . flip peek . getMemory) (`run` ys) state
-  If e ys    -> if 0 == evalExpr e (`peek` mem) then run state ys else state
+  While e ys -> until (isZero e) (`run` ys) state
+  If e ys    -> if isZero e state then run state ys else state
 
   PutChar e -> State inp        (out |> evalExpr' e) mem
   GetChar d -> State (tail inp) out                  (applyAt' (head inp) d mem)
@@ -20,11 +20,14 @@ evalOp state@(State inp out mem) x = case x of
   Shift s   -> State inp        out                  (move s mem)
 
   where
-    evalExpr' e = evalExpr e (`peek` mem)
-    applyAt' = applyAt . const
+    isZero e = (== 0) . (`evalExpr` e) . flip peek . getMemory
 
-evalExpr :: (Integral a) => Expr -> (Int -> a) -> a
-evalExpr (Const v) _   = fromIntegral v
-evalExpr (Get o) f     = f o
-evalExpr (Add e1 e2) f = evalExpr e1 f + evalExpr e2 f
-evalExpr (Mul e1 e2) f = evalExpr e1 f * evalExpr e2 f
+    evalExpr' = evalExpr (`peek` mem)
+    applyAt'  = applyAt . const
+
+evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
+evalExpr f e = case e of
+  Const v   -> fromIntegral v
+  Get o     -> f o
+  Add e1 e2 -> evalExpr f e1 + evalExpr f e2
+  Mul e1 e2 -> evalExpr f e1 * evalExpr f e2
