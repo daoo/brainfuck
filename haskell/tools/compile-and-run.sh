@@ -7,7 +7,7 @@ if [[ ! -x "$bf" ]]; then
 elif [[ ! -f "$1" ]]; then
   echo "usage: compile-and-run brainfuck.bf"
 else
-  name=$(basename $1)
+  name="$(basename "$1" .bf)"
 
   cfile="/tmp/$name.c"
   ofile="/tmp/$name"
