@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 
 bf="build/brainfuck"
+dir="/tmp/brainfuck"
 
 if [[ ! -x "$bf" ]]; then
   echo "brainfuck compiler not found"
 elif [[ ! -f "$1" ]]; then
   echo "usage: compile-and-run brainfuck.bf"
 else
+  mkdir -p "$dir"
+
   name="$(basename "$1" .bf)"
 
-  cfile="/tmp/$name.c"
-  ofile="/tmp/$name"
+  cfile="$dir/$name.c"
+  ofile="$dir/$name"
 
   $bf -c "$1" > "$cfile"
 
