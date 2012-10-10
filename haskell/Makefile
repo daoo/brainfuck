@@ -20,7 +20,7 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-flags = -isrc:build -odir build -hidir build
+flags = -isrc:build -odir build -hidir build -XLambdaCase -XTupleSections
 
 make_main = --make $(flags) $(warnings) -o build/$(exename) src/Main.hs
 

@@ -1,8 +1,6 @@
 module Brainfuck.Data.Expr where
 
-import Brainfuck.Ext
 import Control.Monad
-import Data.List (intersperse)
 import Test.QuickCheck
 
 data Expr = Get Int
@@ -25,8 +23,8 @@ instance Arbitrary Expr where
                      , liftM Get $ choose (-s `div` 10, s `div` 5) ]
 
 
-  shrink (Add e1 e2) = [Add e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
-  shrink (Mul e1 e2) = [Mul e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
+  shrink (Add e1 e2) = e1 : e2 : [Add e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
+  shrink (Mul e1 e2) = e1 : e2 : [Mul e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
   shrink (Const i)   = map Const $ shrink i
   shrink (Get d)     = map Get $ shrink d
 
@@ -41,9 +39,10 @@ instance Num Expr where
   signum = undefined
 
 unfold :: (a -> a -> a) -> (a -> a -> a) -> (Expr -> a) -> Expr -> a
-unfold add mul f (Add e1 e2) = unfold add mul f e1 `add` unfold add mul f e2
-unfold add mul f (Mul e1 e2) = unfold add mul f e1 `mul` unfold add mul f e2
-unfold _ _ f e               = f e
+unfold add mul f = \case
+  Add e1 e2 -> unfold add mul f e1 `add` unfold add mul f e2
+  Mul e1 e2 -> unfold add mul f e1 `mul` unfold add mul f e2
+  e         -> f e
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d1 e = unfold Add Mul f
@@ -61,13 +60,24 @@ eval = unfold (+) (*) . g
     g f (Get d)   = f d
     g _ _         = error "unfold Expr error"
 
+heigth :: Expr -> Int
+heigth = \case
+  Add a b -> 1 + max (heigth a) (heigth b)
+  Mul a b -> 1 + max (heigth a) (heigth b)
+  _       -> 1
+
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
-optimizeExpr = whileModified (pipe pipeline)
+optimizeExpr = p
   where
-    pipeline = clean : intersperse clean [mult, sort, listify]
+    p e = if b1 || b2 then p e2 else e2
+      where
+        (e1, b1) = clean e
+        (e2, b2) = listify e1
 
-    mult e = case e of
+    --pipeline = clean : intersperse clean [mult, sort, listify]
+
+    mult = \case
       Add e1 e2          | e1 == e2 -> mult $ Mul (Const 2) e1
       Add e1 (Add e2 e3) | e1 == e2 -> mult $ Add (Mul (Const 2) e1) e3
 
@@ -76,18 +86,9 @@ optimizeExpr = whileModified (pipe pipeline)
       Add e1 e2 -> mult e1 `Add` mult e2
       Mul e1 e2 -> mult e1 `Mul` mult e2
 
-      _ -> e
+      e -> e
 
-    listify e = case e of
-      Add (Add e1 e2) e3 -> listify $ Add e1 (Add e2 e3)
-      Mul (Mul e1 e2) e3 -> listify $ Mul e1 (Mul e2 e3)
-
-      Add e1 e2 -> Add (listify e1) (listify e2)
-      Mul e1 e2 -> Mul (listify e1) (listify e2)
-
-      _ -> e
-
-    sort e = case e of
+    sort = \case
       Add e1@(Get _) e2@(Const _)             -> Add e2 e1
       Add e1@(Get d1) e2@(Get d2) | d1 > d2   -> Add e2 e1
                                   | otherwise -> Add e1 e2
@@ -100,27 +101,48 @@ optimizeExpr = whileModified (pipe pipeline)
       Add e1 e2 -> sort e1 `Add` sort e2
       Mul e1 e2 -> sort e1 `Mul` sort e2
 
-      _ -> e
+      e -> e
 
-    clean e = case e of
-      Add (Const 0) e' -> clean e'
-      Add e' (Const 0) -> clean e'
-      Mul (Const 0) _  -> Const 0
-      Mul _ (Const 0)  -> Const 0
-      Mul (Const 1) e' -> clean e'
-      Mul e' (Const 1) -> clean e'
+listify :: Expr -> (Expr, Bool)
+listify = \case
+  Add (Add e1 e2) e3 -> (Add e1 (Add e2 e3), True)
+  Mul (Mul e1 e2) e3 -> (Mul e1 (Mul e2 e3), True)
 
-      Add (Const c1) (Const c2) -> Const $ c1 + c2
-      Mul (Const c1) (Const c2) -> Const $ c1 * c2
+  Add e1 e2 -> loop2 listify Add e1 e2
+  Mul e1 e2 -> loop2 listify Mul e1 e2
 
-      Add (Const c1) (Add (Const c2) e') -> clean $ Add (Const $ c1 + c2) e'
-      Mul (Const c1) (Mul (Const c2) e') -> clean $ Mul (Const $ c1 * c2) e'
-      Mul (Const c1) (Add (Const c2) e') -> clean $ Add (Const $ c1 * c2) (Mul (Const c1) e')
+  e -> (e, False)
 
-      Add (Mul (Const c1) e1) (Mul (Const c2) e2) | e1 == e2 -> clean $ Mul (Const $ c1 + c2) e1
-      Add (Mul (Const c1) e1) e2                  | e1 == e2 -> clean $ Mul (Const $ c1 + 1) e2
+clean :: Expr -> (Expr, Bool)
+clean = \case
+  Const 0 `Add` e -> (e, True)
+  Const 0 `Mul` _ -> (Const 0, True)
+  Const 1 `Mul` e -> (e, True)
+  e `Add` Const 0 -> (e, True)
+  _ `Mul` Const 0 -> (Const 0, True)
+  e `Mul` Const 1 -> (e, True)
 
-      Add e1 e2 -> clean e1 `Add` clean e2
-      Mul e1 e2 -> clean e1 `Mul` clean e2
+  Const c1 `Add` Const c2 -> (Const (c1 + c2), True)
+  Const c1 `Mul` Const c2 -> (Const (c1 * c2), True)
 
-      _ -> e
+  Const c1 `Add` (Const c2 `Add` e) -> (Const (c1 + c2) `Add` e, True)
+  Const c1 `Mul` (Const c2 `Mul` e) -> (Const (c1 * c2) `Mul` e, True)
+  Const c1 `Mul` (Const c2 `Add` e) -> (Const (c1 * c2) `Add` (Const c1 `Mul` e), True)
+
+  Add (Mul (Const c1) e1) (Mul (Const c2) e2) | e1 == e2 -> (Const (c1 + c2) `Mul` e1, True)
+  Add (Mul (Const c1) e1) e2                  | e1 == e2 -> (Const (c1 + 1) `Mul` e2, True)
+
+  Add e1 e2 -> loop2 clean Add e1 e2
+  Mul e1 e2 -> loop2 clean Mul e1 e2
+
+  e -> (e, False)
+
+loop :: (a -> (a, Bool)) -> (a, Bool) -> (a, Bool)
+loop f = until (not . snd) (f . fst)
+
+loop2 :: (a -> (a, Bool)) -> (a -> a -> a) -> a -> a -> (a, Bool)
+loop2 f op a b | b1 || b2  = f (a' `op` b')
+                | otherwise = (a `op` b, False)
+  where
+    (a', b1) = f a
+    (b', b2) = f b

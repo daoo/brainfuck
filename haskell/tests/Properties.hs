@@ -135,6 +135,21 @@ propExprEval e (NonEmpty xs) = eval f e == eval f (optimizeExpr e)
 
 propExprOptimizeSmaller :: Expr -> Bool
 propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (optimizeExpr expr)
+
+propExprListifyDepth :: Expr -> Bool
+propExprListifyDepth expr = left <= right
+  where
+    expr' = fst $ listify expr
+
+    left = case expr' of
+      Add a _ -> heigth a
+      Mul a _ -> heigth a
+      _       -> 0
+
+    right = case expr' of
+      Add _ b -> heigth b
+      Mul _ b -> heigth b
+      _       -> 0
 -- }}}
 
 -- vim: set fdm=marker :
