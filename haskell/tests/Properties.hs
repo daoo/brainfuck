@@ -136,17 +136,20 @@ propExprEval e (NonEmpty xs) = eval f e == eval f (optimizeExpr e)
 propExprOptimizeSmaller :: Expr -> Bool
 propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (optimizeExpr expr)
 
+propExprListifyChanged :: Expr -> Bool
+propExprListifyChanged e = let (e', b) = listify e in (e /= e') == b
+
 propExprListifyDepth :: Expr -> Bool
-propExprListifyDepth expr = left <= right
+propExprListifyDepth expr = l <= r
   where
     expr' = fst $ listify expr
 
-    left = case expr' of
+    l = case expr' of
       Add a _ -> heigth a
       Mul a _ -> heigth a
       _       -> 0
 
-    right = case expr' of
+    r = case expr' of
       Add _ b -> heigth b
       Mul _ b -> heigth b
       _       -> 0

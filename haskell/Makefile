@@ -20,7 +20,7 @@ warnings = -Wall \
 	   -fwarn-unused-matches \
 	   -fwarn-wrong-do-bind \
 
-flags = -isrc:build -odir build -hidir build -XLambdaCase -XTupleSections
+flags = -isrc:build -odir build -hidir build -XTupleSections
 
 make_main = --make $(flags) $(warnings) -o build/$(exename) src/Main.hs
 
@@ -44,7 +44,7 @@ clean:
 	rm -r build/*
 
 ctags:
-	echo ":ctags" | ghci -isrc/:build/ -v0 src/TestProperties.hs
+	echo ":ctags" | ghci -isrc/ -v0 src/TestProperties.hs
 
 lint:
 	hlint src -xc

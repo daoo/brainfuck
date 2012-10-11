@@ -39,10 +39,10 @@ instance Num Expr where
   signum = undefined
 
 unfold :: (a -> a -> a) -> (a -> a -> a) -> (Expr -> a) -> Expr -> a
-unfold add mul f = \case
+unfold add mul f e = case e of
   Add e1 e2 -> unfold add mul f e1 `add` unfold add mul f e2
   Mul e1 e2 -> unfold add mul f e1 `mul` unfold add mul f e2
-  e         -> f e
+  _         -> f e
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d1 e = unfold Add Mul f
@@ -61,7 +61,7 @@ eval = unfold (+) (*) . g
     g _ _         = error "unfold Expr error"
 
 heigth :: Expr -> Int
-heigth = \case
+heigth e = case e of
   Add a b -> 1 + max (heigth a) (heigth b)
   Mul a b -> 1 + max (heigth a) (heigth b)
   _       -> 1
@@ -70,79 +70,94 @@ heigth = \case
 optimizeExpr :: Expr -> Expr
 optimizeExpr = p
   where
-    p e = if b1 || b2 then p e2 else e2
+    p e = if b1 || b2 || b3 || b4 then p e4 else e4
       where
         (e1, b1) = clean e
         (e2, b2) = listify e1
+        (e3, b3) = sort e2
+        (e4, b4) = mult e3
 
     --pipeline = clean : intersperse clean [mult, sort, listify]
 
-    mult = \case
-      Add e1 e2          | e1 == e2 -> mult $ Mul (Const 2) e1
-      Add e1 (Add e2 e3) | e1 == e2 -> mult $ Add (Mul (Const 2) e1) e3
+mult :: Expr -> (Expr, Bool)
+mult = treeOptimizer opt
+  where
+    opt e = case e of
+      Add e1 e2          | e1 == e2 -> (Mul (Const 2) e1, True)
+      Add e1 (Add e2 e3) | e1 == e2 -> (Add (Mul (Const 2) e1) e3, True)
 
-      Add (Mul (Const c) e1) (Add e2 e3) | e1 == e2 -> mult $ Add (Mul (Const c + 1) e1) e3
+      Add (Mul (Const c) e1) (Add e2 e3) | e1 == e2 -> (Add (Mul (Const c + 1) e1) e3, True)
 
-      Add e1 e2 -> mult e1 `Add` mult e2
-      Mul e1 e2 -> mult e1 `Mul` mult e2
+      _ -> (e, False)
 
-      e -> e
+sort :: Expr -> (Expr, Bool)
+sort = treeOptimizer opt
+  where
+    opt e = case e of
+      Add e1@(Get _) e2@(Const _)           -> (Add e2 e1, True)
+      Add e1@(Get d1) e2@(Get d2) | d1 > d2 -> (Add e2 e1, True)
 
-    sort = \case
-      Add e1@(Get _) e2@(Const _)             -> Add e2 e1
-      Add e1@(Get d1) e2@(Get d2) | d1 > d2   -> Add e2 e1
-                                  | otherwise -> Add e1 e2
+      Add e1@(Get d1) (Add e2@(Get d2) e3) | d1 > d2 -> (Add e2 (Add e1 e3), True)
 
-      Add e1@(Get d1) (Add e2@(Get d2) e3) | d1 > d2   -> sort $ Add e2 (Add e1 e3)
-                                           | otherwise -> Add e1 $ sort $ Add e2 (sort e3)
+      Add e1@(Get _) (Add e2@(Const _) e3) -> (Add e2 (Add e1 e3), True)
 
-      Add e1@(Get _) (Add e2@(Const _) e3) -> sort $ Add e2 (Add e1 e3)
-
-      Add e1 e2 -> sort e1 `Add` sort e2
-      Mul e1 e2 -> sort e1 `Mul` sort e2
-
-      e -> e
+      _ -> (e, False)
 
 listify :: Expr -> (Expr, Bool)
-listify = \case
-  Add (Add e1 e2) e3 -> (Add e1 (Add e2 e3), True)
-  Mul (Mul e1 e2) e3 -> (Mul e1 (Mul e2 e3), True)
+listify = treeOptimizer opt
+  where
+    opt e = case e of
+      Const a `Add` Const b -> (Const (a + b), True)
+      Get _ `Add` Get _     -> (e, False)
+      Const _ `Add` Get _   -> (e, False)
+      Get _ `Add` Const _   -> (e, False)
 
-  Add e1 e2 -> loop2 listify Add e1 e2
-  Mul e1 e2 -> loop2 listify Mul e1 e2
+      Const a `Mul` Const b -> (Const (a * b), True)
+      Get _ `Mul` Get _     -> (e, False)
+      Const _ `Mul` Get _   -> (e, False)
+      Get _ `Mul` Const _   -> (e, False)
 
-  e -> (e, False)
+      a `Add` b@(Const _) -> (b `Add` a, True)
+      a `Add` b@(Get _)   -> (b `Add` a, True)
+      a `Mul` b@(Const _) -> (b `Mul` a, True)
+      a `Mul` b@(Get _)   -> (b `Mul` a, True)
+
+      Add (Add e1 e2) e3 -> (Add e1 (Add e2 e3), True)
+      Mul (Mul e1 e2) e3 -> (Mul e1 (Mul e2 e3), True)
+
+      _ -> (e, False)
 
 clean :: Expr -> (Expr, Bool)
-clean = \case
-  Const 0 `Add` e -> (e, True)
-  Const 0 `Mul` _ -> (Const 0, True)
-  Const 1 `Mul` e -> (e, True)
-  e `Add` Const 0 -> (e, True)
-  _ `Mul` Const 0 -> (Const 0, True)
-  e `Mul` Const 1 -> (e, True)
-
-  Const c1 `Add` Const c2 -> (Const (c1 + c2), True)
-  Const c1 `Mul` Const c2 -> (Const (c1 * c2), True)
-
-  Const c1 `Add` (Const c2 `Add` e) -> (Const (c1 + c2) `Add` e, True)
-  Const c1 `Mul` (Const c2 `Mul` e) -> (Const (c1 * c2) `Mul` e, True)
-  Const c1 `Mul` (Const c2 `Add` e) -> (Const (c1 * c2) `Add` (Const c1 `Mul` e), True)
-
-  Add (Mul (Const c1) e1) (Mul (Const c2) e2) | e1 == e2 -> (Const (c1 + c2) `Mul` e1, True)
-  Add (Mul (Const c1) e1) e2                  | e1 == e2 -> (Const (c1 + 1) `Mul` e2, True)
-
-  Add e1 e2 -> loop2 clean Add e1 e2
-  Mul e1 e2 -> loop2 clean Mul e1 e2
-
-  e -> (e, False)
-
-loop :: (a -> (a, Bool)) -> (a, Bool) -> (a, Bool)
-loop f = until (not . snd) (f . fst)
-
-loop2 :: (a -> (a, Bool)) -> (a -> a -> a) -> a -> a -> (a, Bool)
-loop2 f op a b | b1 || b2  = f (a' `op` b')
-                | otherwise = (a `op` b, False)
+clean = treeOptimizer opt
   where
-    (a', b1) = f a
-    (b', b2) = f b
+    opt e = case e of
+      Const 0 `Add` b -> (b, True)
+      Const 0 `Mul` _ -> (Const 0, True)
+      Const 1 `Mul` b -> (b, True)
+      a `Add` Const 0 -> (a, True)
+      _ `Mul` Const 0 -> (Const 0, True)
+      a `Mul` Const 1 -> (a, True)
+
+      Const a `Add` Const b -> (Const (a + b), True)
+      Const a `Mul` Const b -> (Const (a * b), True)
+
+      Const a `Add` (Const b `Add` c) -> (Const (a + b) `Add` c, True)
+      Const a `Mul` (Const b `Mul` c) -> (Const (a * b) `Mul` c, True)
+      Const a `Mul` (Const b `Add` c) -> (Const (a * b) `Add` (Const a `Mul` c), True)
+
+      Add (Mul (Const a) b) (Mul (Const c) d) | b == d -> (Const (a + c) `Mul` b, True)
+      Add (Mul (Const a) b) c                 | b == c -> (Const (a + 1) `Mul` c, True)
+
+      _ -> (e, False)
+
+treeOptimizer :: (Expr -> (Expr, Bool)) -> Expr -> (Expr, Bool)
+treeOptimizer f e = case f e of
+  (Add a b, False) -> splitNode f Add a b
+  (Mul a b, False) -> splitNode f Mul a b
+  (e', False)      -> (e', False)
+  (e', True)       -> (fst $ f e', True)
+
+splitNode :: (a -> (b, Bool)) -> (b -> b -> c) -> a -> a -> (c, Bool)
+splitNode f op a b = let (a', b1) = f a
+                         (b', b2) = f b
+                      in (a' `op` b', b1 || b2)

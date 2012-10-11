@@ -21,12 +21,12 @@ optimizeAll = removeFromEnd . whileModified pipeline
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
-optimizeExpressions = \case
+optimizeExpressions il = case il of
   While e xs -> While (optimizeExpr e) xs
   If e xs    -> If (optimizeExpr e) xs
   Set d e    -> Set d $ optimizeExpr e
   PutChar e  -> PutChar $ optimizeExpr e
-  il         -> il
+  _          -> il
 
 -- Remove instructions that does not do anything
 cleanUp :: [IL] -> [IL]

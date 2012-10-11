@@ -1,6 +1,7 @@
 module Main where
 
 import Brainfuck.Compiler.Brainfuck
+import Brainfuck.Compiler.Optimize
 import Brainfuck.Compiler.Target.C99
 import Brainfuck.Data.Brainfuck
 import Brainfuck.Data.IL
@@ -75,7 +76,7 @@ check (Checker _ f bf) = case (f unopt, f opt) of
   (True, True)  -> Ok
   where
     unopt = compile $ parse bf
-    opt   = optimizeForC unopt
+    opt   = optimizeAll unopt
 -- }}}
 -- {{{ Main
 handleResult :: Checker -> IO ()
@@ -96,7 +97,7 @@ parse str = case parseBrainfuck str of
   Right bf -> bf
 
 prepareBf :: String -> ([IL], [IL])
-prepareBf bf = (il, optimizeForC il)
+prepareBf bf = (il, optimizeAll il)
   where il = compile $ parse bf
 
 findOutput :: String -> [IL] -> String
