@@ -18,6 +18,7 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . optimizeSets
              . inlineZeros
 
+-- |Merge sequences of Set ILs
 optimizeSets :: [IL] -> [IL]
 optimizeSets []       = []
 optimizeSets (x : xs) = case x of
@@ -41,7 +42,7 @@ optimizeSets (x : xs) = case x of
 
     g (d, e)    = Set d e
 
--- Optimize expressions
+-- |Optimize expressions
 optimizeExpressions :: IL -> IL
 optimizeExpressions il = case il of
   While e xs -> While (optimizeExpr e) xs
@@ -50,7 +51,7 @@ optimizeExpressions il = case il of
   PutChar e  -> PutChar $ optimizeExpr e
   _          -> il
 
--- Remove instructions that does not do anything
+-- |Remove instructions that provides no side effects
 cleanUp :: [IL] -> [IL]
 cleanUp []       = []
 cleanUp (x : xs) = case x of
@@ -67,7 +68,8 @@ cleanUp (x : xs) = case x of
 
   _ -> x : cleanUp xs
 
--- |Move shift instructions
+-- |Move shift instructions towards the end.
+-- This make most of the shift operations disappear
 moveShifts :: [IL] -> [IL]
 moveShifts []             = []
 moveShifts (x1 : x2 : xs) = case x1 of
@@ -126,6 +128,7 @@ removeFromEnd = reverse . helper . reverse
     helper (il : ils) | sideEffect il = il : ils
                       | otherwise     = helper ils
 
+-- |Convert while loops that are only run once to if statements
 whileToIf :: [IL] -> [IL]
 whileToIf []                      = []
 whileToIf (While (Get d) ys : xs) = case setToZero d ys of
@@ -133,6 +136,7 @@ whileToIf (While (Get d) ys : xs) = case setToZero d ys of
   Just ys' -> If (Get d) ys' : Set d (Const 0) : whileToIf xs
 whileToIf (x : xs) = x : whileToIf xs
 
+-- |Calculate the optimal representation of some Set ILs
 optimalSets :: [(Int, Expr)] -> [(Int, Expr)]
 optimalSets = go M.empty
   where
