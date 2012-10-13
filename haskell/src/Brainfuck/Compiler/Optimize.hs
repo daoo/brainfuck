@@ -18,7 +18,31 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . moveShifts
              . mapIL optimizeExpressions
              . inlining
+             . optimizeSets
              . inlineZeros
+
+optimizeSets :: [IL] -> [IL]
+optimizeSets []       = []
+optimizeSets (x : xs) = case x of
+  While e ys -> While e (optimizeSets ys) : optimizeSets xs
+  If e ys    -> If e (optimizeSets ys) : optimizeSets xs
+
+  e@(Set _ _) -> let (sets, xs') = span isSet xs
+                  in opt (e : sets) ++ optimizeSets xs'
+
+  _ -> x : optimizeSets xs
+
+  where
+    opt :: [IL] -> [IL]
+    opt = map g . optimalSets . map f
+
+    isSet (Set _ _) = True
+    isSet _         = False
+
+    f (Set d e) = (d, e)
+    f _         = error "Non-Set il in optimizeSets f"
+
+    g (d, e)    = Set d e
 
 -- Optimize expressions
 optimizeExpressions :: IL -> IL
