@@ -10,13 +10,13 @@ import qualified Data.Set as S
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
   where
-    pipeline = cleanUp
+    pipeline = optimizeSets
              . whileToIf
              . reduceCopyLoops
              . moveShifts
              . mapIL optimizeExpressions
-             . optimizeSets
              . inlineZeros
+             . cleanUp
 
 -- |Merge sequences of Set ILs
 optimizeSets :: [IL] -> [IL]

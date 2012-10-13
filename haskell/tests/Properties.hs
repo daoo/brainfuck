@@ -88,7 +88,6 @@ propOptimizeCleanUp     = propOptimize cleanUp
 propOptimizeCopies      = propOptimize reduceCopyLoops
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
 propOptimizeInlineZeros = propOptimize inlineZeros
-propOptimizeInlining    = propOptimize inlining
 
 propOptimizeMoveShifts :: [IL] -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
