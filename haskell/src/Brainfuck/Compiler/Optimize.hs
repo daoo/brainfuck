@@ -1,13 +1,11 @@
 module Brainfuck.Compiler.Optimize where
 
 import Brainfuck.Compiler.Analysis
-import Brainfuck.Compiler.Inlining
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 import Brainfuck.Ext
-import Data.Maybe
-import qualified Data.Set as S
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
@@ -17,7 +15,6 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . reduceCopyLoops
              . moveShifts
              . mapIL optimizeExpressions
-             . inlining
              . optimizeSets
              . inlineZeros
 
@@ -69,14 +66,6 @@ cleanUp (x : xs) = case x of
   Shift s         | s == 0   -> cleanUp xs
 
   _ -> x : cleanUp xs
-
-inlining :: [IL] -> [IL]
-inlining []       = []
-inlining (x : xs) = case x of
-  While e ys -> While e (inlining ys) : inlining xs
-  If e ys    -> If e (inlining ys) : inlining xs
-  Set d e    -> fromMaybe (x : inlining xs) (optimisticInlining d e xs)
-  _          -> x : inlining xs
 
 -- |Move shift instructions
 moveShifts :: [IL] -> [IL]
