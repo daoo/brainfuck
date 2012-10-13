@@ -77,8 +77,6 @@ optimizeExpr = p
         (e3, b3) = sort e2
         (e4, b4) = mult e3
 
-    --pipeline = clean : intersperse clean [mult, sort, listify]
-
 mult :: Expr -> (Expr, Bool)
 mult = treeOptimizer opt
   where
