@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.Expr where
 
 import Control.Monad
@@ -39,10 +40,10 @@ instance Num Expr where
   signum = undefined
 
 unfold :: (a -> a -> a) -> (a -> a -> a) -> (Expr -> a) -> Expr -> a
-unfold add mul f e = case e of
+unfold add mul f = \case
   Add e1 e2 -> unfold add mul f e1 `add` unfold add mul f e2
   Mul e1 e2 -> unfold add mul f e1 `mul` unfold add mul f e2
-  _         -> f e
+  e         -> f e
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d1 e = unfold Add Mul f
@@ -61,7 +62,7 @@ eval = unfold (+) (*) . g
     g _ _         = error "unfold Expr error"
 
 heigth :: Expr -> Int
-heigth e = case e of
+heigth = \case
   Add a b -> 1 + max (heigth a) (heigth b)
   Mul a b -> 1 + max (heigth a) (heigth b)
   _       -> 1
@@ -80,18 +81,18 @@ optimizeExpr = p
 mult :: Expr -> (Expr, Bool)
 mult = treeOptimizer opt
   where
-    opt e = case e of
+    opt = \case
       Add e1 e2          | e1 == e2 -> (Mul (Const 2) e1, True)
       Add e1 (Add e2 e3) | e1 == e2 -> (Add (Mul (Const 2) e1) e3, True)
 
       Add (Mul (Const c) e1) (Add e2 e3) | e1 == e2 -> (Add (Mul (Const c + 1) e1) e3, True)
 
-      _ -> (e, False)
+      e -> (e, False)
 
 sort :: Expr -> (Expr, Bool)
 sort = treeOptimizer opt
   where
-    opt e = case e of
+    opt = \case
       Add e1@(Get _) e2@(Const _)           -> (Add e2 e1, True)
       Add e1@(Get d1) e2@(Get d2) | d1 > d2 -> (Add e2 e1, True)
 
@@ -99,21 +100,21 @@ sort = treeOptimizer opt
 
       Add e1@(Get _) (Add e2@(Const _) e3) -> (Add e2 (Add e1 e3), True)
 
-      _ -> (e, False)
+      e -> (e, False)
 
 listify :: Expr -> (Expr, Bool)
 listify = treeOptimizer opt
   where
-    opt e = case e of
-      Const a `Add` Const b -> (Const (a + b), True)
-      Get _ `Add` Get _     -> (e, False)
-      Const _ `Add` Get _   -> (e, False)
-      Get _ `Add` Const _   -> (e, False)
+    opt = \case
+      Const a `Add` Const b   -> (Const (a + b), True)
+      e@(Get _ `Add` Get _)   -> (e, False)
+      e@(Const _ `Add` Get _) -> (e, False)
+      e@(Get _ `Add` Const _) -> (e, False)
 
-      Const a `Mul` Const b -> (Const (a * b), True)
-      Get _ `Mul` Get _     -> (e, False)
-      Const _ `Mul` Get _   -> (e, False)
-      Get _ `Mul` Const _   -> (e, False)
+      Const a `Mul` Const b   -> (Const (a * b), True)
+      e@(Get _ `Mul` Get _)   -> (e, False)
+      e@(Const _ `Mul` Get _) -> (e, False)
+      e@(Get _ `Mul` Const _) -> (e, False)
 
       a `Add` b@(Const _) -> (b `Add` a, True)
       a `Add` b@(Get _)   -> (b `Add` a, True)
@@ -123,12 +124,12 @@ listify = treeOptimizer opt
       Add (Add e1 e2) e3 -> (Add e1 (Add e2 e3), True)
       Mul (Mul e1 e2) e3 -> (Mul e1 (Mul e2 e3), True)
 
-      _ -> (e, False)
+      e -> (e, False)
 
 clean :: Expr -> (Expr, Bool)
 clean = treeOptimizer opt
   where
-    opt e = case e of
+    opt = \case
       Const 0 `Add` b -> (b, True)
       Const 0 `Mul` _ -> (Const 0, True)
       Const 1 `Mul` b -> (b, True)
@@ -146,7 +147,7 @@ clean = treeOptimizer opt
       Add (Mul (Const a) b) (Mul (Const c) d) | b == d -> (Const (a + c) `Mul` b, True)
       Add (Mul (Const a) b) c                 | b == c -> (Const (a + 1) `Mul` c, True)
 
-      _ -> (e, False)
+      e -> (e, False)
 
 treeOptimizer :: (Expr -> (Expr, Bool)) -> Expr -> (Expr, Bool)
 treeOptimizer f e = case f e of
