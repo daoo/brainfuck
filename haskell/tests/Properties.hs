@@ -82,12 +82,14 @@ propHeuristicInlining d e xs = case heuristicInlining d e xs of
   Nothing  -> True
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
-  propOptimizeExpressions, propOptimizeInlining :: [IL] -> Bool
+  propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets :: [IL] -> Bool
 
 propOptimizeCleanUp     = propOptimize cleanUp
 propOptimizeCopies      = propOptimize reduceCopyLoops
 propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
 propOptimizeInlineZeros = propOptimize inlineZeros
+propOptimizeMovePutGet  = propOptimize movePutGet
+propOptimizeSets        = propOptimize optimizeSets
 
 propOptimizeMoveShifts :: [IL] -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)

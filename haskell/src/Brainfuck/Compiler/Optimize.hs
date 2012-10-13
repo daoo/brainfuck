@@ -16,6 +16,7 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . moveShifts
              . mapIL optimizeExpressions
              . inlineZeros
+             . movePutGet
              . cleanUp
 
 -- |Merge sequences of Set ILs
@@ -67,6 +68,17 @@ cleanUp (x : xs) = case x of
   Shift s         | s == 0   -> cleanUp xs
 
   _ -> x : cleanUp xs
+
+movePutGet :: [IL] -> [IL]
+movePutGet []             = []
+movePutGet [x]            = [x]
+movePutGet (x1 : x2 : xs) = case x1 of
+  Set d e1 -> case x2 of
+    PutChar e2     -> PutChar (inlineExpr d e1 e2) : x1 : movePutGet xs
+    --GetChar d e2 ->
+    _              -> x1 : movePutGet (x2 : xs)
+
+  _ -> x1 : movePutGet (x2 : xs)
 
 -- |Move shift instructions towards the end.
 -- This make most of the shift operations disappear
