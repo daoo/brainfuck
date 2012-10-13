@@ -7,6 +7,7 @@ import Brainfuck.Data.IL
 import Brainfuck.Ext
 import Data.Maybe
 import qualified Data.Set as S
+import qualified Data.Map as M
 
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
@@ -118,3 +119,20 @@ whileToIf (While (Get d) ys : xs) = case setToZero d ys of
   Nothing  -> While (Get d) (whileToIf ys) : whileToIf xs
   Just ys' -> If (Get d) ys' : Set d (Const 0) : whileToIf xs
 whileToIf (x : xs) = x : whileToIf xs
+
+optimalSets :: [(Int, Expr)] -> [(Int, Expr)]
+optimalSets = go M.empty
+  where
+    go :: M.Map Int Expr -> [(Int, Expr)] -> [(Int, Expr)]
+    go m []          = M.assocs m
+    go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
+
+    f :: M.Map Int Expr -> Expr -> Expr
+    f m = modifyLeafs (g m)
+
+    g :: M.Map Int Expr -> Expr -> Expr
+    g m e@(Get i) = case M.lookup i m of
+      Nothing -> e
+      Just e' -> e'
+
+    g _ e = e
