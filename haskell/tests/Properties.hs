@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Properties where
 
 import Brainfuck.Compiler.Analyzer
@@ -10,6 +11,7 @@ import Brainfuck.Data.State
 import Brainfuck.Ext
 import Brainfuck.Interpreter
 import Brainfuck.Parser
+import Control.Monad
 import Data.ListZipper
 import Data.Sequence (empty)
 import Data.Word
@@ -125,6 +127,20 @@ exShiftLoop1 =
 
 -- }}}
 -- {{{ Expressions
+constOnly :: Gen Expr
+constOnly = frequency
+  [ (3, liftM Const arbitrary)
+  , (1, liftM2 Add constOnly constOnly)
+  , (1, liftM2 Mul constOnly constOnly)
+  ]
+
+propExprOptimizeConst :: Property
+propExprOptimizeConst = forAll constOnly (f . optimizeExpr)
+  where
+    f = \case
+      Const _ -> True
+      _       -> False
+
 propExprOptimizeTwice :: Expr -> Bool
 propExprOptimizeTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
 

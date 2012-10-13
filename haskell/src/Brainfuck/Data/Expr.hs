@@ -80,10 +80,11 @@ optimizeExpr = p
 
 mult :: Expr -> (Expr, Bool)
 mult = treeOptimizer (\case
-  Add e1 e2          | e1 == e2 -> (Mul (Const 2) e1, True)
-  Add e1 (Add e2 e3) | e1 == e2 -> (Add (Mul (Const 2) e1) e3, True)
+  Add a b         | a == b -> (Const 2 `Mul` a, True)
+  Add a (Add b c) | a == b -> (Add (Const 2 `Mul` a) c, True)
 
-  Add (Mul (Const c) e1) (Add e2 e3) | e1 == e2 -> (Add (Mul (Const c + 1) e1) e3, True)
+  Add (Mul (Const a) b) c         | b == c -> (Mul (Const a + 1) b, True)
+  Add (Mul (Const a) b) (Add c d) | b == c -> (Add (Mul (Const a + 1) b) d, True)
 
   e -> (e, False))
 
@@ -100,23 +101,24 @@ sort = treeOptimizer (\case
 
 listify :: Expr -> (Expr, Bool)
 listify = treeOptimizer (\case
-  Const a `Add` Const b   -> (Const (a + b), True)
-  e@(Get _ `Add` Get _)   -> (e, False)
-  e@(Const _ `Add` Get _) -> (e, False)
-  e@(Get _ `Add` Const _) -> (e, False)
+  Const a `Add` Const b -> (Const (a + b), True)
+  Const a `Mul` Const b -> (Const (a * b), True)
 
-  Const a `Mul` Const b   -> (Const (a * b), True)
-  e@(Get _ `Mul` Get _)   -> (e, False)
+  e@(Get _   `Add` Get _) -> (e, False)
+  e@(Const _ `Add` Get _) -> (e, False)
+  e@(Get _   `Mul` Get _) -> (e, False)
   e@(Const _ `Mul` Get _) -> (e, False)
-  e@(Get _ `Mul` Const _) -> (e, False)
+
+  a@(Get _) `Add` b@(Const _) -> (b `Add` a, True)
+  a@(Get _) `Mul` b@(Const _) -> (b `Mul` a, True)
 
   a `Add` b@(Const _) -> (b `Add` a, True)
   a `Add` b@(Get _)   -> (b `Add` a, True)
   a `Mul` b@(Const _) -> (b `Mul` a, True)
   a `Mul` b@(Get _)   -> (b `Mul` a, True)
 
-  Add (Add e1 e2) e3 -> (Add e1 (Add e2 e3), True)
-  Mul (Mul e1 e2) e3 -> (Mul e1 (Mul e2 e3), True)
+  Add a@(Add _ _) (Add b@(Get _) c) -> (Add b (Add a c), True)
+  Add a@(Mul _ _) (Add b@(Get _) c) -> (Add b (Add a c), True)
 
   e -> (e, False))
 
@@ -136,15 +138,12 @@ clean = treeOptimizer (\case
   Const a `Mul` (Const b `Mul` c) -> (Const (a * b) `Mul` c, True)
   Const a `Mul` (Const b `Add` c) -> (Const (a * b) `Add` (Const a `Mul` c), True)
 
-  Add (Mul (Const a) b) (Mul (Const c) d) | b == d -> (Const (a + c) `Mul` b, True)
-  Add (Mul (Const a) b) c                 | b == c -> (Const (a + 1) `Mul` c, True)
-
   e -> (e, False))
 
 treeOptimizer :: (Expr -> (Expr, Bool)) -> Expr -> (Expr, Bool)
 treeOptimizer f e = case f e of
-  (Add a b, False) -> splitNode f Add a b
-  (Mul a b, False) -> splitNode f Mul a b
+  (Add a b, False) -> splitNode (treeOptimizer f) Add a b
+  (Mul a b, False) -> splitNode (treeOptimizer f) Mul a b
   (e', False)      -> (e', False)
   (e', True)       -> (fst $ f e', True)
 
