@@ -83,8 +83,9 @@ mult = treeOptimizer (\case
   Add a b         | a == b -> (Const 2 `Mul` a, True)
   Add a (Add b c) | a == b -> (Add (Const 2 `Mul` a) c, True)
 
-  Add (Mul (Const a) b) c         | b == c -> (Mul (Const a + 1) b, True)
-  Add (Mul (Const a) b) (Add c d) | b == c -> (Add (Mul (Const a + 1) b) d, True)
+  Add c (Const a `Mul` b) | b == c -> (Mul (Const a + 1) b, True)
+
+  Add (Const a `Mul` b) (Const c `Mul` d) | b == d -> (Const (a + c) `Mul` b, True)
 
   e -> (e, False))
 
@@ -117,8 +118,7 @@ listify = treeOptimizer (\case
   a `Mul` b@(Const _) -> (b `Mul` a, True)
   a `Mul` b@(Get _)   -> (b `Mul` a, True)
 
-  Add a@(Add _ _) (Add b@(Get _) c) -> (Add b (Add a c), True)
-  Add a@(Mul _ _) (Add b@(Get _) c) -> (Add b (Add a c), True)
+  Add (Add a b) c -> (Add a (Add b c), True)
 
   e -> (e, False))
 
