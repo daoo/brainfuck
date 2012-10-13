@@ -1,8 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module Properties where
 
-import Data.List
-import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Analysis
 import Brainfuck.Compiler.Inlining
 import Brainfuck.Compiler.Optimize
 import Brainfuck.Data.Brainfuck

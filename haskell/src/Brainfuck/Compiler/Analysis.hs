@@ -1,4 +1,4 @@
-module Brainfuck.Compiler.Analyzer where
+module Brainfuck.Compiler.Analysis where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL

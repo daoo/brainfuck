@@ -1,6 +1,6 @@
 module Brainfuck.Compiler.Inlining where
 
-import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Analysis
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 

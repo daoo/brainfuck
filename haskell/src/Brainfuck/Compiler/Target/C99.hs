@@ -1,6 +1,6 @@
 module Brainfuck.Compiler.Target.C99 (showC) where
 
-import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Analysis
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 import Control.Monad

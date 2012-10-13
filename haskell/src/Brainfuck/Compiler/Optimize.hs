@@ -1,6 +1,6 @@
 module Brainfuck.Compiler.Optimize where
 
-import Brainfuck.Compiler.Analyzer
+import Brainfuck.Compiler.Analysis
 import Brainfuck.Compiler.Inlining
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
