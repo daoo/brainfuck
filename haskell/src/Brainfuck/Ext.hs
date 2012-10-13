@@ -26,3 +26,9 @@ mapIndex _ _ _        = error "Index out of range"
 -- |Pipe a value through a list of functions
 pipe :: [a -> a] -> a -> a
 pipe = flip (foldr ($))
+
+mapFst :: (a -> b) -> (a, c) -> (b, c)
+mapFst f (a, b) = (f a, b)
+
+mapSnd :: (a -> b) -> (c, a) -> (c, b)
+mapSnd f (a, b) = (a, f b)
