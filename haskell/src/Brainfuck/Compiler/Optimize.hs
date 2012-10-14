@@ -10,7 +10,7 @@ import qualified Data.Set as S
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
   where
-    pipeline = optimizeSets
+    pipeline = id
              . whileToIf
              . reduceCopyLoops
              . moveShifts
