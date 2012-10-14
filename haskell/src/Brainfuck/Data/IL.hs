@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.IL where
 
 import Brainfuck.Data.Expr
@@ -21,29 +22,32 @@ instance Arbitrary IL where
               , (1, return $ PutChar e)
               ]
 
-  shrink (While e ys) = map (While e) $ tail $ tails ys
-  shrink (If e ys)    = map (If e) $ tail $ tails ys
-  shrink (Set d e)    = map (Set d) $ shrink e
-  shrink (Shift i)    = map Shift $ shrink i
-  shrink (PutChar e)  = map PutChar $ shrink e
-  shrink (GetChar d)  = map GetChar $ shrink d
+  shrink = \case
+    While e ys -> map (While e) $ tail $ tails ys
+    If e ys    -> map (If e) $ tail $ tails ys
+    Set d e    -> map (Set d) $ shrink e
+    Shift i    -> map Shift $ shrink i
+    PutChar e  -> map PutChar $ shrink e
+    GetChar d  -> map GetChar $ shrink d
 
 filterIL :: (IL -> Bool) -> [IL] -> [IL]
-filterIL _ []                          = []
-filterIL f (x@(While e ys) : xs) | f x = While e (filterIL f ys) : filterIL f xs
-filterIL f (x@(If e ys) : xs)    | f x = If e (filterIL f ys) : filterIL f xs
-filterIL f (x : xs)              | f x = x : filterIL f xs
-filterIL f (_ : xs)                    = filterIL f xs
+filterIL f = \case
+  []                        -> []
+  x@(While e ys) : xs | f x -> While e (filterIL f ys) : filterIL f xs
+  x@(If e ys) : xs    | f x -> If e (filterIL f ys)    : filterIL f xs
+  x : xs              | f x -> x                       : filterIL f xs
+  _ : xs                    -> filterIL f xs
 
 mapIL :: (IL -> IL) -> [IL] -> [IL]
 mapIL = map . g
   where
-    g f (While e ys) = f $ While e (map (g f) ys)
-    g f (If e ys)    = f $ If e (map (g f) ys)
-    g f il           = f il
+    g f = \case
+      While e ys -> f $ While e (map (g f) ys)
+      If e ys    -> f $ If e (map (g f) ys)
+      il         -> f il
 
 modifyPtr :: (Int -> Int) -> IL -> IL
-modifyPtr f x = case x of
+modifyPtr f = \case
   While e ys -> While (h e) (map (modifyPtr f) ys)
   If e ys    -> If (h e) (map (modifyPtr f) ys)
   Set d e    -> Set (f d) (h e)

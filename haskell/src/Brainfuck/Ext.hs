@@ -32,3 +32,6 @@ mapFst f (a, b) = (f a, b)
 
 mapSnd :: (a -> b) -> (c, a) -> (c, b)
 mapSnd f (a, b) = (a, f b)
+
+mapTuple :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
+mapTuple f g (a, b) = (f a, g b)

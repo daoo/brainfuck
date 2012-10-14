@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Compiler.Optimize where
 
 import Brainfuck.Compiler.Analysis
@@ -6,6 +7,13 @@ import Brainfuck.Data.IL
 import Brainfuck.Ext
 import qualified Data.Map as M
 import qualified Data.Set as S
+
+applyHelper :: ([IL] -> [IL]) -> [IL] -> [IL]
+applyHelper f = \case
+  []              -> []
+  If    e ys : xs -> If e (f ys)    : f xs
+  While e ys : xs -> While e (f ys) : f xs
+  x          : xs -> x              : f xs
 
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
@@ -21,80 +29,87 @@ optimizeAll = removeFromEnd . whileModified pipeline
 
 -- |Merge sequences of Set ILs
 optimizeSets :: [IL] -> [IL]
-optimizeSets []       = []
-optimizeSets (x : xs) = case x of
-  While e ys -> While e (optimizeSets ys) : optimizeSets xs
-  If e ys    -> If e (optimizeSets ys) : optimizeSets xs
+optimizeSets = \case
+  xs@(Set _ _ : _) -> uncurry (++) $ mapTuple opt optimizeSets $ span isSet xs
 
-  e@(Set _ _) -> let (sets, xs') = span isSet xs
-                  in opt (e : sets) ++ optimizeSets xs'
-
-  _ -> x : optimizeSets xs
+  xs -> applyHelper optimizeSets xs
 
   where
     opt :: [IL] -> [IL]
-    opt = map g . optimalSets . map f
+    opt = map (uncurry Set) . optimalSets . map (\(Set d e) -> (d, e))
 
     isSet (Set _ _) = True
     isSet _         = False
 
-    f (Set d e) = (d, e)
-    f _         = error "Non-Set il in optimizeSets f"
-
-    g (d, e)    = Set d e
-
 -- |Optimize expressions
 optimizeExpressions :: IL -> IL
-optimizeExpressions il = case il of
-  While e xs -> While (optimizeExpr e) xs
-  If e xs    -> If (optimizeExpr e) xs
+optimizeExpressions = \case
   Set d e    -> Set d $ optimizeExpr e
   PutChar e  -> PutChar $ optimizeExpr e
-  _          -> il
+  x          -> x
 
 -- |Remove instructions that provides no side effects
 cleanUp :: [IL] -> [IL]
-cleanUp []       = []
-cleanUp (x : xs) = case x of
-  While (Const i) ys | i == 0    -> cleanUp xs
-                     | otherwise -> While (Const 1) (cleanUp ys) : cleanUp xs -- never ending loop
-  While e ys                     -> While e (cleanUp ys) : cleanUp xs
+cleanUp = \case
+  While (Const i) ys : xs | i == 0    -> cleanUp xs
+                          | otherwise -> While (Const 1) (cleanUp ys) : cleanUp xs -- never ending loop
 
-  If (Const i) ys | i == 0    -> cleanUp xs
-                  | otherwise -> cleanUp ys ++ cleanUp xs
-  If e ys                     -> If e (cleanUp ys) : cleanUp xs
+  If (Const i) ys : xs | i == 0    -> cleanUp xs
+                       | otherwise -> cleanUp ys ++ cleanUp xs
 
-  Set d1 (Get d2) | d1 == d2 -> cleanUp xs
-  Shift s         | s == 0   -> cleanUp xs
+  Set d1 (Get d2) : xs | d1 == d2 -> cleanUp xs
+  Shift s         : xs | s == 0   -> cleanUp xs
 
-  _ -> x : cleanUp xs
+  xs -> applyHelper cleanUp xs
 
 movePutGet :: [IL] -> [IL]
-movePutGet []             = []
-movePutGet [x]            = [x]
-movePutGet (x1 : x2 : xs) = case x1 of
-  Set d e1 -> case x2 of
-    PutChar e2     -> PutChar (inlineExpr d e1 e2) : x1 : movePutGet xs
-    --GetChar d e2 ->
-    _              -> x1 : movePutGet (x2 : xs)
+movePutGet = \case
+  x1@(Set d e1) : x2 : xs -> case x2 of
+    PutChar e2 -> PutChar (inlineExpr d e1 e2) : x1 : movePutGet xs
+    _          -> x1 : movePutGet (x2 : xs)
 
-  _ -> x1 : movePutGet (x2 : xs)
+  xs -> applyHelper movePutGet xs
 
 -- |Move shift instructions towards the end.
 -- This make most of the shift operations disappear
 moveShifts :: [IL] -> [IL]
-moveShifts []             = []
-moveShifts (x1 : x2 : xs) = case x1 of
-  While e ys -> While e (moveShifts ys) : moveShifts (x2 : xs)
-  If e ys    -> If e (moveShifts ys)    : moveShifts (x2 : xs)
-
-  Shift s1 -> case x2 of
+moveShifts = \case
+  x1@(Shift s1) : x2 : xs -> case x2 of
     Shift s2 -> moveShifts $ Shift (s1 + s2) : xs
     _        -> moveShifts $ modifyPtr (+s1) x2 : x1 : xs
 
-  _ -> x1 : moveShifts (x2 : xs)
+  xs -> applyHelper moveShifts xs
 
-moveShifts (x : xs) = x : moveShifts xs
+-- |Reduce multiplications and clear loops
+reduceCopyLoops :: [IL] -> [IL]
+reduceCopyLoops = \case
+  While (Get d) ys : xs -> case copyLoop d ys of
+    Nothing  -> While (Get d) (reduceCopyLoops ys) : reduceCopyLoops xs
+    Just ys' -> map f ys' ++ [Set d $ Const 0] ++ reduceCopyLoops xs
+      where
+        f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
+  xs -> applyHelper reduceCopyLoops xs
+
+-- |Convert while loops that are only run once to if statements
+whileToIf :: [IL] -> [IL]
+whileToIf = \case
+  While e@(Get d) ys : xs -> case setToZero d ys of
+    Nothing  -> While e (whileToIf ys) : whileToIf xs
+    Just ys' -> If (Get d) ys' : Set d (Const 0) : whileToIf xs
+  xs -> applyHelper whileToIf xs
+
+-- |Remove side effect free instructions from the end
+removeFromEnd :: [IL] -> [IL]
+removeFromEnd = reverse . helper . reverse
+  where
+    sideEffect (PutChar _) = True
+    sideEffect (While _ _) = True -- TODO: Not always a side effect
+    sideEffect (If _ _)    = True -- TODO: Not always a side effect
+    sideEffect _           = False
+
+    helper []                         = []
+    helper (il : ils) | sideEffect il = il : ils
+                      | otherwise     = helper ils
 
 -- |Inline initial zeroes
 inlineZeros :: [IL] -> [IL]
@@ -116,37 +131,6 @@ inlineZeros = go S.empty
         f s (Get i) | S.member i s = Get i
                     | otherwise    = Const 0
         f _ e                      = e
-
--- |Reduce multiplications and clear loops
-reduceCopyLoops :: [IL] -> [IL]
-reduceCopyLoops []                      = []
-reduceCopyLoops (While (Get d) ys : xs) = case copyLoop d ys of
-  Nothing  -> While (Get d) (reduceCopyLoops ys) : reduceCopyLoops xs
-  Just ys' -> map f ys' ++ [Set d $ Const 0] ++ reduceCopyLoops xs
-    where
-      f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
-reduceCopyLoops (il : ils) = il : reduceCopyLoops ils
-
--- |Remove side effect free instructions from the end
-removeFromEnd :: [IL] -> [IL]
-removeFromEnd = reverse . helper . reverse
-  where
-    sideEffect (PutChar _) = True
-    sideEffect (While _ _) = True -- TODO: Not always a side effect
-    sideEffect (If _ _)    = True -- TODO: Not always a side effect
-    sideEffect _           = False
-
-    helper []                         = []
-    helper (il : ils) | sideEffect il = il : ils
-                      | otherwise     = helper ils
-
--- |Convert while loops that are only run once to if statements
-whileToIf :: [IL] -> [IL]
-whileToIf []                      = []
-whileToIf (While (Get d) ys : xs) = case setToZero d ys of
-  Nothing  -> While (Get d) (whileToIf ys) : whileToIf xs
-  Just ys' -> If (Get d) ys' : Set d (Const 0) : whileToIf xs
-whileToIf (x : xs) = x : whileToIf xs
 
 -- |Calculate the optimal representation of some Set ILs
 optimalSets :: [(Int, Expr)] -> [(Int, Expr)]
