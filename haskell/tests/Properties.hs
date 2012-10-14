@@ -13,6 +13,7 @@ import Brainfuck.Interpreter
 import Brainfuck.Parser
 import Control.Monad
 import Data.ListZipper
+import Data.Maybe
 import Data.Sequence (empty)
 import Data.Word
 import Test.QuickCheck
@@ -153,13 +154,10 @@ propExprEval e (NonEmpty xs) = eval f e == eval f (optimizeExpr e)
 propExprOptimizeSmaller :: Expr -> Bool
 propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (optimizeExpr expr)
 
-propExprListifyChanged :: Expr -> Bool
-propExprListifyChanged e = let (e', b) = listify e in (e /= e') == b
-
 propExprListifyDepth :: Expr -> Bool
 propExprListifyDepth expr = l <= r
   where
-    expr' = fst $ listify expr
+    expr' = fromMaybe expr (listify expr)
 
     l = case expr' of
       Add a _ -> heigth a
