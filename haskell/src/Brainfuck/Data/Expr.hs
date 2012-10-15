@@ -146,20 +146,34 @@ clean = treeOptimizer (\case
 
   _ -> Nothing)
 
+-- |Recursivley optimize an Expr tree using a node-level optimization function.
+-- Uses depth first recursion. Get and Const results in Nothing. Add and Mul
+-- are a little more complex:
+--   For a node e@(BinOp a b) we first recurse to its children
+--
+--     a' = treeOptimizer f a
+--     b' = treeOptimizer f b
+--
+--   Then there are two cases:
+--
+--     * Both are Nothing, no optimization happend, we return (f e)
+--
+--     * a' or b' is just, an optimization has occured and therefore the
+--       entire treeOptimizer call have to return (Just someExpr). Thus
+--       we must rebuild the node and return either the optimization or
+--       a MORE optimized expression.
 treeOptimizer :: (Expr -> Maybe Expr) -> Expr -> Maybe Expr
-treeOptimizer f e = case f e of
-  Just (Add a b) -> splitNode (treeOptimizer f) Add a b
-  Just (Mul a b) -> splitNode (treeOptimizer f) Mul a b
-  Nothing        -> case e of
-    Add a b      -> splitNode (treeOptimizer f) Add a b
-    Mul a b      -> splitNode (treeOptimizer f) Mul a b
-    m            -> Just m
-  m              -> m
+treeOptimizer f = \case
+  Get _   -> Nothing
+  Const _ -> Nothing
+  Add a b -> opt Add a b
+  Mul a b -> opt Mul a b
 
+  where
+    opt op a b = case (treeOptimizer f a, treeOptimizer f b) of
+      (Nothing, Nothing) -> f $ op a b
+      (Just a', Just b') -> mby $ op a' b'
+      (Just a', Nothing) -> mby $ op a' b
+      (Nothing, Just b') -> mby $ op a b'
 
-splitNode :: (a -> Maybe a) -> (a -> a -> a) -> a -> a -> Maybe a
-splitNode f op a b = case (f a, f b) of
-  (Just a', Just b') -> Just $ a' `op` b'
-  (Nothing, Just b') -> Just $ a `op` b'
-  (Just a', Nothing) -> Just $ a' `op` b
-  (Nothing, Nothing) -> Just $ a `op` b
+    mby a = Just $ fromMaybe a (treeOptimizer f $ a)
