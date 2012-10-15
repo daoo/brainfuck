@@ -25,10 +25,10 @@ instance Arbitrary Expr where
                      , liftM Get $ choose (-s `div` 10, s `div` 5) ]
 
 
-  shrink (Add e1 e2) = e1 : e2 : [Add e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
-  shrink (Mul e1 e2) = e1 : e2 : [Mul e1' e2' | (e1', e2') <- zip (shrink e1) (shrink e2)]
-  shrink (Const i)   = map Const $ shrink i
-  shrink (Get d)     = map Get $ shrink d
+  shrink (Add a b) = a : b : [Add a' b' | (a', b') <- zip (shrink a) (shrink b)]
+  shrink (Mul a b) = a : b : [Mul a' b' | (a', b') <- zip (shrink a) (shrink b)]
+  shrink (Const i) = map Const $ shrink i
+  shrink (Get d)   = map Get $ shrink d
 
 -- For easier testing
 instance Num Expr where
@@ -42,9 +42,9 @@ instance Num Expr where
 
 unfold :: (a -> a -> a) -> (a -> a -> a) -> (Expr -> a) -> Expr -> a
 unfold add mul f = \case
-  Add e1 e2 -> unfold add mul f e1 `add` unfold add mul f e2
-  Mul e1 e2 -> unfold add mul f e1 `mul` unfold add mul f e2
-  e         -> f e
+  Add a b -> unfold add mul f a `add` unfold add mul f b
+  Mul a b -> unfold add mul f a `mul` unfold add mul f b
+  e       -> f e
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d1 e = unfold Add Mul f
@@ -97,12 +97,12 @@ mult = treeOptimizer (\case
 
 sort :: Expr -> Maybe Expr
 sort = treeOptimizer (\case
-  Add e1@(Get _) e2@(Const _)           -> Just $ Add e2 e1
-  Add e1@(Get d1) e2@(Get d2) | d1 > d2 -> Just $ Add e2 e1
+  Add a@(Get _) b@(Const _)           -> Just $ Add b a
+  Add a@(Get d1) b@(Get d2) | d1 > d2 -> Just $ Add b a
 
-  Add e1@(Get d1) (Add e2@(Get d2) e3) | d1 > d2 -> Just $ Add e2 (Add e1 e3)
+  Add a@(Get d1) (Add b@(Get d2) c) | d1 > d2 -> Just $ Add b (Add a c)
 
-  Add e1@(Get _) (Add e2@(Const _) e3) -> Just $ Add e2 (Add e1 e3)
+  Add a@(Get _) (Add b@(Const _) c) -> Just $ Add b (Add a c)
 
   _ -> Nothing)
 
