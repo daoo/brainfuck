@@ -17,6 +17,22 @@ showExpr = \case
   Mul a (Add b c) -> showExpr a . showString " * (" . showExpr b . showString " + " . showExpr c . showString ")"
   Mul a b         -> showExpr a . showString " * " . showExpr b
 
+removeGet :: Int -> Expr -> Maybe Expr
+removeGet d = \case
+  Add a b | h a       -> Just b
+          | h b       -> Just a
+          | otherwise -> case (removeGet d a, removeGet d b) of
+                           (Nothing, Nothing) -> Nothing
+                           (Just a', Just b') -> Just $ a' `Add` b'
+                           (Just a', Nothing) -> Just $ a' `Add` b
+                           (Nothing, Just b') -> Just $ a `Add` b'
+
+  _ -> Nothing
+  where
+    h = \case
+      Get d' -> d == d'
+      _      -> False
+
 showC :: [IL] -> String
 showC ils = writeCode $ do
   line "#include <stdio.h>"
@@ -50,12 +66,12 @@ showC ils = writeCode $ do
       line "}"
 
     statement x = case x of
-      Set d1 (Get d2 `Add` Const c) | d1 == d2 -> ptr d1 "+=" (show c)
-      Set d1 (Const c `Add` Get d2) | d1 == d2 -> ptr d1 "+=" (show c)
+      Set d e -> case removeGet d e of
+        Nothing -> ptr d "=" (showExpr e "")
+        Just e' -> ptr d "+=" (showExpr e' "")
 
       PutChar (Const c) -> string "putchar(" >> string (show $ chr c) >> string ")"
 
-      Set d e   -> ptr d "=" (showExpr e "")
       Shift s   -> string "ptr += " >> string (show s)
       PutChar e -> string "putchar(" >> string (showExpr e ")")
       GetChar p -> ptr p "=" "getchar()"
