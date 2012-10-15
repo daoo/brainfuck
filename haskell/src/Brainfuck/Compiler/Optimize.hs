@@ -5,6 +5,7 @@ import Brainfuck.Compiler.Analysis
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 import Brainfuck.Ext
+import qualified Data.Graph as G
 import qualified Data.Map as M
 import qualified Data.Set as S
 
@@ -132,8 +133,37 @@ inlineZeros = go S.empty
                     | otherwise    = Const 0
         f _ e                      = e
 
+-- Initial Code:
+-- Set 2 (Get 1)
+-- Set 1 (Get 0)
+-- Set 0 (Get 2)
+--
+-- 0: Get 1
+-- 1: Get 0
+-- 2: Get 1
+--
+-- After Optimal Sets:
+-- Set 2 (Get 1)
+-- Set 1 (Get 0)
+-- Set 0 (Get 1)
+--
+-- 0: Get 0
+-- 1: Get 0
+-- 2: Get 1
+--
+-- After Topologic Sort:
+-- Set 2 (Get 1)
+-- Set 0 (Get 1)
+-- Set 1 (Get 2)
+--
+-- 0; Get 1
+-- 1: Get 1
+-- 2: Get 1
+
 type SetOp = (Int, Expr)
+
 -- |Calculate the optimal representation of some Set ILs
+-- TODO: Handle cyclical dependencies
 optimalSets :: [SetOp] -> [SetOp]
 optimalSets = topSort . go M.empty
   where
@@ -152,46 +182,10 @@ optimalSets = topSort . go M.empty
     g _ e = e
 
 topSort :: [SetOp] -> [SetOp]
-topSort = uncurry (go []) . mklists . mkmap M.empty
+topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
-    go :: [SetOp] -> [SetOp] -> [(Int, [Int], Expr)] -> [SetOp]
-    go acc [] _              = acc
-    go acc (x@(i, _):xs) inc = uncurry (go (x:acc)) $ mapAccumL' f xs inc
-      where
-        f :: [SetOp] -> (Int, [Int], Expr) -> ([SetOp], Maybe (Int, [Int], Expr))
-        f acc' (y, edges, e') = case filter (/= i) edges of
-          []     -> ((y, e') : acc', Nothing)
-          edges' -> (acc', Just (y, edges', e'))
-
-    mklists :: M.Map Int ([Int], Expr) -> ([SetOp], [(Int, [Int], Expr)])
-    mklists = M.foldrWithKey help ([], [])
-      where
-        help x (edges, e) (noinc, inc) = case edges of
-          [] -> ((x, e) : noinc, inc)
-          _  -> (noinc, (x, edges, e) : inc)
-
-    mkmap :: M.Map Int ([Int], Expr) -> [SetOp] -> M.Map Int ([Int], Expr)
-    mkmap m []            = m
-    mkmap m ((x, e) : xs) = mkmap (help m x e) xs
-      where
-        help m' x e = case get e of
-          []    -> M.insert x ([], e) m'
-          edges -> foldl (\m'' y -> M.alter (up y e) x m'') m' edges
-
-    up x e = \case
-      Nothing      -> Just ([x], e)
-      Just (xs, _) -> Just (x:xs, e)
+    (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
     get = unfold (++) (++) (\case
       Get d -> [d]
       _     -> [])
-
--- In optimal sets:
--- when we reach an expression which contains a (Get i) not in the map
--- we have to make sure it comes before any (Set i) in the result
-
--- Order matters:
--- [0, 0]
--- Set 1 $ Get 0
--- Set 0 $ Const 1
--- [1, Get 0]
