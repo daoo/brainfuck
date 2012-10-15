@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Ext where
 
 -- |Repeat a function a certain ammount of times
@@ -35,3 +36,15 @@ mapSnd f (a, b) = (a, f b)
 
 mapTuple :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
 mapTuple f g (a, b) = (f a, g b)
+-- |Like mapAccumL but drops Nothing from resulting list
+
+mapAccumL' :: (acc -> x -> (acc, Maybe y)) -> acc -> [x] -> (acc, [y])
+mapAccumL' _ acc []     = (acc, [])
+mapAccumL' f acc (x:xs) = (acc'', mapp ys y)
+  where
+    (acc', y)   = f acc x
+    (acc'', ys) = mapAccumL' f acc' xs
+
+    mapp zs = \case
+      Just z  -> z : zs
+      Nothing -> zs
