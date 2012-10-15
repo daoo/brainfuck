@@ -18,7 +18,7 @@ applyHelper f = \case
 optimizeAll :: [IL] -> [IL]
 optimizeAll = removeFromEnd . whileModified pipeline
   where
-    pipeline = id
+    pipeline = optimizeSets
              . whileToIf
              . reduceCopyLoops
              . moveShifts
@@ -132,11 +132,12 @@ inlineZeros = go S.empty
                     | otherwise    = Const 0
         f _ e                      = e
 
+type SetOp = (Int, Expr)
 -- |Calculate the optimal representation of some Set ILs
-optimalSets :: [(Int, Expr)] -> [(Int, Expr)]
-optimalSets = go M.empty
+optimalSets :: [SetOp] -> [SetOp]
+optimalSets = topSort . go M.empty
   where
-    go :: M.Map Int Expr -> [(Int, Expr)] -> [(Int, Expr)]
+    go :: M.Map Int Expr -> [SetOp] -> [SetOp]
     go m []          = M.assocs m
     go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
 
@@ -149,3 +150,48 @@ optimalSets = go M.empty
       Just e' -> e'
 
     g _ e = e
+
+topSort :: [SetOp] -> [SetOp]
+topSort = uncurry (go []) . mklists . mkmap M.empty
+  where
+    go :: [SetOp] -> [SetOp] -> [(Int, [Int], Expr)] -> [SetOp]
+    go acc [] _              = acc
+    go acc (x@(i, _):xs) inc = uncurry (go (x:acc)) $ mapAccumL' f xs inc
+      where
+        f :: [SetOp] -> (Int, [Int], Expr) -> ([SetOp], Maybe (Int, [Int], Expr))
+        f acc' (y, edges, e') = case filter (/= i) edges of
+          []     -> ((y, e') : acc', Nothing)
+          edges' -> (acc', Just (y, edges', e'))
+
+    mklists :: M.Map Int ([Int], Expr) -> ([SetOp], [(Int, [Int], Expr)])
+    mklists = M.foldrWithKey help ([], [])
+      where
+        help x (edges, e) (noinc, inc) = case edges of
+          [] -> ((x, e) : noinc, inc)
+          _  -> (noinc, (x, edges, e) : inc)
+
+    mkmap :: M.Map Int ([Int], Expr) -> [SetOp] -> M.Map Int ([Int], Expr)
+    mkmap m []            = m
+    mkmap m ((x, e) : xs) = mkmap (help m x e) xs
+      where
+        help m' x e = case get e of
+          []    -> M.insert x ([], e) m'
+          edges -> foldl (\m'' y -> M.alter (up y e) x m'') m' edges
+
+    up x e = \case
+      Nothing      -> Just ([x], e)
+      Just (xs, _) -> Just (x:xs, e)
+
+    get = unfold (++) (++) (\case
+      Get d -> [d]
+      _     -> [])
+
+-- In optimal sets:
+-- when we reach an expression which contains a (Get i) not in the map
+-- we have to make sure it comes before any (Set i) in the result
+
+-- Order matters:
+-- [0, 0]
+-- Set 1 $ Get 0
+-- Set 0 $ Const 1
+-- [1, Get 0]
