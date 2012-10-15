@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Compiler.Target.C99 (showC) where
 
 import Brainfuck.Compiler.Analysis
@@ -8,12 +9,13 @@ import Data.Char
 import Text.CodeWriter
 
 showExpr :: Expr -> ShowS
-showExpr (Const c)            = shows c
-showExpr (Get d)              = showString "ptr[" . shows d . showString "]"
-showExpr (Add e1 e2)          = showExpr e1 . showString " + " . showExpr e2
-showExpr (Mul (Add e1 e2) e3) = showString "(" . showExpr e1 . showString " + " . showExpr e2 . showString ") * " . showExpr e3
-showExpr (Mul e1 (Add e2 e3)) = showExpr e1 . showString " * (" . showExpr e2 . showString " + " . showExpr e3 . showString ")"
-showExpr (Mul e1 e2)          = showExpr e1 . showString " * " . showExpr e2
+showExpr = \case
+  Const c         -> shows c
+  Get d           -> showString "ptr[" . shows d . showString "]"
+  Add a b         -> showExpr a . showString " + " . showExpr b
+  Mul (Add a b) c -> showString "(" . showExpr a . showString " + " . showExpr b . showString ") * " . showExpr c
+  Mul a (Add b c) -> showExpr a . showString " * (" . showExpr b . showString " + " . showExpr c . showString ")"
+  Mul a b         -> showExpr a . showString " * " . showExpr b
 
 showC :: [IL] -> String
 showC ils = writeCode $ do
