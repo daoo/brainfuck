@@ -1,8 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.Expr where
 
-import Debug.Trace
-
 import Control.Monad
 import Data.Maybe
 import Test.QuickCheck
