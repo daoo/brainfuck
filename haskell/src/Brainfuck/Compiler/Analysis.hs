@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Compiler.Analysis where
 
 import Brainfuck.Data.Expr
@@ -26,9 +27,10 @@ copyLoop d xs = do
   mapM h copies
   where
     -- First filter, if a non-constant add is found, exit
-    f (Set d1 (Get d2 `Add` Const c)) = Just (d1, d2, c)
-    f (Set d1 (Const c `Add` Get d2)) = Just (d1, d2, c)
-    f _                               = Nothing
+    f = \case
+      Set d1 (Get d2 `Add` Const c) -> Just (d1, d2, c)
+      Set d1 (Const c `Add` Get d2) -> Just (d1, d2, c)
+      _                             -> Nothing
 
     -- Filter the decrement operation
     g d1 (d2, d3, -1) = d1 == d2 && d1 == d3
@@ -48,9 +50,9 @@ memoryAccess = go 0
     go i (PutChar e : xs) = expr i e             : go i xs
     go i (GetChar d : xs) = [i + d]              : go i xs
 
-    expr i = map (+i) . unfold (++) (++) f
+    expr i = unfold (++) (++) f
       where
-        f (Get d) = [d]
+        f (Get d) = [i + d]
         f _       = []
 
 -- |Analyze how much memory is needed

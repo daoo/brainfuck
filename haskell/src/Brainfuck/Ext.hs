@@ -1,15 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Ext where
 
+import Control.Arrow
+
 -- |Repeat a function a certain ammount of times
 times :: (a -> a) -> Int -> a -> a
 times f i a = case compare i 0 of
   LT -> error "Negative number"
   EQ -> a
-  GT -> go i a
-  where
-    go 0 b = b
-    go j b = times f (j - 1) (f b)
+  GT -> times f (i - 1) (f a)
 
 -- |Repeat until a function returns the same function
 whileModified :: Eq a => (a -> a) -> a -> a
@@ -29,22 +28,15 @@ pipe :: [a -> a] -> a -> a
 pipe = flip (foldr ($))
 
 mapFst :: (a -> b) -> (a, c) -> (b, c)
-mapFst f (a, b) = (f a, b)
+mapFst = (*** id)
 
 mapSnd :: (a -> b) -> (c, a) -> (c, b)
-mapSnd f (a, b) = (a, f b)
+mapSnd = (id ***)
 
-mapTuple :: (a -> c) -> (b -> d) -> (a, b) -> (c, d)
-mapTuple f g (a, b) = (f a, g b)
 -- |Like mapAccumL but drops Nothing from resulting list
-
 mapAccumL' :: (acc -> x -> (acc, Maybe y)) -> acc -> [x] -> (acc, [y])
 mapAccumL' _ acc []     = (acc, [])
-mapAccumL' f acc (x:xs) = (acc'', mapp ys y)
+mapAccumL' f acc (x:xs) = (acc'', maybe ys (:ys) y)
   where
     (acc', y)   = f acc x
     (acc'', ys) = mapAccumL' f acc' xs
-
-    mapp zs = \case
-      Just z  -> z : zs
-      Nothing -> zs

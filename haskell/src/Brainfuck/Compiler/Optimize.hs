@@ -5,6 +5,7 @@ import Brainfuck.Compiler.Analysis
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 import Brainfuck.Ext
+import Control.Arrow
 import qualified Data.Graph as G
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -25,13 +26,13 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . moveShifts
              . mapIL optimizeExpressions
              . inlineZeros
-             . movePutGet
+             . id
              . cleanUp
 
 -- |Merge sequences of Set ILs
 optimizeSets :: [IL] -> [IL]
 optimizeSets = \case
-  xs@(Set _ _ : _) -> uncurry (++) $ mapTuple opt optimizeSets $ span isSet xs
+  xs@(Set _ _ : _) -> uncurry (++) $ opt *** optimizeSets $ span isSet xs
 
   xs -> applyHelper optimizeSets xs
 
