@@ -44,4 +44,4 @@ string :: String -> CodeWriter
 string = tell
 
 writeCode :: CodeWriter -> String
-writeCode f = execWriter $ execStateT f 0
+writeCode = execWriter . (`execStateT` 0)
