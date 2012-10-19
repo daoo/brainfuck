@@ -70,19 +70,15 @@ heigth = \case
 
 -- |Create the (computionally) shortest expression that have the same results
 optimizeExpr :: Expr -> Expr
-optimizeExpr = p
+optimizeExpr = go
   where
-    p e = case foldr m (e, False) pipeline of
-      (e', True) -> p e'
-      (_, False) -> e
+    go e = maybe e go $ foldl (func e) Nothing pipeline
 
     pipeline = [mult, sort, listify, clean]
 
-    m g (e, b) = let (e', b') = f g e in (e', b || b')
-
-    f g e = case g e of
-      Nothing -> (e, False)
-      Just e' -> (e', True)
+    func e acc f = case acc of
+      Nothing -> f e
+      Just e' -> Just $ fromMaybe e' (f e')
 
 mult :: Expr -> Maybe Expr
 mult = treeOptimizer (\case
@@ -172,8 +168,5 @@ treeOptimizer f = \case
   where
     opt op a b = case (treeOptimizer f a, treeOptimizer f b) of
       (Nothing, Nothing) -> f $ op a b
-      (Just a', Just b') -> mby $ op a' b'
-      (Just a', Nothing) -> mby $ op a' b
-      (Nothing, Just b') -> mby $ op a b'
-
-    mby a = Just $ fromMaybe a (treeOptimizer f $ a)
+      (a', b')           -> let e = fromMaybe a a' `op` fromMaybe b b'
+                             in Just $ fromMaybe e (treeOptimizer f e)
