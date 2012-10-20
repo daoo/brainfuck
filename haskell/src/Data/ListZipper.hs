@@ -1,20 +1,17 @@
 module Data.ListZipper where
 
 import Brainfuck.Ext
+import Control.Applicative
 import Test.QuickCheck.Arbitrary
 
 data ListZipper a = ListZipper
   { left :: [a]
   , focus :: a
-  , right :: [a] }
-  deriving (Show, Eq)
+  , right :: [a]
+  } deriving (Show, Eq)
 
 instance (Arbitrary a) => Arbitrary (ListZipper a) where
-  arbitrary = do
-    xs <- arbitrary
-    y  <- arbitrary
-    zs <- arbitrary
-    return $ ListZipper xs y zs
+  arbitrary = liftA3 ListZipper arbitrary arbitrary arbitrary
 
 size :: ListZipper a -> Int
 size (ListZipper xs _ zs) = length xs + 1 + length zs

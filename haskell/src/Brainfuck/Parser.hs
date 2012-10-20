@@ -1,5 +1,6 @@
 module Brainfuck.Parser (parseBrainfuck) where
 
+import Control.Applicative ((<$>))
 import Brainfuck.Data.Brainfuck
 import Text.ParserCombinators.Parsec
 
@@ -13,7 +14,7 @@ bfOps :: Parser [Brainfuck]
 bfOps = many bfOp
 
 bfOp :: Parser Brainfuck
-bfOp = do 
+bfOp = do
   x <- bfToken <|> bfLoop
   noSymbols
   return x
@@ -25,12 +26,12 @@ bfToken = choice $ map (uncurry f)
   , ('>', ShiftRight)
   , ('<', ShiftLeft)
   , ('.', Output)
-  , (',', Input) ]
-  where
+  , (',', Input)
+  ] where
     f c t = char c >> return (Token t)
 
 bfLoop :: Parser Brainfuck
-bfLoop = fmap Repeat $ between (char '[' >> noSymbols) (char ']' >> noSymbols) bfOps
+bfLoop = Repeat <$> between (char '[' >> noSymbols) (char ']' >> noSymbols) bfOps
 
 parseBrainfuck :: String -> Either ParseError [Brainfuck]
 parseBrainfuck = parse program "brainfuck"

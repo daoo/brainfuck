@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.Brainfuck where
 
 import Data.List
@@ -11,12 +12,13 @@ data Brainfuck = Repeat [Brainfuck]
   deriving Eq
 
 toChar :: Token -> Char
-toChar Plus       = '+'
-toChar Minus      = '-'
-toChar ShiftLeft  = '<'
-toChar ShiftRight = '>'
-toChar Input      = ','
-toChar Output     = '.'
+toChar = \case
+  Plus       -> '+'
+  Minus      -> '-'
+  ShiftLeft  -> '<'
+  ShiftRight -> '>'
+  Input      -> ','
+  Output     -> '.'
 
 instance Show Token where
   show t = [toChar t]

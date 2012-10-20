@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Interpreter where
 
 import Brainfuck.Data.Expr
@@ -10,7 +11,7 @@ run :: (Integral a) => State a -> [IL] -> State a
 run = foldl evalOp
 
 evalOp :: (Integral a) => State a -> IL -> State a
-evalOp state@(State inp out mem) x = case x of
+evalOp state@(State inp out mem) = \case
   While e ys -> until (isZero e) (`run` ys) state
   If e ys    -> if isZero e state then run state ys else state
 
@@ -26,8 +27,8 @@ evalOp state@(State inp out mem) x = case x of
     applyAt'  = applyAt . const
 
 evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
-evalExpr f e = case e of
-  Const v   -> fromIntegral v
-  Get o     -> f o
-  Add e1 e2 -> evalExpr f e1 + evalExpr f e2
-  Mul e1 e2 -> evalExpr f e1 * evalExpr f e2
+evalExpr f = \case
+  Const v -> fromIntegral v
+  Get o   -> f o
+  Add a b -> evalExpr f a + evalExpr f b
+  Mul a b -> evalExpr f a * evalExpr f b
