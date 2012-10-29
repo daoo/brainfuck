@@ -52,8 +52,8 @@ inlineExpr d1 e = unfold Add Mul f
     f (Get d2) | d1 == d2 = e
     f e'                  = e'
 
-modifyLeafs :: (Expr -> Expr) -> Expr -> Expr
-modifyLeafs = unfold Add Mul
+modifyLeaves :: (Expr -> Expr) -> Expr -> Expr
+modifyLeaves = unfold Add Mul
 
 eval :: (Int -> Int) -> Expr -> Int
 eval = unfold (+) (*) . g

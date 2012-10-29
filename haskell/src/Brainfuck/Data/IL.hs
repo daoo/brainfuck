@@ -59,4 +59,4 @@ modifyPtr f = \case
     g (Get d) = Get $ f d
     g e       = e
 
-    h = modifyLeafs g
+    h = modifyLeaves g

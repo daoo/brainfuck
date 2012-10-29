@@ -179,7 +179,7 @@ optimalSets = topSort . go M.empty
     go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
 
     f :: M.Map Int Expr -> Expr -> Expr
-    f m = modifyLeafs (\case
+    f m = modifyLeaves (\case
       e@(Get i) -> fromMaybe e $ M.lookup i m
       e         -> e)
 
