@@ -17,19 +17,14 @@ type CodeWriter = StateT Int (Writer String) ()
 indent :: Int -> String
 indent i = replicate (2 * i) ' '
 
+string :: String -> CodeWriter
+string = tell
+
 line :: String -> CodeWriter
-line str = do
-  i <- get
-  tell $ indent i
-  tell str
-  tell "\n"
+line = lineM . tell
 
 lineM :: CodeWriter -> CodeWriter
-lineM f = do
-  i <- get
-  tell $ indent i
-  f
-  tell "\n"
+lineM cw = get >>= (tell . indent) >> cw >> tell "\n"
 
 indentedM :: CodeWriter -> CodeWriter
 indentedM f = incIndent >> f >> decIndent
@@ -39,9 +34,6 @@ incIndent = modify (+1)
 
 decIndent :: CodeWriter
 decIndent = modify (subtract 1)
-
-string :: String -> CodeWriter
-string = tell
 
 writeCode :: CodeWriter -> String
 writeCode = execWriter . (`execStateT` 0)
