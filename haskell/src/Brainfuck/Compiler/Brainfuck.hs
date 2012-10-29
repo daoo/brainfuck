@@ -7,9 +7,9 @@ import Brainfuck.Data.IL
 
 compile :: [Brainfuck] -> [IL]
 compile = \case
-  []            -> []
-  Repeat l : bs -> While (Get 0) (compile l) : compile bs
-  Token t : bs  -> token t : compile bs
+  []             -> []
+  Repeat ys : xs -> While (Get 0) (compile ys) : compile xs
+  Token t : xs   -> token t : compile xs
   where
     token = \case
       Plus       -> Set 0 $ Add (Get 0) (Const 1)
