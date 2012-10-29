@@ -15,9 +15,10 @@ exprDepends d = unfold (||) (||) f
 
 -- |Analyze a IL Loop for copies
 -- A copy loop is a loop that follow these criteria:
---   * Contains no shifts, puts or gets
---   * The loop memory position is decremented by 1
---   * Increment or decrement any other memory cell by any integer
+--   * Contains no shifts, puts or gets.
+--   * The loop memory position is decremented by 1. The loop memory position
+--     must be decremented by 1, otherwise we do not know if it will reach zero.
+--   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
 copyLoop :: Int -> [IL] -> Maybe [(Int, Int)]
 copyLoop d xs = do
@@ -42,20 +43,21 @@ copyLoop d xs = do
 memoryAccess :: [IL] -> [[Int]]
 memoryAccess = go 0
   where
-    go _ []               = []
-    go _ (While _ _ : _)  = error "FIXME: While"
-    go _ (If _ _    : _)  = error "FIXME: If"
-    go i (Shift s   : xs) = go (i + s) xs
-    go i (Set d e   : xs) = ((i + d) : expr i e) : go i xs
-    go i (PutChar e : xs) = expr i e             : go i xs
-    go i (GetChar d : xs) = [i + d]              : go i xs
+    go _ []     = []
+    go i (x:xs) = case x of
+      If _ _    -> error "FIXME: memoryAccess If"
+      While _ _ -> error "FIXME: memoryAccess While"
+      Shift s   -> go (i + s) xs
+      Set d e   -> ((i + d) : expr i e) : go i xs
+      PutChar e -> expr i e             : go i xs
+      GetChar d -> [i + d]              : go i xs
 
     expr i = unfold (++) (++) f
       where
         f (Get d) = [i + d]
         f _       = []
 
--- |Analyze how much memory is needed
+-- |Approximate how much memory is needed
 memorySize :: [IL] -> (Int, Int)
 memorySize xs = case concat $ memoryAccess xs of
   []  -> (0, 0)
@@ -63,25 +65,25 @@ memorySize xs = case concat $ memoryAccess xs of
 
 -- |Check if the list of ILs make use of the memory or the global pointer
 usesMemory :: [IL] -> Bool
-usesMemory = any f
+usesMemory = any $ \case
+  If _ ys    -> usesMemory ys
+  While _ ys -> usesMemory ys
+  PutChar e  -> unfold (||) (||) g e
+  Set _ _    -> True
+  GetChar _  -> True
+  Shift _    -> True
   where
-    f (While _ ys) = usesMemory ys
-    f (If _ ys)    = usesMemory ys
-    f (Set _ _)    = True
-    f (PutChar e)  = unfold (||) (||) g e
-    f (GetChar _)  = True
-    f (Shift _)    = True
-
     g (Get _) = True
     g _       = False
 
+-- |Check if a memory position is set to zero by some ILs
 setToZero :: Int -> [IL] -> Maybe [IL]
 setToZero d1 = fmap reverse . go . reverse
   where
     go []       = Just []
     go (x : xs) = case x of
-      While _ _                   -> Nothing
       If _ _                      -> Nothing
+      While _ _                   -> Nothing
       Shift _                     -> Nothing
       GetChar d2       | d1 == d2 -> Nothing
       Set d2 (Const 0) | d1 == d2 -> Just xs
