@@ -110,10 +110,11 @@ whileToIf (x:xs) = case x of
 removeFromEnd :: [IL] -> [IL]
 removeFromEnd = reverse . helper . reverse
   where
-    sideEffect (PutChar _) = True
-    sideEffect (While _ _) = True -- TODO: Not always a side effect
-    sideEffect (If _ _)    = True -- TODO: Not always a side effect
-    sideEffect _           = False
+    sideEffect = \case
+      PutChar _ -> True
+      While _ _ -> True -- TODO: Not always a side effect
+      If _ _    -> True -- TODO: Not always a side effect
+      _         -> False
 
     helper []                         = []
     helper (il : ils) | sideEffect il = il : ils
@@ -134,11 +135,10 @@ inlineZeros = go S.empty
       Shift _   -> il : ils
 
     inl :: S.Set Int -> Expr -> Expr
-    inl = unfold Add Mul . f
-      where
-        f s (Get i) | S.member i s = Get i
-                    | otherwise    = Const 0
-        f _ e                      = e
+    inl s = unfold Add Mul (\case
+      Get i | S.member i s -> Get i
+            | otherwise    -> Const 0
+      e                    -> e)
 
 -- Initial Code:
 -- Set 2 (Get 1)
