@@ -6,6 +6,7 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
 import Brainfuck.Ext
 import Control.Arrow
+import Data.Maybe
 import qualified Data.Graph as G
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -173,14 +174,9 @@ optimalSets = topSort . go M.empty
     go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
 
     f :: M.Map Int Expr -> Expr -> Expr
-    f m = modifyLeafs (g m)
-
-    g :: M.Map Int Expr -> Expr -> Expr
-    g m e@(Get i) = case M.lookup i m of
-      Nothing -> e
-      Just e' -> e'
-
-    g _ e = e
+    f m = modifyLeafs (\case
+      e@(Get i) -> fromMaybe e $ M.lookup i m
+      e         -> e)
 
 topSort :: [SetOp] -> [SetOp]
 topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
