@@ -85,21 +85,26 @@ moveShifts = \case
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: [IL] -> [IL]
-reduceCopyLoops = \case
-  While (Get d) ys : xs -> case copyLoop d ys of
-    Nothing  -> While (Get d) (reduceCopyLoops ys) : reduceCopyLoops xs
-    Just ys' -> map f ys' ++ [Set d $ Const 0] ++ reduceCopyLoops xs
-      where
-        f (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
-  xs -> applyHelper reduceCopyLoops xs
+reduceCopyLoops [] = []
+reduceCopyLoops (x:xs) = case x of
+  While e@(Get d) ys -> let x'    = [While e $ reduceCopyLoops ys]
+                            g ys' = map (f d) ys' ++ [Set d $ Const 0]
+                         in (maybe x' g (copyLoop d ys)) ++ reduceCopyLoops xs
+
+  _ -> x : reduceCopyLoops xs
+
+  where
+    f d (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
 
 -- |Convert while loops that are only run once to if statements
 whileToIf :: [IL] -> [IL]
-whileToIf = \case
-  While e@(Get d) ys : xs -> case setToZero d ys of
-    Nothing  -> While e (whileToIf ys) : whileToIf xs
-    Just ys' -> If (Get d) ys' : Set d (Const 0) : whileToIf xs
-  xs -> applyHelper whileToIf xs
+whileToIf []     = []
+whileToIf (x:xs) = case x of
+  While e@(Get d) ys -> let x'    = [While e $ whileToIf ys]
+                            f ys' = [If (Get d) ys', Set d (Const 0)]
+                         in (maybe x' f (setToZero d ys)) ++ whileToIf xs
+
+  _ -> x : whileToIf xs
 
 -- |Remove side effect free instructions from the end
 removeFromEnd :: [IL] -> [IL]
