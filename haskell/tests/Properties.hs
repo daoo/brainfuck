@@ -8,7 +8,6 @@ import Brainfuck.Compiler.Optimize
 import Brainfuck.Data.Brainfuck
 import Brainfuck.Data.Expr
 import Brainfuck.Data.IL
-import Brainfuck.Data.State
 import Brainfuck.Ext
 import Brainfuck.Interpreter
 import Brainfuck.Parser
