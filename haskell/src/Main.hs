@@ -6,7 +6,6 @@ import Brainfuck.Compiler.Target.C99
 import Brainfuck.Compiler.Target.Haskell
 import Brainfuck.Compiler.Target.Indented
 import Brainfuck.Data.IL
-import Brainfuck.Data.State
 import Brainfuck.Ext
 import Brainfuck.Interpreter
 import Brainfuck.Parser
