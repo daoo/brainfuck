@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Compiler.Brainfuck (compile) where
+module Brainfuck.Compiler.Brainfuck (compile, decompile) where
 
 import Brainfuck.Data.Brainfuck
 import Brainfuck.Data.Expr
@@ -18,3 +18,18 @@ compile = \case
       ShiftLeft  -> Shift (-1)
       Output     -> PutChar $ Get 0
       Input      -> GetChar 0
+
+decompile :: [IL] -> [Brainfuck]
+decompile []     = []
+decompile (x:xs) = tokenize x : decompile xs
+  where
+    tokenize = \case
+      While (Get 0) ys                 -> Repeat (decompile ys)
+      Set 0 (Add (Get 0) (Const 1))    -> Token $ Plus
+      Set 0 (Add (Get 0) (Const (-1))) -> Token $ Minus
+      Shift 1                          -> Token $ ShiftRight
+      Shift (-1)                       -> Token $ ShiftLeft
+      PutChar (Get 0)                  -> Token $ Output
+      GetChar 0                        -> Token $ Input
+
+      _ -> error "Not supported by decompile"

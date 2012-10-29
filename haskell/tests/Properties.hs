@@ -2,6 +2,7 @@
 module Properties where
 
 import Brainfuck.Compiler.Analysis
+import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.Inlining
 import Brainfuck.Compiler.Optimize
 import Brainfuck.Data.Brainfuck
@@ -48,6 +49,10 @@ propParser :: [Brainfuck] -> Bool
 propParser bf = case parseBrainfuck (show bf) of
   Left _    -> False
   Right bf' -> bf == bf'
+-- }}}
+-- {{{ Compiler
+propCompileDecompile :: [Brainfuck] -> Bool
+propCompileDecompile bf = bf == decompile (compile bf)
 -- }}}
 -- {{{ Optimization
 compareFull :: (Integral a) => Int -> State a -> State a -> Bool
