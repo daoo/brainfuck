@@ -27,7 +27,7 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . moveShifts
              . mapIL optimizeExpressions
              . inlineZeros
-             . id
+             . movePutGet
              . cleanUp
 
 -- |Merge sequences of Set ILs
