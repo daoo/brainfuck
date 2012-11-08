@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
+# Compare the output of brainfuck after two consecutive runs of this script
+# using vimdiff.
 
 bf="build/brainfuck"
+dir="/tmp/brainfuck/"
+
 infile="$1"
 
 if [[ ! -x "$bf" ]]; then
   echo "brainfuck compiler not found"
 elif [[ ! -f "$infile" ]]; then
-  echo "usage: comapre brainfuck.bf"
+  echo "usage: compare FILE"
 else
   name="$(basename "$infile")"
-  
-  old="/tmp/$name.c.old"
-  new="/tmp/$name.c"
+
+  old="$dir/$name.c.old"
+  new="$dir/$name.c"
 
   if [[ -f "$new" ]]; then
     mv "$new" "$old"
-    $bf -c "$1" > "$new"
+    exec $bf -c "$1" > "$new"
     vimdiff "$new" "$old"
   else
-    $bf -c "$1" > "$new"
+    exec $bf -c "$1" > "$new"
     echo "Nothing to compare with. Maybe next time..."
   fi
 fi
