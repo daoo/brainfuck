@@ -38,15 +38,14 @@ showC ils = writeCode $ do
   line "#include <stdio.h>"
   line ""
   line "int main() {"
-  incIndent
-  when (usesMemory ils) $ do
-    line "unsigned char mem[30001];"
-    line "unsigned char* ptr = mem;"
+  indentedM $ do
+    when (usesMemory ils) $ do
+      line "unsigned char mem[30001];"
+      line "unsigned char* ptr = mem;"
 
-  code ils
+    code ils
 
-  line "return 0;"
-  decIndent
+    line "return 0;"
   line "}"
   where
     code :: [IL] -> CodeWriter
@@ -58,10 +57,7 @@ showC ils = writeCode $ do
 
     block :: String -> Expr -> [IL] -> CodeWriter
     block word e ys = do
-      lineM $ do
-        string word
-        string " ("
-        string $ showExpr e ") {"
+      line $ shows word $ showString " (" $ showExpr e ") {"
       indentedM $ code ys
       line "}"
 
