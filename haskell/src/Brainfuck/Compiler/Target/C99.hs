@@ -57,7 +57,7 @@ showC ils = writeCode $ do
 
     block :: String -> Expr -> [IL] -> CodeWriter
     block word e ys = do
-      line $ shows word $ showString " (" $ showExpr e ") {"
+      lineM $ string word >> string " (" >> (string $ showExpr e ") {")
       indentedM $ code ys
       line "}"
 
