@@ -1,10 +1,12 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Compiler.Target.Haskell where
 
-import Brainfuck.Data.IL
+import Brainfuck.Data.AST
+import Brainfuck.Data.Expr
 import Text.CodeWriter
 
-showHaskell :: [IL] -> String
-showHaskell ils = writeCode $ do
+showHaskell :: AST -> String
+showHaskell ast = writeCode $ do
   line "import Brainfuck.Data.Expr"
   line "import Brainfuck.Data.IOMemory"
   line ""
@@ -18,23 +20,31 @@ showHaskell ils = writeCode $ do
   line "program set put get eval while when = runMemory $ do"
   incIndent
 
-  code ils
+  go ast
 
   where
-    code :: [IL] -> CodeWriter
-    code [] = return ()
-    code (x : xs) = case x of
-      While e ys -> block "while" e ys >> code xs
-      If e ys    -> block "when" e ys >> code xs
-      Set d e    -> line ("set " ++ show d ++ " $ " ++ show e) >> code xs
-      PutChar e  -> line ("put $ " ++ show e) >> code xs
-      GetChar d  -> line ("get " ++ show d) >> code xs
-      Shift d    -> line ("shift (" ++ show d ++ ")") >> code xs
+    go = \case
+      Nop        -> return ()
+      Instruction fun next -> function fun >> go next
+      Flow ctrl inner next -> control ctrl >> indentedM (go inner) >> go next
 
-    block str e ys = do
+    control = \case
+      Forever -> block "while" (Const 1)
+      While e -> block "while" e
+      Once    -> block "when" (Const 1)
+      Never   -> block "when" (Const 0)
+      If e    -> block "when" e
+
+    -- TODO: Do not use ++
+    function = \case
+      Set d e    -> line $ "set " ++ show d ++ " $ " ++ show e
+      PutChar e  -> line $ "put $ " ++ show e
+      GetChar d  -> line $ "get " ++ show d
+      Shift d    -> line $ "shift (" ++ show d ++ ")"
+
+    block str e = do
       lineM $ do
         string str
         string " ("
         string $ show e
         string ") $ do"
-      indentedM $ code ys

@@ -1,21 +1,19 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Compiler.Target.Indented (showIndented) where
 
-import Brainfuck.Data.IL
+import Brainfuck.Data.AST
 import Text.CodeWriter
 
-showIndented :: [IL] -> String
+showIndented :: AST -> String
 showIndented = writeCode . go
   where
-    go []                = return ()
-    go (If e ys : xs)    = block "If" e ys >> go xs
-    go (While e ys : xs) = block "While" e ys >> go xs
-    go (x : xs)          = line (show x) >> go xs
+    go = \case
+      Nop                  -> return ()
+      Instruction fun next -> line (show fun) >> go next
+      Flow ctrl inner next -> block (show ctrl) inner >> go next
 
-    block str e ys = do
-      lineM $ do
-        string str
-        string " "
-        string $ show e
+    block str inner = do
+      line str
       incIndent
-      go ys
+      go inner
       decIndent

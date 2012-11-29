@@ -3,7 +3,7 @@ module Brainfuck.Compiler.Target.C99 (showC) where
 
 import Brainfuck.Compiler.Analysis
 import Brainfuck.Data.Expr
-import Brainfuck.Data.IL
+import Brainfuck.Data.AST
 import Control.Monad
 import Data.Char
 import Text.CodeWriter
@@ -33,35 +33,41 @@ removeGet d = \case
       Get d' -> d == d'
       _      -> False
 
-showC :: [IL] -> String
-showC ils = writeCode $ do
+showC :: AST -> String
+showC ast = writeCode $ do
   line "#include <stdio.h>"
   line ""
   line "int main() {"
   indentedM $ do
-    when (usesMemory ils) $ do
+    when (usesMemory ast) $ do
       line "unsigned char mem[30001];"
       line "unsigned char* ptr = mem;"
 
-    code ils
+    go ast
 
     line "return 0;"
   line "}"
   where
-    code :: [IL] -> CodeWriter
-    code []       = return ()
-    code (x : xs) = case x of
-      While e ys -> block "while" e ys >> code xs
-      If e ys    -> block "if" e ys >> code xs
-      _          -> lineM (statement x >> string ";") >> code xs
+    go :: AST -> CodeWriter
+    go = \case
+      Nop -> return ()
+      Instruction fun next -> lineM (function fun >> string ";") >> go next
+      Flow ctrl inner next -> control ctrl inner >> go next
 
-    block :: String -> Expr -> [IL] -> CodeWriter
+    control = \case
+      Forever -> block "while" (Const 1)
+      While e -> block "while" e
+      Once    -> block "if" (Const 1)
+      Never   -> block "if" (Const 0)
+      If e    -> block "if" e
+
+    block :: String -> Expr -> AST -> CodeWriter
     block word e ys = do
       lineM $ string word >> string " (" >> (string $ showExpr e ") {")
-      indentedM $ code ys
+      indentedM $ go ys
       line "}"
 
-    statement x = case x of
+    function x = case x of
       Set d e -> case removeGet d e of
         Nothing -> ptr d "=" (showExpr e "")
         Just e' -> ptr d "+=" (showExpr e' "")
@@ -71,9 +77,6 @@ showC ils = writeCode $ do
       Shift s   -> string "ptr += " >> string (show s)
       PutChar e -> string "putchar(" >> string (showExpr e ")")
       GetChar p -> ptr p "=" "getchar()"
-
-      While _ _ -> error "While can not be composed into a single line"
-      If _ _    -> error "If can not be composed into a single line"
 
     ptr :: Int -> String -> String -> CodeWriter
     ptr d op b = do
