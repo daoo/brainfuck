@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Compiler.Target.Haskell where
+module Brainfuck.CodeGen.Haskell where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr

@@ -34,3 +34,5 @@ decompile = \case
       Shift (-1)                     -> Token $ ShiftLeft
       PutChar (Get 0)                -> Token $ Output
       GetChar 0                      -> Token $ Input
+
+      _ -> error "unsupported by decompile"

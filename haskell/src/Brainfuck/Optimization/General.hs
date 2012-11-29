@@ -1,44 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Compiler.Optimize where
+module Brainfuck.Optimization.General where
 
-import Brainfuck.Compiler.Analysis
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
-import Brainfuck.Ext
-import Control.Arrow
-import Data.Maybe
-import qualified Data.Graph as G
-import qualified Data.Map as M
+import Brainfuck.Optimization.Analysis
 import qualified Data.Set as S
-
-optimizeAll :: AST -> AST
-optimizeAll = removeFromEnd . whileModified pipeline
-  where
-    pipeline = optimizeSets
-             . whileToIf
-             . reduceCopyLoops
-             . moveShifts
-             . mapAST optimizeExpressions id
-             . inlineZeros
-             . movePutGet
-             . cleanUp
-
--- |Merge sequences of Set ILs
-optimizeSets :: AST -> AST
-optimizeSets = \case
-  Nop -> Nop
-
-  x@(Instruction (Set _ _) _) -> uncurry join $ (mergeSets . optimalSets) *** optimizeSets $ splitSets x
-
-  Instruction fun next -> Instruction fun (optimizeSets next)
-  Flow ctrl inner next -> Flow ctrl (optimizeSets inner) (optimizeSets next)
-
-  where
-    splitSets = \case
-      Instruction (Set d e) next -> mapFst ((d, e) :) $ splitSets next
-      y                            -> ([], y)
-
-    mergeSets = foldr (\(d, e) x -> Instruction (Set d e) x) Nop
 
 -- |Optimize expressions
 optimizeExpressions :: Function -> Function
@@ -182,55 +148,3 @@ inlineZeros = go S.empty
       Get i | S.member i s -> Get i
             | otherwise    -> Const 0
       e                    -> e)
-
--- Initial Code:
--- Set 2 (Get 1)
--- Set 1 (Get 0)
--- Set 0 (Get 2)
---
--- 0: Get 1
--- 1: Get 0
--- 2: Get 1
---
--- After Optimal Sets:
--- Set 2 (Get 1)
--- Set 1 (Get 0)
--- Set 0 (Get 1)
---
--- 0: Get 0
--- 1: Get 0
--- 2: Get 1
---
--- After Topologic Sort:
--- Set 2 (Get 1)
--- Set 0 (Get 1)
--- Set 1 (Get 2)
---
--- 0; Get 1
--- 1: Get 1
--- 2: Get 1
-
-type SetOp = (Int, Expr)
-
--- |Calculate the optimal representation of some Set ILs
--- TODO: Handle cyclical dependencies
-optimalSets :: [SetOp] -> [SetOp]
-optimalSets = topSort . go M.empty
-  where
-    go :: M.Map Int Expr -> [SetOp] -> [SetOp]
-    go m []          = M.assocs m
-    go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
-
-    f :: M.Map Int Expr -> Expr -> Expr
-    f m = modifyLeaves (\case
-      e@(Get i) -> fromMaybe e $ M.lookup i m
-      e         -> e)
-
-topSort :: [SetOp] -> [SetOp]
-topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
-  where
-    (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
-
-    get = unfold (++) (++) (\case
-      Get d -> [d]
-      _     -> [])

@@ -1,16 +1,16 @@
 module Main where
 
+import Brainfuck.CodeGen.C99
+import Brainfuck.CodeGen.Haskell
+import Brainfuck.CodeGen.Indented
 import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Optimize
-import Brainfuck.Compiler.Target.C99
-import Brainfuck.Compiler.Target.Haskell
-import Brainfuck.Compiler.Target.Indented
+import Brainfuck.Compiler.Parser
 import Brainfuck.Data.AST
-import Brainfuck.Ext
 import Brainfuck.Interpreter
-import Brainfuck.Parser
+import Brainfuck.Optimization.Pipeline
 import Data.Foldable (toList)
 import Data.Word
+import Ext
 import System.Console.GetOpt
 import System.Environment
 

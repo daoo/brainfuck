@@ -1,7 +1,7 @@
-module Brainfuck.Parser (parseBrainfuck) where
+module Brainfuck.Compiler.Parser (parseBrainfuck) where
 
-import Control.Applicative ((<$>))
 import Brainfuck.Data.Brainfuck
+import Control.Applicative ((<$>))
 import Text.ParserCombinators.Parsec
 
 noSymbols :: Parser ()

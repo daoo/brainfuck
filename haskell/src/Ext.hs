@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Ext where
+module Ext where
 
 import Control.Arrow
 

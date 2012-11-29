@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Compiler.Target.Indented (showIndented) where
+module Brainfuck.CodeGen.Indented (showIndented) where
 
 import Brainfuck.Data.AST
 import Text.CodeWriter

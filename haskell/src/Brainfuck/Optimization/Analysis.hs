@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Compiler.Analysis where
+module Brainfuck.Optimization.Analysis where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr

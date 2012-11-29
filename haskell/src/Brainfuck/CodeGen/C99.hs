@@ -1,9 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Compiler.Target.C99 (showC) where
+module Brainfuck.CodeGen.C99 (showC) where
 
-import Brainfuck.Compiler.Analysis
-import Brainfuck.Data.Expr
 import Brainfuck.Data.AST
+import Brainfuck.Data.Expr
+import Brainfuck.Optimization.Analysis
 import Control.Monad
 import Data.Char
 import Text.CodeWriter
