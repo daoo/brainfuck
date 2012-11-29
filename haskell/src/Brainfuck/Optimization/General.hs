@@ -58,7 +58,7 @@ moveShifts = \case
       Shift s' -> moveShifts $ Instruction (Shift (s + s')) next'
       fun      -> Instruction (function s fun) (moveShifts (Instruction (Shift s) next'))
 
-    Flow ctrl inner next' -> Flow ctrl (moveShifts (mapAST (function s) (control s) inner)) (moveShifts next')
+    Flow ctrl inner next' -> moveShifts $ Flow ctrl (mapAST (function s) (control s) inner) (Instruction (Shift s) next')
 
   Instruction fun next -> Instruction fun (moveShifts next)
   Flow ctrl inner next -> Flow ctrl (moveShifts inner) (moveShifts next)
@@ -71,8 +71,8 @@ moveShifts = \case
       PutChar e -> PutChar (expr s e)
 
     control s = \case
-      If e    -> While (expr s e)
-      While e -> If (expr s e)
+      If e    -> If (expr s e)
+      While e -> While (expr s e)
       ctrl    -> ctrl
 
     expr s = modifyLeaves (\case
