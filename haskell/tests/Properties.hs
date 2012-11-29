@@ -1,21 +1,21 @@
 {-# LANGUAGE LambdaCase #-}
 module Properties where
 
-import Brainfuck.Compiler.Analysis
 import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Inlining
-import Brainfuck.Compiler.Optimize
+import Brainfuck.Compiler.Parser
+import Brainfuck.Data.AST
 import Brainfuck.Data.Brainfuck
 import Brainfuck.Data.Expr
-import Brainfuck.Data.IL
-import Brainfuck.Ext
 import Brainfuck.Interpreter
-import Brainfuck.Parser
+import Brainfuck.Optimization.Analysis
+import Brainfuck.Optimization.General
+import Brainfuck.Optimization.Pipeline
 import Control.Monad
 import Data.ListZipper
 import Data.Maybe
 import Data.Sequence (empty)
 import Data.Word
+import Ext
 import Test.QuickCheck
 
 -- {{{ ListZipper
@@ -57,13 +57,13 @@ propCompileDecompile bf = bf == decompile (compile bf)
 compareFull :: (Integral a) => Int -> State a -> State a -> Bool
 compareFull i (State _ out1 m1) (State _ out2 m2) = cut i m1 == cut i m2 && out1 == out2
 
-compareOutput :: [IL] -> [IL] -> Bool
-compareOutput xs ys = getOutput (run state xs) == getOutput (run state ys)
+compareOutput :: AST -> AST -> Bool
+compareOutput xs ys = output (run state xs) == output (run state ys)
   where
     state :: State Word8
     state = State [1..] empty newMemory
 
-testCode :: [IL] -> [IL] -> Bool
+testCode :: AST -> AST -> Bool
 testCode xs ys = compareFull s (run state xs) (run state ys)
   where
     s = let (xsMin, xsMax) = memorySize xs
@@ -73,21 +73,21 @@ testCode xs ys = compareFull s (run state xs) (run state ys)
     state :: State Word8
     state = State [1..] empty newMemory
 
-propOptimize :: ([IL] -> [IL]) -> [IL] -> Bool
+propOptimize :: (AST -> AST) -> AST -> Bool
 propOptimize f xs = testCode xs (f xs)
 
 -- TODO: Better testing
 
-propInline :: Int -> Expr -> [IL] -> Bool
+propInline :: Int -> Expr -> AST -> Bool
 propInline d e xs = inline d e xs `testCode` (Set d e : xs)
 
-propHeuristicInlining :: Int -> Expr -> [IL] -> Bool
+propHeuristicInlining :: Int -> Expr -> AST -> Bool
 propHeuristicInlining d e xs = case heuristicInlining d e xs of
   Just xs' -> (Set d e : xs) `testCode` xs'
   Nothing  -> True
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
-  propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets :: [IL] -> Bool
+  propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets :: AST -> Bool
 
 propOptimizeCleanUp     = propOptimize cleanUp
 propOptimizeCopies      = propOptimize reduceCopyLoops
@@ -96,20 +96,20 @@ propOptimizeInlineZeros = propOptimize inlineZeros
 propOptimizeMovePutGet  = propOptimize movePutGet
 propOptimizeSets        = propOptimize optimizeSets
 
-propOptimizeMoveShifts :: [IL] -> Bool
+propOptimizeMoveShifts :: AST -> Bool
 propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
 
-propOptimizeAll :: [IL] -> Bool
+propOptimizeAll :: AST -> Bool
 propOptimizeAll xs = compareOutput xs (optimizeAll xs)
 
 -- }}}
 -- {{{ Loops
-exCopyLoop1 :: IL
+exCopyLoop1 :: AST
 exCopyLoop1 =
   While (Get 0)
     [ Set 0 $ Get 0 `Add` Const (-1) ]
 
-exCopyLoop2 :: IL
+exCopyLoop2 :: AST
 exCopyLoop2 =
   While (Get 5)
     [ Set 5 $ Get 5 `Add` Const (-1)
@@ -117,13 +117,13 @@ exCopyLoop2 =
     , Set 2 $ Get 2 `Add` Const 5
     , Set 3 $ Get 3 `Add` Const 10 ]
 
-exNotCopyLoop1 :: IL
+exNotCopyLoop1 :: AST
 exNotCopyLoop1 =
   While (Get 5)
     [ Set 5 $ Get 5 `Add` Const (-1)
     , Set 6 $ Get 5 `Add` Const 10 ]
 
-exShiftLoop1 :: [IL]
+exShiftLoop1 :: AST
 exShiftLoop1 =
   [ Set 0 $ Get 0 `Add` Const 10
   , Set 1 $ Const 0
