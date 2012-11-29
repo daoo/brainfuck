@@ -2,7 +2,7 @@
 module Brainfuck.Data.AST where
 
 import Brainfuck.Data.Expr
-import Control.Monad
+import Control.Monad (liftM, liftM2)
 import Test.QuickCheck
 
 data Function = Set Int Expr | Shift Int | PutChar Expr | GetChar Int
@@ -30,6 +30,12 @@ instance Arbitrary Function where
     PutChar e -> map PutChar $ shrink e
     GetChar i -> map GetChar $ shrink i
 
+join :: AST -> AST -> AST
+join a b = case a of
+  Nop                  -> b
+  Instruction fun next -> Instruction fun (join next b)
+  Flow ctrl inner next -> Flow ctrl inner (join next b)
+
 filterAST :: (Function -> Bool) -> (Control -> Bool) -> AST -> AST
 filterAST f g = \case
   Nop                              -> Nop
@@ -43,22 +49,3 @@ mapAST f g = \case
   Nop                  -> Nop
   Flow ctrl inner next -> Flow (g ctrl) (mapAST f g inner) (mapAST f g next)
   Instruction fun next -> Instruction (f fun) (mapAST f g next)
-
-modifyPtr :: (Int -> Int) -> AST -> AST
-modifyPtr f = mapAST
-  (\case
-    Set d e    -> Set (f d) (h e)
-    Shift s    -> Shift s
-    PutChar e  -> PutChar (h e)
-    GetChar d  -> GetChar (f d))
-
-  (\case
-    If e    -> While (h e)
-    While e -> If (h e)
-    ctrl    -> ctrl)
-
-  where
-    g (Get d) = Get $ f d
-    g e       = e
-
-    h = modifyLeaves g

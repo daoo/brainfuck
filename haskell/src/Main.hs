@@ -5,7 +5,7 @@ import Brainfuck.Compiler.Optimize
 import Brainfuck.Compiler.Target.C99
 import Brainfuck.Compiler.Target.Haskell
 import Brainfuck.Compiler.Target.Indented
-import Brainfuck.Data.IL
+import Brainfuck.Data.AST
 import Brainfuck.Ext
 import Brainfuck.Interpreter
 import Brainfuck.Parser
@@ -61,5 +61,5 @@ main = do
     Interpret  -> getContents >>= putStr . (`runBF` optimized)
 
   where
-    runBF :: String -> [IL] -> String
-    runBF inp = map chrIntegral . toList . getOutput . run (newState inp :: State Word8)
+    runBF :: String -> AST -> String
+    runBF inp = map chrIntegral . toList . output . run (newState inp :: State Word8)

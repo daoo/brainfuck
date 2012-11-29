@@ -2,8 +2,8 @@
 module Brainfuck.Compiler.Optimize where
 
 import Brainfuck.Compiler.Analysis
+import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
-import Brainfuck.Data.IL
 import Brainfuck.Ext
 import Control.Arrow
 import Data.Maybe
@@ -11,128 +11,171 @@ import qualified Data.Graph as G
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-applyHelper :: ([IL] -> [IL]) -> [IL] -> [IL]
-applyHelper f = \case
-  []              -> []
-  If    e ys : xs -> If e (f ys)    : f xs
-  While e ys : xs -> While e (f ys) : f xs
-  x          : xs -> x              : f xs
-
-optimizeAll :: [IL] -> [IL]
+optimizeAll :: AST -> AST
 optimizeAll = removeFromEnd . whileModified pipeline
   where
     pipeline = optimizeSets
              . whileToIf
              . reduceCopyLoops
              . moveShifts
-             . mapIL optimizeExpressions
+             . mapAST optimizeExpressions id
              . inlineZeros
              . movePutGet
              . cleanUp
 
 -- |Merge sequences of Set ILs
-optimizeSets :: [IL] -> [IL]
+optimizeSets :: AST -> AST
 optimizeSets = \case
-  xs@(Set _ _ : _) -> uncurry (++) $ opt *** optimizeSets $ span isSet xs
+  Nop -> Nop
 
-  xs -> applyHelper optimizeSets xs
+  x@(Instruction (Set _ _) _) -> uncurry join $ (mergeSets . optimalSets) *** optimizeSets $ splitSets x
+
+  Instruction fun next -> Instruction fun (optimizeSets next)
+  Flow ctrl inner next -> Flow ctrl (optimizeSets inner) (optimizeSets next)
 
   where
-    opt :: [IL] -> [IL]
-    opt = map (uncurry Set) . optimalSets . map (\(Set d e) -> (d, e))
+    splitSets = \case
+      Instruction (Set d e) next -> mapFst ((d, e) :) $ splitSets next
+      y                            -> ([], y)
 
-    isSet (Set _ _) = True
-    isSet _         = False
+    mergeSets = foldr (\(d, e) x -> Instruction (Set d e) x) Nop
 
 -- |Optimize expressions
-optimizeExpressions :: IL -> IL
+optimizeExpressions :: Function -> Function
 optimizeExpressions = \case
   Set d e    -> Set d $ optimizeExpr e
   PutChar e  -> PutChar $ optimizeExpr e
   x          -> x
 
 -- |Remove instructions that provides no side effects
-cleanUp :: [IL] -> [IL]
+cleanUp :: AST -> AST
 cleanUp = \case
-  While (Const i) ys : xs | i == 0    -> cleanUp xs
-                          | otherwise -> While (Const 1) (cleanUp ys) : cleanUp xs -- never ending loop
+  Nop -> Nop
 
-  If (Const i) ys : xs | i == 0    -> cleanUp xs
-                       | otherwise -> cleanUp ys ++ cleanUp xs
+  Instruction fun next -> case fun of
+    Set d1 (Get d2) | d1 == d2 -> cleanUp next
+    Shift s         | s == 0   -> cleanUp next
+    _                          -> Instruction fun (cleanUp next)
 
-  Set d1 (Get d2) : xs | d1 == d2 -> cleanUp xs
-  Shift s         : xs | s == 0   -> cleanUp xs
+  Flow _ Nop next      -> cleanUp next
+  Flow Never _ next    -> cleanUp next
+  Flow Once inner next -> join inner next
 
-  xs -> applyHelper cleanUp xs
+  Flow (While (Const i)) inner next | i == 0    -> cleanUp next
+                                    | otherwise -> Flow Forever inner next
+  Flow (If (Const i)) inner next    | i == 0    -> cleanUp next
+                                    | otherwise -> Flow Once inner next
 
-movePutGet :: [IL] -> [IL]
+  Flow ctrl inner next -> Flow ctrl (cleanUp inner) (cleanUp next)
+
+movePutGet :: AST -> AST
 movePutGet = \case
-  x1@(Set d e1) : x2 : xs -> case x2 of
-    PutChar e2 -> PutChar (inlineExpr d e1 e2) : x1 : movePutGet xs
-    _          -> x1 : movePutGet (x2 : xs)
+  Nop -> Nop
 
-  xs -> applyHelper movePutGet xs
+  Instruction s@(Set d e1) (Instruction (PutChar e2) next) ->
+    Instruction (PutChar (inlineExpr d e1 e2)) (Instruction s (movePutGet next))
+
+  Instruction fun next -> Instruction fun (movePutGet next)
+  Flow ctrl inner next -> Flow ctrl (movePutGet inner) (movePutGet next)
 
 -- |Move shift instructions towards the end.
 -- This make most of the shift operations disappear
-moveShifts :: [IL] -> [IL]
+moveShifts :: AST -> AST
 moveShifts = \case
-  x1@(Shift s1) : x2 : xs -> case x2 of
-    Shift s2 -> moveShifts $ Shift (s1 + s2) : xs
-    _        -> moveShifts $ modifyPtr (+s1) x2 : x1 : xs
+  Nop -> Nop
 
-  xs -> applyHelper moveShifts xs
+  Instruction (Shift s) next -> case next of
+    Nop -> Nop
+
+    Instruction instr next' -> case instr of
+
+      Shift s' -> moveShifts $ Instruction (Shift (s + s')) next'
+      fun      -> Instruction (function s fun) (moveShifts (Instruction (Shift s) next'))
+
+    Flow ctrl inner next' -> Flow ctrl (moveShifts (mapAST (function s) (control s) inner)) (moveShifts next')
+
+  Instruction fun next -> Instruction fun (moveShifts next)
+  Flow ctrl inner next -> Flow ctrl (moveShifts inner) (moveShifts next)
+
+  where
+    function s = \case
+      Set d e   -> Set (s + d) (expr s e)
+      Shift s'  -> Shift (s + s')
+      GetChar d -> GetChar (s + d)
+      PutChar e -> PutChar (expr s e)
+
+    control s = \case
+      If e    -> While (expr s e)
+      While e -> If (expr s e)
+      ctrl    -> ctrl
+
+    expr s = modifyLeaves (\case
+      Get d -> Get (s + d)
+      e     -> e)
 
 -- |Reduce multiplications and clear loops
-reduceCopyLoops :: [IL] -> [IL]
-reduceCopyLoops [] = []
-reduceCopyLoops (x:xs) = case x of
-  While e@(Get d) ys -> let x'    = [While e $ reduceCopyLoops ys]
-                            g ys' = map (f d) ys' ++ [Set d $ Const 0]
-                         in (maybe x' g (copyLoop d ys)) ++ reduceCopyLoops xs
+reduceCopyLoops :: AST -> AST
+reduceCopyLoops = \case
+  Nop                  -> Nop
+  Instruction fun next -> Instruction fun (reduceCopyLoops next)
 
-  _ -> x : reduceCopyLoops xs
+  Flow ctrl@(While (Get d)) inner next -> case copyLoop d inner of
+    Nothing -> Flow ctrl (reduceCopyLoops inner) (reduceCopyLoops next)
+    Just x  -> let instr = Instruction (Set d $ Const 0) Nop
+                   x'    = foldr Instruction instr $ map (f d) x
+                in x' `join` (reduceCopyLoops next)
+
+  Flow ctrl inner next -> Flow ctrl (reduceCopyLoops inner) (reduceCopyLoops next)
 
   where
     f d (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
 
 -- |Convert while loops that are only run once to if statements
-whileToIf :: [IL] -> [IL]
-whileToIf []     = []
-whileToIf (x:xs) = case x of
-  While e@(Get d) ys -> let x'    = [While e $ whileToIf ys]
-                            f ys' = [If (Get d) ys', Set d (Const 0)]
-                         in (maybe x' f (setToZero d ys)) ++ whileToIf xs
+whileToIf :: AST -> AST
+whileToIf = \case
+  Nop                  -> Nop
+  Instruction fun next -> Instruction fun (whileToIf next)
 
-  _ -> x : whileToIf xs
+  Flow ctrl@(While e@(Get d)) inner next -> if setToZero d inner
+    then Flow (If e) inner (whileToIf next)
+    else Flow ctrl (whileToIf inner) (whileToIf next)
+
+  Flow ctrl inner next -> Flow ctrl (whileToIf inner) (whileToIf next)
 
 -- |Remove side effect free instructions from the end
-removeFromEnd :: [IL] -> [IL]
-removeFromEnd = reverse . helper . reverse
+removeFromEnd :: AST -> AST
+removeFromEnd = go
   where
+    go = \case
+      x@(Instruction fun next) | helper x -> Instruction fun (go next)
+      x@(Flow ctrl inner next) | helper x -> Flow ctrl inner (go next)
+
+      _ -> Nop
+
+    helper = \case
+      Nop                  -> False
+      Instruction fun next -> sideEffect fun || helper next
+      Flow _ _ _           -> True -- TODO: Investigate when flow control statements are side effect free
+
     sideEffect = \case
       PutChar _ -> True
-      While _ _ -> True -- TODO: Not always a side effect
-      If _ _    -> True -- TODO: Not always a side effect
       _         -> False
 
-    helper []                         = []
-    helper (il : ils) | sideEffect il = il : ils
-                      | otherwise     = helper ils
-
 -- |Inline initial zeroes
-inlineZeros :: [IL] -> [IL]
+inlineZeros :: AST -> AST
 inlineZeros = go S.empty
   where
-    go :: S.Set Int -> [IL] -> [IL]
-    go _ []         = []
-    go s (il : ils) = case il of
-      While _ _ -> il : ils
-      If _ _    -> error "FIXME: inlineZeros If _ _"
-      Set i e   -> Set i (inl s e) : go (S.insert i s) ils
-      PutChar e -> PutChar (inl s e) : go s ils
-      GetChar _ -> il : go s ils
-      Shift _   -> il : ils
+    go :: S.Set Int -> AST -> AST
+    go s = \case
+      Nop -> Nop
+
+      flow@(Flow _ _ _) -> flow
+
+      Instruction fun next -> case fun of
+        Set i e   -> Instruction (Set i (inl s e)) (go (S.insert i s) next)
+        PutChar e -> Instruction (PutChar (inl s e)) (go s next)
+        GetChar d -> Instruction fun (go (S.delete d s) next)
+        Shift _   -> Instruction fun next
 
     inl :: S.Set Int -> Expr -> Expr
     inl s = unfold Add Mul (\case
