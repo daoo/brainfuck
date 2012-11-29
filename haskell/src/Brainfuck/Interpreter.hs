@@ -1,16 +1,16 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Interpreter where
 
+import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
-import Brainfuck.Data.IL
 import Data.Char
 import Data.ListZipper
 import Data.Sequence
 
 data State a = State
-  { getInput :: [a]
-  , getOutput :: Seq a
-  , getMemory :: ListZipper a
+  { input :: [a]
+  , output :: Seq a
+  , memory :: ListZipper a
   } deriving (Show, Eq)
 
 chrIntegral :: (Integral a) => a -> Char
@@ -26,24 +26,29 @@ newMemory = ListZipper zeros 0 zeros
 newState :: (Integral a) => String -> State a
 newState inp = State (map ordIntegral inp) empty newMemory
 
-run :: (Integral a) => State a -> [IL] -> State a
-run = foldl evalOp
-
-evalOp :: (Integral a) => State a -> IL -> State a
-evalOp state@(State inp out mem) = \case
-  While e ys -> until (isZero e) (`run` ys) state
-  If e ys    -> if isZero e state then run state ys else state
-
-  PutChar e -> State inp        (out |> evalExpr' e) mem
-  GetChar d -> State (tail inp) out                  (applyAt' (head inp) d mem)
-  Set d e   -> State inp        out                  (applyAt' (evalExpr' e) d mem)
-  Shift s   -> State inp        out                  (move s mem)
-
+run :: (Integral a) => State a -> AST -> State a
+run state = \case
+  Nop                  -> state
+  Instruction fun next -> run (evalFunction state fun) next
+  Flow ctrl inner next -> run (evalFlow state inner ctrl) next
   where
-    isZero e = (== 0) . (`evalExpr` e) . flip peek . getMemory
+    evalFlow state' inner = \case
+      Forever -> error "infinite loop"
+      Never   -> state'
+      Once    -> run state' inner
+      While e -> until (isZero e) (`run` inner) state'
+      If e    -> if isZero e state' then run state' inner else state'
 
-    evalExpr' = evalExpr (`peek` mem)
-    applyAt'  = applyAt . const
+    evalFunction state'@(State inp out mem) = \case
+      PutChar e -> state' { output = out |> evalExpr' mem e }
+      GetChar d -> state' { input  = tail inp, memory = applyAt' (head inp) d mem }
+      Set d e   -> state' { memory = applyAt' (evalExpr' mem e) d mem }
+      Shift s   -> state' { memory = move s mem }
+
+    isZero e = (== 0) . (`evalExpr` e) . flip peek . memory
+
+    evalExpr' mem = evalExpr (`peek` mem)
+    applyAt'      = applyAt . const
 
 evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
 evalExpr f = \case
