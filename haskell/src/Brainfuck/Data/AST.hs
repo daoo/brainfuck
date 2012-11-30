@@ -36,6 +36,14 @@ instance Arbitrary Control where
                     , liftA If arbitrary
                     ]
 
+  shrink = \case
+    Never   -> []
+    Once    -> [Never]
+    Forever -> [Once, Never]
+
+    If e    -> map If (shrink e) ++ [Once, Never]
+    While e -> map While (shrink e) ++ [Once, Never]
+
 instance Arbitrary AST where
   arbitrary = sized tree
     where
@@ -44,6 +52,29 @@ instance Arbitrary AST where
                          , (1, liftA3 Flow arbitrary subtree subtree) ]
         where
           subtree = tree (n `div` 2)
+
+  shrink = \case
+    Nop                  -> []
+    Instruction fun next -> map (`Instruction` next) (shrink fun) ++ initsAST next
+    Flow ctrl inner next -> map (\c -> Flow c inner next) (shrink ctrl)
+                         ++ map (\x -> Flow ctrl x next) (shrink inner)
+                         ++ map (\x -> Flow ctrl inner x) (shrink next)
+
+
+initAST :: AST -> AST
+initAST = \case
+  Nop               -> Nop
+  Instruction _ Nop -> Nop
+  Flow _ Nop _      -> Nop
+  Flow _ _ Nop      -> Nop
+
+  Instruction fun next -> Instruction fun (initAST next)
+  Flow ctrl inner next -> Flow ctrl (initAST inner) (initAST next)
+
+initsAST :: AST -> [AST]
+initsAST = \case
+  Nop -> []
+  x   -> let x' = initAST x in x' : initsAST x'
 
 join :: AST -> AST -> AST
 join a b = case a of
