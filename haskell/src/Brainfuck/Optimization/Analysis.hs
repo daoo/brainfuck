@@ -51,6 +51,36 @@ copyLoop d xs = do
     h (d1, d2, c) | d1 == d2  = Just (d1, c)
                   | otherwise = Nothing
 
+memorySize :: AST -> (Int, Int)
+memorySize = \case
+  Nop                  -> (0, 0)
+  Instruction fun next -> function fun <+> memorySize next
+  Flow ctrl inner next -> control ctrl <+> memorySize inner <+> memorySize next
+
+  where
+    function = \case
+      Set d e   -> g d <+> unfold (<+>) (<+>) expr e
+      Shift d   -> g d
+      PutChar e -> expr e
+      GetChar d -> g d
+
+    control = \case
+      If e    -> expr e
+      While e -> expr e
+      _       -> (0, 0)
+
+    expr = \case
+      Get d -> g d
+      _     -> g 0
+
+    g :: Int -> (Int, Int)
+    g d = case compare d 0 of
+      LT -> (d, 0)
+      EQ -> (0, 0)
+      GT -> (0, d)
+
+    (a, b) <+> (c, d) = (a + c, b + d)
+
 -- |Check if the list of ILs make use of the memory or the global pointer
 usesMemory :: AST -> Bool
 usesMemory = \case
