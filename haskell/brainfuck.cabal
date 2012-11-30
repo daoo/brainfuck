@@ -1,17 +1,23 @@
 name: brainfuck
+maintainer: daoo
+category: Language
+license: PublicDomain
 version: 1.0.0
 synopsis: Brainfuck tools written in haskell
+description: Provides various tools for working with brainfuck code.
 build-type: Simple
 cabal-version: >=1.8
 tested-with: GHC>=7.6
 
-library
+executable brainfuck
   hs-source-dirs: src
-  build-depends: base
-  ghc-options: -Wall -O2
+  main-is: Main.hs
+  build-depends: base == 4.*, containers, parsec, mtl, QuickCheck
+  ghc-options: -Wall
 
-test-suite signal-tests
+test-suite brainfuck-tests
   type: exitcode-stdio-1.0
   hs-source-dirs: tests, src
   main-is: MainTestSuite.hs
-  build-depends: base, QuickCheck, test-framework, test-framework-quickcheck2
+  build-depends: base == 4.*, containers, parsec, mtl, QuickCheck,
+                 test-framework, test-framework-quickcheck2
