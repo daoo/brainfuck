@@ -35,8 +35,6 @@ testCode xs ys = compareFull s (run state xs) (run state ys)
 propOptimize :: (AST -> AST) -> AST -> Bool
 propOptimize f xs = testCode xs (f xs)
 
--- TODO: Better testing
-
 propInline :: Int -> Expr -> AST -> Bool
 propInline d e xs = inline d e xs `testCode` Instruction (Set d e) xs
 

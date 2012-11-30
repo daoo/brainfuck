@@ -1,12 +1,11 @@
 module Main where
 
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
-
 import Properties.Compiler
 import Properties.Expressions
 import Properties.Misc
 import Properties.Optimization
+import Test.Framework
+import Test.Framework.Providers.QuickCheck2
 
 main :: IO ()
 main = defaultMain tests
