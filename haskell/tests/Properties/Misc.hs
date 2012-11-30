@@ -5,8 +5,12 @@ import Data.ListZipper
 import Ext
 import Test.QuickCheck hiding (output)
 
-propZipperMoveSize :: Int -> ListZipper () -> Bool
-propZipperMoveSize i a = size a == size (move i a)
+propZipperMoveSize :: ListZipper () -> Property
+propZipperMoveSize a@(ListZipper xs y zs) =
+  not (null xs) && not (null zs) ==>
+    forAll (choose (-m, m)) $ \i -> size a == size (move i a)
+  where
+    m = min (length xs) (length zs)
 
 propMapIndexEq :: Int -> NonEmptyList Int -> Property
 propMapIndexEq x (NonEmpty xs) = forAll (choose (0, length xs - 1)) $
