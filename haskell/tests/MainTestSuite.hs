@@ -2,7 +2,6 @@ module Main where
 
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
-import Test.Framework.Providers.HUnit
 
 import Properties.Compiler
 import Properties.Expressions

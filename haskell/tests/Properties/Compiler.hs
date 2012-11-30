@@ -1,4 +1,4 @@
-module Compiler where
+module Properties.Compiler where
 
 import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.Parser

@@ -27,7 +27,7 @@ copyLoop d xs = do
   sets <- mapM setsOnly instrs
   adds <- mapM constantAddOnly sets
   let (dec, copies) = partition (g d) adds
-  listToMaybe dec
+  _ <- listToMaybe dec
   mapM h copies
   where
     instructionsOnly = \case

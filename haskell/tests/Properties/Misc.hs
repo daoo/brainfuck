@@ -1,11 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
-module Properties where
+module Properties.Misc where
 
 import Data.ListZipper
 import Ext
 import Test.QuickCheck hiding (output)
 
-propZipperMoveSize :: Int -> ListZipper a -> Bool
+propZipperMoveSize :: Int -> ListZipper () -> Bool
 propZipperMoveSize i a = size a == size (move i a)
 
 propMapIndexEq :: Int -> NonEmptyList Int -> Property

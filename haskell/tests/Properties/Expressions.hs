@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Expressions where
+module Properties.Expressions where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Inlining
