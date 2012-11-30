@@ -21,3 +21,4 @@ test-suite brainfuck-tests
   main-is: MainTestSuite.hs
   build-depends: base == 4.*, containers, parsec, mtl, QuickCheck,
                  test-framework, test-framework-quickcheck2
+  ghc-options: -Wall
