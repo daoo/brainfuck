@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module Properties where
 
+import Brainfuck.CodeGen.C99
 import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.Parser
 import Brainfuck.Data.AST
@@ -8,7 +9,9 @@ import Brainfuck.Data.Brainfuck
 import Brainfuck.Data.Expr
 import Brainfuck.Interpreter
 import Brainfuck.Optimization.Analysis
+import Brainfuck.Optimization.Assignment
 import Brainfuck.Optimization.General
+import Brainfuck.Optimization.Inlining
 import Brainfuck.Optimization.Pipeline
 import Control.Monad
 import Data.ListZipper
@@ -16,7 +19,7 @@ import Data.Maybe
 import Data.Sequence (empty)
 import Data.Word
 import Ext
-import Test.QuickCheck
+import Test.QuickCheck hiding (output)
 
 -- {{{ ListZipper
 propZipperMoveSize :: Int -> ListZipper a -> Bool
@@ -79,25 +82,24 @@ propOptimize f xs = testCode xs (f xs)
 -- TODO: Better testing
 
 propInline :: Int -> Expr -> AST -> Bool
-propInline d e xs = inline d e xs `testCode` (Set d e : xs)
+propInline d e xs = inline d e xs `testCode` Instruction (Set d e) xs
 
 propHeuristicInlining :: Int -> Expr -> AST -> Bool
 propHeuristicInlining d e xs = case heuristicInlining d e xs of
-  Just xs' -> (Set d e : xs) `testCode` xs'
+  Just xs' -> (Instruction (Set d e) xs) `testCode` xs'
   Nothing  -> True
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
-  propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets :: AST -> Bool
+  propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets,
+  propOptimizeMoveShifts :: AST -> Bool
 
 propOptimizeCleanUp     = propOptimize cleanUp
 propOptimizeCopies      = propOptimize reduceCopyLoops
-propOptimizeExpressions = propOptimize $ mapIL optimizeExpressions
+propOptimizeExpressions = propOptimize optimizeExpressions
 propOptimizeInlineZeros = propOptimize inlineZeros
 propOptimizeMovePutGet  = propOptimize movePutGet
+propOptimizeMoveShifts  = propOptimize moveShifts
 propOptimizeSets        = propOptimize optimizeSets
-
-propOptimizeMoveShifts :: AST -> Bool
-propOptimizeMoveShifts xs = memoryAccess xs == memoryAccess (moveShifts xs)
 
 propOptimizeAll :: AST -> Bool
 propOptimizeAll xs = compareOutput xs (optimizeAll xs)
@@ -106,30 +108,34 @@ propOptimizeAll xs = compareOutput xs (optimizeAll xs)
 -- {{{ Loops
 exCopyLoop1 :: AST
 exCopyLoop1 =
-  While (Get 0)
-    [ Set 0 $ Get 0 `Add` Const (-1) ]
+  Flow (While $ Get 0)
+    (Instruction (Set 0 (Get 0 `Add` Const (-1))) Nop)
+  Nop
 
 exCopyLoop2 :: AST
 exCopyLoop2 =
-  While (Get 5)
-    [ Set 5 $ Get 5 `Add` Const (-1)
-    , Set 1 $ Get 1 `Add` Const 1
-    , Set 2 $ Get 2 `Add` Const 5
-    , Set 3 $ Get 3 `Add` Const 10 ]
+  Flow (While (Get 5))
+    (Instruction (Set 5 $ Get 5 `Add` Const (-1))
+    (Instruction (Set 1 $ Get 1 `Add` Const 1)
+    (Instruction (Set 2 $ Get 2 `Add` Const 5)
+    (Instruction (Set 3 $ Get 3 `Add` Const 10) Nop))))
+  Nop
 
 exNotCopyLoop1 :: AST
 exNotCopyLoop1 =
-  While (Get 5)
-    [ Set 5 $ Get 5 `Add` Const (-1)
-    , Set 6 $ Get 5 `Add` Const 10 ]
+  Flow (While $ Get 5)
+    (Instruction (Set 5 $ Get 5 `Add` Const (-1))
+    (Instruction (Set 6 $ Get 5 `Add` Const 10)
+    Nop))
+  Nop
 
 exShiftLoop1 :: AST
-exShiftLoop1 =
-  [ Set 0 $ Get 0 `Add` Const 10
-  , Set 1 $ Const 0
-  , Set 2 $ Get 2 `Add` Const 4 `Add` Get 0
-  , Set 3 $ Get 3 `Add` Const 5
-  , While (Get 3) [ Shift (-1) ] ]
+exShiftLoop1 = Instruction (Set 0 $ Get 0 `Add` Const 10)
+  (Instruction (Set 1 $ Const 0)
+  (Instruction (Set 2 $ Get 2 `Add` Const 4 `Add` Get 0)
+  (Instruction (Set 3 $ Get 3 `Add` Const 5)
+  (Flow (While $ Get 3) (Instruction (Shift (-1)) Nop)
+  Nop))))
 
 -- }}}
 -- {{{ Expressions

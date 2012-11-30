@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Optimization.Inlining where
 
 import Brainfuck.Data.AST
@@ -7,24 +8,31 @@ import Brainfuck.Optimization.Analysis
 data Occurs = GetOnce | SetOnce | InLoop [Occurs] | InIf [Occurs]
   deriving (Show)
 
-occurs :: Int -> [IL] -> [Occurs]
-occurs _ []       = []
-occurs d (x : xs) = case x of
-  While e ys -> InLoop (occursExpr e ++ occurs d ys) : occurs d xs
-  If e ys    -> occursExpr e ++ InIf (occurs d ys) : occurs d xs
+occurs :: Int -> AST -> [Occurs]
+occurs d = \case
+  Nop                  -> []
+  Instruction fun next -> case fun of
 
-  Set d' e | d == d'     -> SetOnce : occursExpr e ++ occurs d xs
-           | otherwise   -> occursExpr e ++ occurs d xs
-  PutChar e              -> occursExpr e ++ occurs d xs
-  GetChar d' | d == d'   -> SetOnce : occurs d xs
-             | otherwise -> occurs d xs
-  Shift s                -> occurs (d - s) xs
+    Set d' e | d == d'     -> SetOnce : expr e ++ occurs d next
+             | otherwise   -> expr e ++ occurs d next
+    PutChar e              -> expr e ++ occurs d next
+    GetChar d' | d == d'   -> SetOnce : occurs d next
+               | otherwise -> occurs d next
+    Shift s                -> occurs (d - s) next
+
+  Flow ctrl inner next -> case ctrl of
+
+    Never   -> occurs d next
+    Once    -> occurs d inner ++ occurs d next
+    Forever -> InLoop (occurs d inner) : occurs d next
+
+    While e -> InLoop (expr e ++ occurs d inner) : occurs d next
+    If e    -> expr e ++ InIf (occurs d inner) : occurs d next
 
   where
-    occursExpr = unfold (++) (++) f
-
-    f (Get d') | d == d' = [GetOnce]
-    f _                  = []
+    expr = unfold (++) (++) (\case
+      Get d' | d == d' -> [GetOnce]
+      _                -> [])
 
 allowedComplexity :: [Occurs] -> Int
 allowedComplexity [] = 0
@@ -42,14 +50,14 @@ allowedComplexity oc = getCount oc + 2 * setCount oc
     getCount (GetOnce : xs) = 1 + getCount xs
     getCount (_ : xs)       = getCount xs
 
-heuristicInlining :: Int -> Expr -> [IL] -> Maybe [IL]
+heuristicInlining :: Int -> Expr -> AST -> Maybe AST
 heuristicInlining d e xs | c1 <= c2  = Just $ inline d e xs
                          | otherwise = Nothing
   where
     c1 = exprComplexity e
     c2 = allowedComplexity $ occurs d xs
 
-optimisticInlining :: Int -> Expr -> [IL] -> Maybe [IL]
+optimisticInlining :: Int -> Expr -> AST -> Maybe AST
 optimisticInlining d e xs | c1 <= c2 = Nothing
                           | otherwise = Just xs'
   where
@@ -64,33 +72,49 @@ exprComplexity = unfold (+) (+) f
     f (Get _)   = 1
     f _         = error "unfold Expr error"
 
-ilComplexity :: [IL] -> Int
-ilComplexity = foldr ((+) . f) 0
+ilComplexity :: AST -> Int
+ilComplexity = \case
+  Nop                  -> 0
+  Instruction fun next -> function fun + ilComplexity next
+  Flow ctrl inner next -> control inner next ctrl
+
   where
-    f x = case x of
-      While e ys -> 1 + exprComplexity e + ilComplexity ys
-      If e ys    -> 1 + exprComplexity e + ilComplexity ys
+    function = \case
       Set _ e    -> 1 + exprComplexity e
       Shift _    -> 1
       PutChar e  -> 1 + exprComplexity e
       GetChar _  -> 1
 
-inline :: Int -> Expr -> [IL] -> [IL]
-inline d e []       = [Set d e]
-inline d e (x : xs) = case x of
-  Set d' e' | d == d'                -> Set d' (ie e') : xs
-            | not (exprDepends d' e) -> Set d' (ie e') : inline d e xs
+    control inner next = \case
+      Forever -> ilComplexity inner
+      Once    -> ilComplexity inner + ilComplexity next
+      Never   -> ilComplexity next
 
-  PutChar e' -> PutChar (ie e') : inline d e xs
+      While e -> 1 + exprComplexity e
+      If e    -> 1 + exprComplexity e
 
-  -- Inline into If
-  -- Inlining into the condition is safe, we keep the set before the if since
-  -- the value has to change even if the condition evaluates to false.
-  -- But we also inline into each expression within the if, this can reduce
-  -- some += expressions to constant assigns.
-  If e' ys -> Set d e : If (ie e') (inline d e ys) : xs
+inline :: Int -> Expr -> AST -> AST
+inline d e = \case
+  Nop -> Instruction (Set d e) Nop
 
-  _ -> Set d e : x : xs
+  x@(Instruction fun next) -> case fun of
+
+    Set d' e' | d == d'                -> Instruction (Set d' (ie e')) next
+              | not (exprDepends d' e) -> Instruction (Set d' (ie e')) (inline d e next)
+
+    PutChar e' -> Instruction (PutChar (ie e')) (inline d e next)
+
+    _ -> Instruction (Set d e) x
+
+  x@(Flow ctrl inner next) -> case ctrl of
+    -- Inline into If
+    -- Inlining into the condition is safe, we keep the set before the if since
+    -- the value has to change even if the condition evaluates to false.
+    -- But we also inline into each expression within the if, this can reduce
+    -- some += expressions to constant assigns.
+    If e' -> Instruction (Set d e) (Flow (If (ie e')) (inline d e inner) next)
+
+    _ -> Instruction (Set d e) x
 
   where
     ie = inlineExpr d e

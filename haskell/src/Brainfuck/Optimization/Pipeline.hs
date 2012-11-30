@@ -12,7 +12,7 @@ optimizeAll = removeFromEnd . whileModified pipeline
              . whileToIf
              . reduceCopyLoops
              . moveShifts
-             . mapAST optimizeExpressions id
+             . optimizeExpressions
              . inlineZeros
              . movePutGet
              . cleanUp

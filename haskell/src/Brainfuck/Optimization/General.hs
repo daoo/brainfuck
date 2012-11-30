@@ -7,11 +7,18 @@ import Brainfuck.Optimization.Analysis
 import qualified Data.Set as S
 
 -- |Optimize expressions
-optimizeExpressions :: Function -> Function
-optimizeExpressions = \case
-  Set d e    -> Set d $ optimizeExpr e
-  PutChar e  -> PutChar $ optimizeExpr e
-  x          -> x
+optimizeExpressions :: AST -> AST
+optimizeExpressions = mapAST function control
+  where
+    function = \case
+      Set d e   -> Set d $ optimizeExpr e
+      PutChar e -> PutChar $ optimizeExpr e
+      x         -> x
+
+    control = \case
+      If e    -> If $ optimizeExpr e
+      While e -> While $ optimizeExpr e
+      x       -> x
 
 -- |Remove instructions that provides no side effects
 cleanUp :: AST -> AST
