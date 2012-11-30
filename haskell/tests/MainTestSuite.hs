@@ -20,5 +20,25 @@ tests =
       , testProperty "Pipe add invariant" propPipeAdd
       , testProperty "While Modified towards zero" propWhileModified
       ]
+    , testGroup "Compiler"
+      [ testProperty "Compile Decompile invariant" propCompileDecompile
+      , testProperty "Parse Show invariant" propParser
+      ]
+    , testGroup "Expressions"
+      [ testProperty "Optimize Const Expression" propExprOptimizeConst
+      , testProperty "Optimize Twice Invariant" propExprOptimizeTwice
+      , testProperty "Optimize Decerase Size" propExprOptimizeSmaller
+      , testProperty "Evaluation" propExprEval
+      ]
+    , testGroup "Optimization"
+      [ testProperty "Clean Up" propOptimizeCleanUp
+      , testProperty "Copy Loop Reduction" propOptimizeCopies
+      , testProperty "Expressions" propOptimizeExpressions
+      , testProperty "Inline Initial Values" propOptimizeInlineZeros
+      , testProperty "Move Put and Get" propOptimizeMovePutGet
+      , testProperty "Move Shifts" propOptimizeMoveShifts
+      , testProperty "Minimal Assignments" propOptimizeSets
+      , testProperty "All Optimizations" propOptimizeAll
+      ]
     ]
   ]
