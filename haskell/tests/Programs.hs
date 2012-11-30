@@ -1,17 +1,15 @@
 module Main where
 
 import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Optimize
-import Brainfuck.Compiler.Target.C99
+import Brainfuck.Compiler.Parser
+import Brainfuck.Data.AST
 import Brainfuck.Data.Brainfuck
-import Brainfuck.Data.IL
-import Brainfuck.Data.State
 import Brainfuck.Interpreter
-import Brainfuck.Parser
+import Brainfuck.Optimization.Pipeline
 import Data.Char
 import Data.Foldable (toList)
 import Data.Word
-import Test.QuickCheck
+import Test.QuickCheck hiding (output)
 
 -- {{{ Programs
 -- Prints "Hello World!\n"
@@ -60,13 +58,13 @@ propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
     out    = findOutput s' (compile $ parse bfASCIIValues)
     values = map length $ words out
 -- {{{ Checkers
-checkOutput :: String -> String -> [IL] -> Bool
+checkOutput :: String -> String -> AST -> Bool
 checkOutput inp out ils = out == findOutput inp ils
 
 data CheckRes  = Ok | UnOptFail | OptFail
 data Checker = Checker
   { checkName :: String
-  , checkFunc :: [IL] -> Bool
+  , checkFunc :: AST -> Bool
   , checkBf :: String }
 
 check :: Checker -> CheckRes
@@ -96,12 +94,12 @@ parse str = case parseBrainfuck str of
   Left err -> error $ show err
   Right bf -> bf
 
-prepareBf :: String -> ([IL], [IL])
+prepareBf :: String -> (AST, AST)
 prepareBf bf = (il, optimizeAll il)
   where il = compile $ parse bf
 
-findOutput :: String -> [IL] -> String
-findOutput inp = map chrIntegral . toList . getOutput . run state
+findOutput :: String -> AST -> String
+findOutput inp = map chrIntegral . toList . output . run state
   where
     state :: State Word8
     state = newState inp
