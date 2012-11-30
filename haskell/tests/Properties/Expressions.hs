@@ -4,8 +4,7 @@ module Properties.Expressions where
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Inlining
 import Control.Monad
-import Data.Maybe
-import Test.QuickCheck hiding (output)
+import Test.QuickCheck
 
 constOnly :: Gen Expr
 constOnly = frequency

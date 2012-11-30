@@ -3,7 +3,7 @@ module Properties.Misc where
 
 import Data.ListZipper
 import Ext
-import Test.QuickCheck hiding (output)
+import Test.QuickCheck
 
 propZipperMoveSize :: ListZipper () -> Property
 propZipperMoveSize a@(ListZipper xs _ zs) =
