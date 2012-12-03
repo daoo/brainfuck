@@ -25,24 +25,23 @@ compareFull :: (Integral a) => Int -> State a -> State a -> Bool
 compareFull i (State _ out1 m1) (State _ out2 m2) =
   cut i m1 == cut i m2 && out1 == out2
 
-compareOutput :: AST -> AST -> Bool
-compareOutput xs ys = output (run state xs) == output (run state ys)
-  where
-    state :: State Word8
-    state = State [1..] empty newMemory
+compareOutput :: (Integral a) => State a -> State a -> Bool
+compareOutput s1 s2 = output s1 == output s2
 
-testCode :: AST -> AST -> Bool
-testCode xs ys = compareFull s (run state xs) (run state ys)
+testCode :: (State Word8 -> State Word8 -> Bool) -> AST -> AST -> Bool
+testCode f ast ast' = f (run state ast) (run state ast')
   where
-    s = let (xsMin, xsMax) = memorySize xs
-            (ysMin, ysMax) = memorySize ys
-         in 1 + abs xsMin + abs xsMax + abs ysMin + abs ysMax
-
     state :: State Word8
     state = State [1..] empty newMemory
 
 propTransform :: (AST -> AST) -> AST -> Bool
-propTransform f xs = testCode xs (f xs)
+propTransform f ast = testCode (compareFull s) ast ast'
+  where
+    ast' = f ast
+
+    s = let (xsMin, xsMax) = memorySize ast
+            (ysMin, ysMax) = memorySize ast'
+         in 1 + abs xsMin + abs xsMax + abs ysMin + abs ysMax
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
   propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets,
@@ -57,4 +56,4 @@ propOptimizeMoveShifts  = propTransform moveShifts . getAst
 propOptimizeSets        = propTransform optimizeSets . getAst
 
 propOptimizeAll :: PrettyAST -> Bool
-propOptimizeAll (PrettyAST ast) = compareOutput ast (optimizeAll ast)
+propOptimizeAll (PrettyAST ast) = testCode compareOutput ast (optimizeAll ast)
