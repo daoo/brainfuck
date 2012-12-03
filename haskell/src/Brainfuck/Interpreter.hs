@@ -51,8 +51,16 @@ run state = \case
     applyAt'      = applyAt . const
 
 evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
-evalExpr f = \case
-  Const v -> fromIntegral v
-  Get o   -> f o
-  Add a b -> evalExpr f a + evalExpr f b
-  Mul a b -> evalExpr f a * evalExpr f b
+evalExpr f = unfold unary binary value
+  where
+    unary op a = case op of
+      Id     -> a
+      Negate -> -a
+
+    binary op a b = case op of
+      Add -> a + b
+      Mul -> a * b
+
+    value = \case
+      Const v -> fromIntegral v
+      Get o   -> f o

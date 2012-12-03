@@ -65,15 +65,15 @@ optimalSets = topSort . go M.empty
     go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
 
     f :: M.Map Int Expr -> Expr -> Expr
-    f m = modifyLeaves (\case
-      e@(Get i) -> fromMaybe e $ M.lookup i m
-      e         -> e)
+    f m = modifyValues (\case
+      e@(Get i) -> fromMaybe (Value e) $ M.lookup i m
+      e         -> Value e)
 
 topSort :: [SetOp] -> [SetOp]
 topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
-    get = unfold (++) (++) (\case
+    get = unfold (flip const) (tailp (++)) (\case
       Get d -> [d]
       _     -> [])

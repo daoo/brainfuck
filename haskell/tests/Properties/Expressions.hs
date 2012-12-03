@@ -8,17 +8,17 @@ import Test.QuickCheck
 
 constOnly :: Gen Expr
 constOnly = frequency
-  [ (3, liftM Const arbitrary)
-  , (1, liftM2 Add constOnly constOnly)
-  , (1, liftM2 Mul constOnly constOnly)
+  [ (2, liftM mkInt arbitrary)
+  , (1, liftM2 UnaryOp arbitrary constOnly)
+  , (1, liftM3 BinaryOp arbitrary constOnly constOnly)
   ]
 
 propExprOptimizeConst :: Property
 propExprOptimizeConst = forAll constOnly (f . optimizeExpr)
   where
     f = \case
-      Const _ -> True
-      _       -> False
+      Value (Const _) -> True
+      _               -> False
 
 propExprOptimizeTwice :: Expr -> Bool
 propExprOptimizeTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'

@@ -4,6 +4,7 @@ module Brainfuck.Optimization.Inlining where
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
+import Ext
 
 data Occurs = GetOnce | SetOnce | InLoop [Occurs] | InIf [Occurs]
   deriving (Show)
@@ -30,7 +31,7 @@ occurs d = \case
     If e    -> expr e ++ InIf (occurs d inner) : occurs d next
 
   where
-    expr = unfold (++) (++) (\case
+    expr = unfold (flip const) (tailp (++)) (\case
       Get d' | d == d' -> [GetOnce]
       _                -> [])
 
@@ -66,11 +67,11 @@ optimisticInlining d e xs | c1 <= c2 = Nothing
     c2  = ilComplexity xs'
 
 exprComplexity :: Expr -> Int
-exprComplexity = unfold (+) (+) f
+exprComplexity = unfold (flip const) (tailp (+)) f
   where
-    f (Const _) = 0
-    f (Get _)   = 1
-    f _         = error "unfold Expr error"
+    f = \case
+      Const _ -> 0
+      Get _   -> 1
 
 ilComplexity :: AST -> Int
 ilComplexity = \case

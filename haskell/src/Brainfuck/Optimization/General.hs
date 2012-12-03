@@ -26,18 +26,20 @@ cleanUp = \case
   Nop -> Nop
 
   Instruction fun next -> case fun of
-    Set d1 (Get d2) | d1 == d2 -> cleanUp next
-    Shift s         | s == 0   -> cleanUp next
-    _                          -> Instruction fun (cleanUp next)
+
+    Set d1 (Value (Get d2)) | d1 == d2 -> cleanUp next
+    Shift s                 | s == 0   -> cleanUp next
+    _                                  -> Instruction fun (cleanUp next)
 
   Flow _ Nop next      -> cleanUp next
   Flow Never _ next    -> cleanUp next
   Flow Once inner next -> join inner next
 
-  Flow (While (Const i)) inner next | i == 0    -> cleanUp next
-                                    | otherwise -> Flow Forever inner next
-  Flow (If (Const i)) inner next    | i == 0    -> cleanUp next
-                                    | otherwise -> Flow Once inner next
+  Flow (While (Value (Const i))) inner next | i == 0    -> cleanUp next
+                                            | otherwise -> Flow Forever inner next
+
+  Flow (If (Value (Const i))) inner next | i == 0    -> cleanUp next
+                                         | otherwise -> Flow Once inner next
 
   Flow ctrl inner next -> Flow ctrl (cleanUp inner) (cleanUp next)
 
@@ -82,9 +84,9 @@ moveShifts = \case
       While e -> While (expr s e)
       ctrl    -> ctrl
 
-    expr s = modifyLeaves (\case
-      Get d -> Get (s + d)
-      e     -> e)
+    expr s = modifyValues (\case
+      Get d -> Value $ Get (s + d)
+      e     -> Value e)
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: AST -> AST
@@ -92,16 +94,16 @@ reduceCopyLoops = \case
   Nop                  -> Nop
   Instruction fun next -> Instruction fun (reduceCopyLoops next)
 
-  Flow ctrl@(While (Get d)) inner next -> case copyLoop d inner of
+  Flow ctrl@(While (Value (Get d))) inner next -> case copyLoop d inner of
     Nothing -> Flow ctrl (reduceCopyLoops inner) (reduceCopyLoops next)
-    Just x  -> let instr = Instruction (Set d $ Const 0) Nop
+    Just x  -> let instr = Instruction (Set d $ mkInt 0) Nop
                    x'    = foldr Instruction instr $ map (f d) x
                 in x' `join` (reduceCopyLoops next)
 
   Flow ctrl inner next -> Flow ctrl (reduceCopyLoops inner) (reduceCopyLoops next)
 
   where
-    f d (ds, v) = Set ds $ Get ds `Add` (Const v `Mul` Get d)
+    f d (ds, v) = Set ds $ mkGet ds `add` (mkInt v `mul` mkGet d)
 
 -- |Convert while loops that are only run once to if statements
 whileToIf :: AST -> AST
@@ -109,7 +111,7 @@ whileToIf = \case
   Nop                  -> Nop
   Instruction fun next -> Instruction fun (whileToIf next)
 
-  Flow ctrl@(While e@(Get d)) inner next -> if setToZero d inner
+  Flow ctrl@(While e@(Value (Get d))) inner next -> if setToZero d inner
     then Flow (If e) inner (whileToIf next)
     else Flow ctrl (whileToIf inner) (whileToIf next)
 
@@ -151,7 +153,7 @@ inlineZeros = go S.empty
         Shift _   -> Instruction fun next
 
     inl :: S.Set Int -> Expr -> Expr
-    inl s = unfold Add Mul (\case
-      Get i | S.member i s -> Get i
-            | otherwise    -> Const 0
-      e                    -> e)
+    inl s = modifyValues (\case
+      Get i | S.member i s -> mkGet i
+            | otherwise    -> mkInt 0
+      e                    -> Value e)
