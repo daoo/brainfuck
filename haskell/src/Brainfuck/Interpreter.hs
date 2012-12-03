@@ -37,7 +37,7 @@ run state = \case
       Never   -> state'
       Once    -> run state' inner
       While e -> until (isZero e) (`run` inner) state'
-      If e    -> if isZero e state' then run state' inner else state'
+      If e    -> if isZero e state' then state' else run state' inner
 
     evalFunction state'@(State inp out mem) = \case
       PutChar e -> state' { output = out |> evalExpr' mem e }
