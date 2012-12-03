@@ -14,7 +14,8 @@ import Data.Sequence (empty)
 import Data.Word
 
 compareFull :: (Integral a) => Int -> State a -> State a -> Bool
-compareFull i (State _ out1 m1) (State _ out2 m2) = cut i m1 == cut i m2 && out1 == out2
+compareFull i (State _ out1 m1) (State _ out2 m2) =
+  cut i m1 == cut i m2 && out1 == out2
 
 compareOutput :: AST -> AST -> Bool
 compareOutput xs ys = output (run state xs) == output (run state ys)
