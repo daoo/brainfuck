@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module Properties.Optimization where
 
+import Brainfuck.CodeGen.Indented
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Brainfuck.Interpreter
@@ -12,6 +13,15 @@ import Brainfuck.Optimization.Pipeline
 import Data.ListZipper
 import Data.Sequence (empty)
 import Data.Word
+import Test.QuickCheck hiding (output)
+
+newtype PrettyAST = PrettyAST { getAst :: AST }
+
+instance Arbitrary PrettyAST where
+  arbitrary = fmap PrettyAST arbitrary
+
+instance Show PrettyAST where
+  show (PrettyAST ast) = showIndented ast
 
 compareFull :: (Integral a) => Int -> State a -> State a -> Bool
 compareFull i (State _ out1 m1) (State _ out2 m2) =
@@ -46,15 +56,15 @@ propHeuristicInlining d e xs = case heuristicInlining d e xs of
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
   propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets,
-  propOptimizeMoveShifts :: AST -> Bool
+  propOptimizeMoveShifts :: PrettyAST -> Bool
 
-propOptimizeCleanUp     = propTransform cleanUp
-propOptimizeCopies      = propTransform reduceCopyLoops
-propOptimizeExpressions = propTransform optimizeExpressions
-propOptimizeInlineZeros = propTransform inlineZeros
-propOptimizeMovePutGet  = propTransform movePutGet
-propOptimizeMoveShifts  = propTransform moveShifts
-propOptimizeSets        = propTransform optimizeSets
+propOptimizeCleanUp     = propTransform cleanUp . getAst
+propOptimizeCopies      = propTransform reduceCopyLoops . getAst
+propOptimizeExpressions = propTransform optimizeExpressions . getAst
+propOptimizeInlineZeros = propTransform inlineZeros . getAst
+propOptimizeMovePutGet  = propTransform movePutGet . getAst
+propOptimizeMoveShifts  = propTransform moveShifts . getAst
+propOptimizeSets        = propTransform optimizeSets . getAst
 
-propOptimizeAll :: AST -> Bool
-propOptimizeAll xs = compareOutput xs (optimizeAll xs)
+propOptimizeAll :: PrettyAST -> Bool
+propOptimizeAll (PrettyAST ast) = compareOutput ast (optimizeAll ast)
