@@ -53,13 +53,7 @@ instance Arbitrary AST where
         where
           subtree = tree (n `div` 2)
 
-  shrink = \case
-    Nop                  -> []
-    Instruction fun next -> map (`Instruction` next) (shrink fun) ++ initsAST next
-    Flow ctrl inner next -> map (\c -> Flow c inner next) (shrink ctrl)
-                         ++ map (\x -> Flow ctrl x next) (shrink inner)
-                         ++ map (\x -> Flow ctrl inner x) (shrink next)
-
+  shrink = initsAST
 
 initAST :: AST -> AST
 initAST = \case
