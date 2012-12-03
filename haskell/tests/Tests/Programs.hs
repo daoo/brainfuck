@@ -1,4 +1,4 @@
-module Main where
+module Tests.Programs where
 
 import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.Parser
@@ -57,25 +57,6 @@ propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
     s'     = s ++ "\NUL" -- bfASCIIValues stops on 0
     out    = findOutput s' (compile $ parse bfASCIIValues)
     values = map length $ words out
--- {{{ Checkers
-checkOutput :: String -> String -> AST -> Bool
-checkOutput inp out ils = out == findOutput inp ils
-
-data CheckRes  = Ok | UnOptFail | OptFail
-data Checker = Checker
-  { checkName :: String
-  , checkFunc :: AST -> Bool
-  , checkBf :: String }
-
-check :: Checker -> CheckRes
-check (Checker _ f bf) = case (f unopt, f opt) of
-  (False, _)    -> UnOptFail
-  (True, False) -> OptFail
-  (True, True)  -> Ok
-  where
-    unopt = compile $ parse bf
-    opt   = optimizeAll unopt
--- }}}
 -- {{{ Main
 handleResult :: Checker -> IO ()
 handleResult c = case check c of
