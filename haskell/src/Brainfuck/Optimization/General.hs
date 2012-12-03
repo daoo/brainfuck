@@ -33,13 +33,13 @@ cleanUp = \case
 
   Flow _ Nop next      -> cleanUp next
   Flow Never _ next    -> cleanUp next
-  Flow Once inner next -> join inner next
+  Flow Once inner next -> cleanUp inner `join` cleanUp next
 
   Flow (While (Value (Const i))) inner next | i == 0    -> cleanUp next
                                             | otherwise -> Flow Forever inner next
 
   Flow (If (Value (Const i))) inner next | i == 0    -> cleanUp next
-                                         | otherwise -> Flow Once inner next
+                                         | otherwise -> cleanUp inner `join` cleanUp next
 
   Flow ctrl inner next -> Flow ctrl (cleanUp inner) (cleanUp next)
 
