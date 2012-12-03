@@ -60,7 +60,7 @@ moveShifts = \case
   Nop -> Nop
 
   Instruction (Shift s) next -> case next of
-    Nop -> Nop
+    Nop -> Instruction (Shift s) Nop
 
     Instruction instr next' -> case instr of
 
