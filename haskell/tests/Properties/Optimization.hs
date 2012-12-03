@@ -32,28 +32,28 @@ testCode xs ys = compareFull s (run state xs) (run state ys)
     state :: State Word8
     state = State [1..] empty newMemory
 
-propOptimize :: (AST -> AST) -> AST -> Bool
-propOptimize f xs = testCode xs (f xs)
+propTransform :: (AST -> AST) -> AST -> Bool
+propTransform f xs = testCode xs (f xs)
 
 propInline :: Int -> Expr -> AST -> Bool
 propInline d e xs = inline d e xs `testCode` Instruction (Set d e) xs
 
 propHeuristicInlining :: Int -> Expr -> AST -> Bool
 propHeuristicInlining d e xs = case heuristicInlining d e xs of
-  Just xs' -> (Instruction (Set d e) xs) `testCode` xs'
+  Just xs' -> Instruction (Set d e) xs `testCode` xs'
   Nothing  -> True
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
   propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets,
   propOptimizeMoveShifts :: AST -> Bool
 
-propOptimizeCleanUp     = propOptimize cleanUp
-propOptimizeCopies      = propOptimize reduceCopyLoops
-propOptimizeExpressions = propOptimize optimizeExpressions
-propOptimizeInlineZeros = propOptimize inlineZeros
-propOptimizeMovePutGet  = propOptimize movePutGet
-propOptimizeMoveShifts  = propOptimize moveShifts
-propOptimizeSets        = propOptimize optimizeSets
+propOptimizeCleanUp     = propTransform cleanUp
+propOptimizeCopies      = propTransform reduceCopyLoops
+propOptimizeExpressions = propTransform optimizeExpressions
+propOptimizeInlineZeros = propTransform inlineZeros
+propOptimizeMovePutGet  = propTransform movePutGet
+propOptimizeMoveShifts  = propTransform moveShifts
+propOptimizeSets        = propTransform optimizeSets
 
 propOptimizeAll :: AST -> Bool
 propOptimizeAll xs = compareOutput xs (optimizeAll xs)
