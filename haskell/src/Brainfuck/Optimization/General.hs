@@ -62,10 +62,10 @@ moveShifts = \case
   Instruction (Shift s) next -> case next of
     Nop -> Instruction (Shift s) Nop
 
-    Instruction instr next' -> case instr of
+    Instruction fun next' -> case fun of
 
       Shift s' -> moveShifts $ Instruction (Shift (s + s')) next'
-      fun      -> Instruction (function s fun) (moveShifts (Instruction (Shift s) next'))
+      _        -> Instruction (function s fun) (moveShifts (Instruction (Shift s) next'))
 
     Flow ctrl inner next' -> moveShifts $ Flow ctrl (mapAST (function s) (control s) inner) (Instruction (Shift s) next')
 
