@@ -3,12 +3,10 @@ module Properties.Optimization where
 
 import Brainfuck.CodeGen.Indented
 import Brainfuck.Data.AST
-import Brainfuck.Data.Expr
 import Brainfuck.Interpreter
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Assignment
 import Brainfuck.Optimization.General
-import Brainfuck.Optimization.Inlining
 import Brainfuck.Optimization.Pipeline
 import Data.ListZipper
 import Data.Sequence (empty)
@@ -45,14 +43,6 @@ testCode xs ys = compareFull s (run state xs) (run state ys)
 
 propTransform :: (AST -> AST) -> AST -> Bool
 propTransform f xs = testCode xs (f xs)
-
-propInline :: Int -> Expr -> AST -> Bool
-propInline d e xs = inline d e xs `testCode` Instruction (Set d e) xs
-
-propHeuristicInlining :: Int -> Expr -> AST -> Bool
-propHeuristicInlining d e xs = case heuristicInlining d e xs of
-  Just xs' -> Instruction (Set d e) xs `testCode` xs'
-  Nothing  -> True
 
 propOptimizeInlineZeros, propOptimizeCopies, propOptimizeCleanUp,
   propOptimizeExpressions, propOptimizeMovePutGet, propOptimizeSets,
