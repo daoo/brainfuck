@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.Expr where
 
-import Control.Monad
+import Control.Applicative ((<$>),(<*>))
 import Data.Maybe
 import Test.QuickCheck
 
@@ -29,8 +29,8 @@ mul = BinaryOp Mul
 
 instance Arbitrary Value where
   arbitrary = frequency
-    [ (4, liftM Const arbitrary)
-    , (1, liftM Get (choose (-100, 100))) ]
+    [ (4, Const <$> arbitrary)
+    , (1, Get <$> choose (-100, 100)) ]
 
   shrink = \case
     Const i -> map Const (shrink i)
@@ -51,18 +51,17 @@ instance Arbitrary BinaryOp where
     Mul -> [Add]
 
 instance Arbitrary Expr where
-  arbitrary = expr
+  arbitrary = sized $ \n -> expr n n
     where
-      expr = sized $ \n -> expr' n n
+      expr 0 _ = leaf
+      expr n s = oneof [leaf, branch n s]
 
-      expr' 0 _ = leaf
-      expr' n s = oneof [leaf, branch n s]
+      branch n s = frequency
+        [ (1, UnaryOp <$> arbitrary <*> (expr (n - 1) s))
+        , (4, BinaryOp <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
+        ]
 
-      branch n s = frequency [ (1, liftM2 UnaryOp arbitrary (expr' (n - 1) s))
-                             , (4, liftM3 BinaryOp arbitrary (expr' (n - 1) s) (expr' (n - 1) s))
-                             ]
-
-      leaf = liftM Value arbitrary
+      leaf = Value <$> arbitrary
 
   shrink = \case
     Value v         -> map Value $ shrink v

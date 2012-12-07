@@ -3,15 +3,21 @@ module Properties.Expressions where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Inlining
-import Control.Monad
+import Control.Applicative ((<$>),(<*>))
 import Test.QuickCheck
 
 constOnly :: Gen Expr
-constOnly = frequency
-  [ (2, liftM mkInt arbitrary)
-  , (1, liftM2 UnaryOp arbitrary constOnly)
-  , (1, liftM3 BinaryOp arbitrary constOnly constOnly)
-  ]
+constOnly = sized $ \n -> expr n n
+  where
+    expr 0 _ = leaf
+    expr n s = oneof [leaf, branch n s]
+
+    branch n s = frequency
+      [ (1, UnaryOp <$> arbitrary <*> (expr (n - 1) s))
+      , (4, BinaryOp <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
+      ]
+
+    leaf = mkInt <$> arbitrary
 
 propExprOptimizeConst :: Property
 propExprOptimizeConst = forAll constOnly (f . optimizeExpr)
