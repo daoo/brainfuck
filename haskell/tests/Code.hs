@@ -11,8 +11,12 @@ import Data.Word
 import Test.QuickCheck hiding (output)
 
 printableChar :: Gen Char
-printableChar = oneof $ map return
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
+printableChar = frequency
+  [ (5, choose ('a', 'z'))
+  , (5, choose ('A', 'Z'))
+  , (5, choose ('0', '9'))
+  , (4, return ' ')
+  ]
 
 printableString :: Gen String
 printableString = sized $ \n ->
