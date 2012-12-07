@@ -59,25 +59,29 @@ moveShifts :: AST -> AST
 moveShifts = \case
   Nop -> Nop
 
-  Instruction (Shift s) next -> case next of
-    Nop -> Instruction (Shift s) Nop
+  ast@(Instruction (Shift s) next) -> case next of
+    Nop -> ast
 
     Instruction fun next' -> case fun of
 
-      Shift s' -> moveShifts $ Instruction (Shift (s + s')) next'
-      _        -> Instruction (function s fun) (moveShifts (Instruction (Shift s) next'))
+      GetChar d -> Instruction (GetChar (s + d)) (cont s next')
+      PutChar e -> Instruction (PutChar (expr s e)) (cont s next')
+      Set d e   -> Instruction (Set (s + d) (expr s e)) (cont s next')
+      Shift s'  -> moveShifts $ Instruction (Shift (s + s')) next'
 
-    Flow ctrl inner next' -> moveShifts $ Flow ctrl (mapAST (function s) (control s) inner) (Instruction (Shift s) next')
+    Flow ctrl inner next' -> Flow (control s ctrl) (mapAST (function s) (control s) inner) (cont s next')
 
   Instruction fun next -> Instruction fun (moveShifts next)
   Flow ctrl inner next -> Flow ctrl (moveShifts inner) (moveShifts next)
 
   where
+    cont s next = Instruction (Shift s) next
+
     function s = \case
-      Set d e   -> Set (s + d) (expr s e)
-      Shift s'  -> Shift (s + s')
-      GetChar d -> GetChar (s + d)
-      PutChar e -> PutChar (expr s e)
+      GetChar d     -> GetChar (s + d)
+      PutChar e     -> PutChar (expr s e)
+      Set d e       -> Set (s + d) (expr s e)
+      fun@(Shift _) -> fun
 
     control s = \case
       If e    -> If (expr s e)
