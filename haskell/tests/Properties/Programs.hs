@@ -1,15 +1,7 @@
 module Properties.Programs where
 
-import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Parser
-import Brainfuck.Data.AST
-import Brainfuck.Data.Brainfuck
-import Brainfuck.Interpreter
-import Brainfuck.Optimization.Pipeline
 import Code
 import Data.Char
-import Data.Foldable (toList)
-import Data.Word
 import Test.QuickCheck hiding (output)
 import Tests.Programs
 
