@@ -20,20 +20,23 @@ data Target = Indented | C99 | Haskell deriving (Show, Read)
 data Options = Options
   { optAction :: Action
   , optTarget :: Target
+  , optOptimize :: Int
   }
 
 defaultOptions :: Options
 defaultOptions = Options
   { optAction = Interpret
   , optTarget = C99
+  , optOptimize = 1
   }
 
 data Flag = Do Action | Target Target
 
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option "c" ["compile"] (NoArg (\opt -> opt { optAction = Compile })) "compile input"
-  , Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg })  "Indented | C99 | Haskell") "target language"
+  [ Option ['c'] ["compile"] (NoArg (\opt -> opt { optAction = Compile })) "compile input"
+  , Option ['t'] ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "Indented | C99 | Haskell") "target language"
+  , Option ['O'] ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "Optimization Level 0 | 1") "optimizations"
   ]
 
 main :: IO ()
@@ -47,18 +50,24 @@ main = do
 
   code <- readFile file
 
-  ils <- case parseBrainfuck code of
+  ast <- case parseBrainfuck code of
     Left err -> error $ show err
     Right bf -> return $ compile bf
 
-  let optimized = optimizeAll ils
+  let optimize =
+        case optOptimize opts of
+          0 -> id
+          _ -> optimizeAll
+
+  let codegen =
+        case optTarget opts of
+          Indented -> showIndented
+          C99      -> showC
+          Haskell  -> showHaskell
 
   case optAction opts of
-    Compile    -> case optTarget opts of
-      Indented -> putStrLn $ showIndented optimized
-      C99      -> putStrLn $ showC optimized
-      Haskell  -> putStrLn $ showHaskell optimized
-    Interpret  -> getContents >>= putStr . (`runBF` optimized)
+    Compile   -> putStrLn $ codegen $ optimize ast
+    Interpret -> getContents >>= putStr . (`runBF` (optimize ast))
 
   where
     runBF :: String -> AST -> String
