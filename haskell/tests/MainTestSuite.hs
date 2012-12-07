@@ -4,6 +4,7 @@ import Properties.Compiler
 import Properties.Expressions
 import Properties.Misc
 import Properties.Optimization
+import Properties.Programs
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 
@@ -39,6 +40,10 @@ tests =
       , testProperty "Move Shifts" propOptimizeMoveShifts
       , testProperty "Minimal Assignments" propOptimizeSets
       , testProperty "All Optimizations" propOptimizeAll
+      ]
+    , testGroup "Programs"
+      [ testProperty "Reverse" propReverse
+      , testProperty "ASCII Values" propASCIIValues
       ]
     ]
   ]

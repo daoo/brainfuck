@@ -3,69 +3,49 @@ module Tests.Programs where
 import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.Parser
 import Brainfuck.Data.AST
-import Brainfuck.Data.Brainfuck
-import Brainfuck.Interpreter
-import Brainfuck.Optimization.Pipeline
-import Data.Char
-import Data.Foldable (toList)
-import Data.Word
-import Test.QuickCheck hiding (output)
+
+parseCompile :: String -> AST
+parseCompile = (\(Right bf) -> compile bf) . parseBrainfuck
 
 -- Prints "Hello World!\n"
-bfHello :: String
-bfHello = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
+bfHello :: AST
+bfHello = parseCompile
+  "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
 
 -- Prints "brainfuck\n"
-bfPrintBrainFuck :: String
-bfPrintBrainFuck = ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
+bfPrintBrainFuck :: AST
+bfPrintBrainFuck = parseCompile
+  ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
 
-bfRot13, bfReverse :: String
-bfRot13   = "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
-bfReverse = ">,[>,]<[.<]"
+bfRot13 :: AST
+bfRot13 = parseCompile
+  "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
+
+bfReverse :: AST
+bfReverse = parseCompile
+  ">,[>,]<[.<]"
 
 -- Outputs in unary (with bangs (!))
-bfASCIIValues :: String
-bfASCIIValues = "++++[>++++++++<-],[[>+.-<-]>.<,]"
+bfASCIIValues :: AST
+bfASCIIValues = parseCompile
+  "++++[>++++++++<-],[[>+.-<-]>.<,]"
 
 -- Prints the squars (as ASCII numbers)
-bfSquares :: String
-bfSquares = "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
+bfSquares :: AST
+bfSquares = parseCompile
+  "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
 
 -- Goes to the 30000th cell
-bf30000 :: String
-bf30000 = "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
+bf30000 :: AST
+bf30000 = parseCompile
+  "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
 
 -- Prints the fibonacci sequence
-bfFib :: String
-bfFib = ">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]"
+bfFib :: AST
+bfFib = parseCompile
+  ">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]"
 
 -- Prints "\n\EOT"
-bfIO :: String
-bfIO = ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
--- }}}
--- {{{ QuickCheck properties
-propReverse :: String -> Property
-propReverse s = notElem '\NUL' s ==> out == reverse s
-  where
-    s'  = s ++ "\NUL" -- bfReverse stops on 0
-    out = findOutput s' (compile $ parse bfReverse)
-
-propASCIIValues :: NonEmptyList Char -> Property
-propASCIIValues (NonEmpty s) = notElem '\NUL' s ==> values == map ord s
-  where
-    s'     = s ++ "\NUL" -- bfASCIIValues stops on 0
-    out    = findOutput s' (compile $ parse bfASCIIValues)
-    values = map length $ words out
--- {{{ Main
-handleResult :: Checker -> IO ()
-handleResult c = case check c of
-  Ok        -> return ()
-  UnOptFail -> putStrLn $ "Unoptimized code failed for test: " ++ checkName c
-  OptFail   -> putStrLn $ "Optimized code failed for test: " ++ checkName c
-
-main :: IO ()
-main = mapM_ handleResult
-  [ Checker "30000" (checkOutput "" "#\n") bf30000
-  ]
-
--- vim: set fdm=marker :
+bfIO :: AST
+bfIO = parseCompile
+  ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
