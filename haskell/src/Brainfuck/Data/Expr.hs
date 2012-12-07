@@ -101,6 +101,12 @@ eval f = unfold unary binary value
       Const i -> i
       Get i   -> f i
 
+nodeCount :: Expr -> Int
+nodeCount = \case
+  Value _        -> 1
+  UnaryOp _ a    -> 1 + nodeCount a
+  BinaryOp _ a b -> 1 + nodeCount a + nodeCount b
+
 heigth :: Expr -> Int
 heigth = \case
   Value _        -> 1
