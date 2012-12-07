@@ -4,7 +4,7 @@
 cc=${CXX:-gcc}
 dir="/tmp/brainfuck/"
 input_file="$dir/input"
-bfc="build/brainfuck"
+bfc="dist/build/brainfuck/brainfuck"
 
 bf_file="$1"
 bf_input="$2"

@@ -2,7 +2,7 @@
 # Compare the output of brainfuck after two consecutive runs of this script
 # using vimdiff.
 
-bf="build/brainfuck"
+bf="dist/build/brainfuck/brainfuck"
 dir="/tmp/brainfuck/"
 
 infile="$1"

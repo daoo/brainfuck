@@ -2,7 +2,7 @@
 # Compile brainfuck to C then compile the C with gcc and run it
 
 cc=${CXX:-gcc}
-bf="build/brainfuck"
+bf="dist/build/brainfuck/brainfuck"
 dir="/tmp/brainfuck"
 
 infile="$1"
