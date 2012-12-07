@@ -11,7 +11,6 @@ import Data.Foldable (toList)
 import Data.Word
 import Test.QuickCheck hiding (output)
 
--- {{{ Programs
 -- Prints "Hello World!\n"
 bfHello :: String
 bfHello = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
@@ -68,22 +67,5 @@ main :: IO ()
 main = mapM_ handleResult
   [ Checker "30000" (checkOutput "" "#\n") bf30000
   ]
--- }}}
--- {{{ Helpers
-parse :: String -> [Brainfuck]
-parse str = case parseBrainfuck str of
-  Left err -> error $ show err
-  Right bf -> bf
-
-prepareBf :: String -> (AST, AST)
-prepareBf bf = (il, optimizeAll il)
-  where il = compile $ parse bf
-
-findOutput :: String -> AST -> String
-findOutput inp = map chrIntegral . toList . output . run state
-  where
-    state :: State Word8
-    state = newState inp
--- }}}
 
 -- vim: set fdm=marker :
