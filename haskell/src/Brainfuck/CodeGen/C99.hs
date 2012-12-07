@@ -21,13 +21,23 @@ showExpr = \case
 
     binary op a b = case op of
       Add -> showExpr a . showString " + " . showExpr b
-      Mul -> showParen (paren Mul a b) (showExpr a) . showString " * " . showParen (paren Mul a b) (showExpr b)
+      Mul -> showParen (paren Mul a) (showExpr a) . showString " * " . showParen (paren Mul b) (showExpr b)
 
     value = \case
       Const c -> shows c
       Get d   -> showString "ptr[" . shows d . showString "]"
 
-    paren _ _ _ = True
+    paren Mul = \case
+      BinaryOp Add _ _ -> True
+      BinaryOp Mul _ _ -> False
+      UnaryOp Id a    -> paren Mul a
+      UnaryOp Negate _ -> True
+      Value _          -> False
+
+    paren Add = \case
+      UnaryOp Negate _ -> True
+      UnaryOp Id a     -> paren Add a
+      _                -> False
 
 showC :: AST -> String
 showC ast = writeCode $ do
