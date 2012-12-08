@@ -122,11 +122,11 @@ optimizeExpr = go
     pipeline = [mult, sort, listify, clean]
 
     func e acc f = case acc of
-      Nothing -> f e
-      Just e' -> Just $ fromMaybe e' (f e')
+      Nothing -> treeOptimizer f e
+      Just e' -> Just $ fromMaybe e' (treeOptimizer f e')
 
 mult :: Expr -> Maybe Expr
-mult = treeOptimizer (\case
+mult = \case
   BinaryOp Add a b                  | a == b -> Just $ (Value $ Const 2) `mul` a
   BinaryOp Add a (BinaryOp Add b c) | a == b -> Just $ (mkInt 2 `mul` a) `add` c
 
@@ -136,10 +136,10 @@ mult = treeOptimizer (\case
     (BinaryOp Mul (Value (Const a)) b)
     (BinaryOp Mul (Value (Const c)) d) | b == d -> Just $ mkInt (a + c) `mul` b
 
-  _ -> Nothing)
+  _ -> Nothing
 
 sort :: Expr -> Maybe Expr
-sort = treeOptimizer (\case
+sort = \case
   BinaryOp Add a b -> case (a, b) of
     (Value a', Value b') -> case (a', b') of
       (Get _, Const _)           -> Just $ b `add` a
@@ -151,19 +151,19 @@ sort = treeOptimizer (\case
 
     _ -> Nothing
 
-  _ -> Nothing)
+  _ -> Nothing
 
 listify :: Expr -> Maybe Expr
-listify = treeOptimizer (\case
+listify = \case
   BinaryOp Add a@(Value (Get _)) b@(Value (Const _)) -> Just $ b `add` a
   BinaryOp Mul a@(Value (Get _)) b@(Value (Const _)) -> Just $ b `mul` a
 
   BinaryOp Add (BinaryOp Add a b) c -> Just $ a `add` (b `add` c)
 
-  _ -> Nothing)
+  _ -> Nothing
 
 clean :: Expr -> Maybe Expr
-clean = treeOptimizer (\case
+clean = \case
   UnaryOp Id a                      -> Just a
   UnaryOp Negate (UnaryOp Negate a) -> Just a
   UnaryOp Negate (Value (Const a))  -> Just $ mkInt (-a)
@@ -187,7 +187,7 @@ clean = treeOptimizer (\case
     (Mul, Add) -> Just $ mkInt (c1 * c2) `add` (mkInt c1 `mul` e)
     (Mul, Mul) -> Just $ mkInt (c1 * c2) `mul` e
 
-  _ -> Nothing)
+  _ -> Nothing
 
 -- |Recursivley optimize an Expr tree using a node-level optimization function.
 -- Uses depth first recursion. Get and Const results in Nothing. Add and Mul
