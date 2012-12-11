@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.Expr where
 
-import Control.Applicative ((<$>),(<*>))
+import Control.Applicative ((<$>),(<*>),(<|>))
 import Data.Maybe
 import Test.QuickCheck
 
@@ -206,17 +206,15 @@ clean = treeOptimizer (\case
 --       we must rebuild the node and return either the optimization or
 --       a MORE optimized expression.
 treeOptimizer :: (Expr -> Maybe Expr) -> Expr -> Maybe Expr
-treeOptimizer f = \case
-  Value _         -> Nothing
-  UnaryOp op a    -> optUn op a
-  BinaryOp op a b -> optBin op a b
-  where
-    optUn op a = case (treeOptimizer f a) of
-      Nothing -> f $ UnaryOp op a
-      a'      -> let e = UnaryOp op (fromMaybe a a')
-                  in Just $ fromMaybe e (treeOptimizer f e)
+treeOptimizer f e = case e of
+  Value _ -> Nothing
 
-    optBin op a b = case (treeOptimizer f a, treeOptimizer f b) of
-      (Nothing, Nothing) -> f $ BinaryOp op a b
-      (a', b')           -> let e = BinaryOp op (fromMaybe a a') (fromMaybe b b')
-                             in Just $ fromMaybe e (treeOptimizer f e)
+  UnaryOp op a -> case (treeOptimizer f a) of
+    Nothing -> f $ UnaryOp op a
+    Just a' -> let e' = UnaryOp op a'
+                in Just e' <|> treeOptimizer f e'
+
+  BinaryOp op a b -> case (treeOptimizer f a, treeOptimizer f b) of
+    (Nothing, Nothing) -> f $ BinaryOp op a b
+    (a', b')           -> let e' = BinaryOp op (fromMaybe a a') (fromMaybe b b')
+                           in Just e' <|> treeOptimizer f e'
