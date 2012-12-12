@@ -206,17 +206,17 @@ clean = \case
 --       we must rebuild the node and return either the optimization or
 --       a MORE optimized expression.
 treeOptimizer :: (Expr -> Maybe Expr) -> Expr -> Maybe Expr
-treeOptimizer f = helper
+treeOptimizer f = go
   where
-    helper = \case
+    go = \case
       Value _ -> Nothing
 
-      UnaryOp op a -> case helper a of
+      UnaryOp op a -> case go a of
         Nothing -> f $ UnaryOp op a
         Just a' -> let e' = UnaryOp op a'
-                    in Just e' <|> helper e'
+                    in go e' <|> Just e'
 
-      BinaryOp op a b -> case (helper a, helper b) of
+      BinaryOp op a b -> case (go a, go b) of
         (Nothing, Nothing) -> f $ BinaryOp op a b
         (a', b')           -> let e' = BinaryOp op (fromMaybe a a') (fromMaybe b b')
-                              in Just e' <|> helper e'
+                              in go e' <|> Just e'
