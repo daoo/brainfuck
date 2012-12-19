@@ -13,8 +13,10 @@ import Data.Word
 import Ext
 import System.Console.GetOpt
 import System.Environment
+import System.Exit
+import System.IO
 
-data Action = Compile | Interpret deriving (Show, Read)
+data Action = Compile | Interpret | Help deriving (Show, Read)
 data Target = Indented | C99 | Haskell deriving (Show, Read)
 
 data Options = Options
@@ -32,11 +34,17 @@ defaultOptions = Options
 
 data Flag = Do Action | Target Target
 
+printHelp :: IO ()
+printHelp = putStrLn (usageInfo header options)
+  where
+    header = "Usage: brainfuck [options] file..."
+
 options :: [OptDescr (Options -> Options)]
 options =
   [ Option ['c'] ["compile"] (NoArg (\opt -> opt { optAction = Compile })) "compile input"
-  , Option ['t'] ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "Indented | C99 | Haskell") "target language"
-  , Option ['O'] ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "Optimization Level 0 | 1") "optimizations"
+  , Option ['t'] ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "{Indented|C99|Haskell}") "target language"
+  , Option ['O'] ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1}") "optimizations"
+  , Option ['h'] ["help"] (NoArg (\opt -> opt { optAction = Help})) "show help"
   ]
 
 main :: IO ()
@@ -44,15 +52,9 @@ main = do
   args <- getArgs
   (flags, file) <- case getOpt RequireOrder options args of
     (flags , nonOpts , [])   -> return (flags, concat nonOpts)
-    (_     , _       , msgs) -> error $ concat msgs
+    (_     , _       , errs) -> hPutStr stderr (concat errs) >> printHelp >> exitWith (ExitFailure 1)
 
   let opts = pipe flags defaultOptions
-
-  code <- readFile file
-
-  ast <- case parseBrainfuck code of
-    Left err -> error $ show err
-    Right bf -> return $ compile bf
 
   let optimize =
         case optOptimize opts of
@@ -63,12 +65,22 @@ main = do
         case optTarget opts of
           Indented -> showIndented
           C99      -> showC
-          Haskell  -> showHaskell
+          Haskell  -> showHaskellIO
 
   case optAction opts of
-    Compile   -> putStrLn $ codegen $ optimize ast
-    Interpret -> getContents >>= putStr . (`runBF` (optimize ast))
+    Help      -> printHelp
+    Compile   -> astFrom file >>= putStrLn . codegen . optimize
+    Interpret -> do
+      ast <- astFrom file
+      inp <- getContents
+      putStr $ runBF inp $ optimize ast
 
   where
+    astFrom file = do
+      code <- readFile file
+      case parseBrainfuck code of
+        Left err -> error $ show err
+        Right bf -> return $ compile bf
+
     runBF :: String -> AST -> String
     runBF inp = map chrIntegral . toList . output . run (newState inp :: State Word8)
