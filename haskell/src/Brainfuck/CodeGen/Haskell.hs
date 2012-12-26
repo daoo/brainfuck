@@ -5,22 +5,19 @@ import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Text.CodeWriter
 
-showHaskell :: AST -> String
-showHaskell ast = writeCode $ do
+showHaskellIO :: AST -> String
+showHaskellIO ast = writeCode $ do
   line "import Brainfuck.Data.Expr"
   line "import Brainfuck.Data.IOMemory"
   line ""
   line "main :: IO ()"
   line "main = do"
-  incIndent
-  line "m <- newMemory 30001"
-  line "program (setMemory m) (putMemory m) (getMemory m) (evalMemory m) (whileMemory m) (ifMemory m)"
-  decIndent
+  indentedM $ do
+    line "m <- newMemory 30001"
+    line "program (setMemory m) (putMemory m) (getMemory m) (evalMemory m) (whileMemory m) (ifMemory m)"
   line ""
   line "program set put get eval while when = runMemory $ do"
-  incIndent
-
-  go ast
+  indentedM $ go ast
 
   where
     go = \case
