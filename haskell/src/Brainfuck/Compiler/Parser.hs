@@ -4,20 +4,11 @@ import Brainfuck.Data.Brainfuck
 import Control.Applicative ((<$>))
 import Text.ParserCombinators.Parsec
 
-noSymbols :: Parser ()
-noSymbols = skipMany $ noneOf "+-<>.,[]"
-
 program :: Parser [Brainfuck]
-program = between noSymbols eof bfOps
-
-bfOps :: Parser [Brainfuck]
-bfOps = many bfOp
+program = many bfOp
 
 bfOp :: Parser Brainfuck
-bfOp = do
-  x <- bfToken <|> bfLoop
-  noSymbols
-  return x
+bfOp = bfToken <|> bfLoop
 
 bfToken :: Parser Brainfuck
 bfToken = choice $ map (uncurry f)
@@ -31,7 +22,7 @@ bfToken = choice $ map (uncurry f)
     f c t = char c >> return (Token t)
 
 bfLoop :: Parser Brainfuck
-bfLoop = Repeat <$> between (char '[' >> noSymbols) (char ']' >> noSymbols) bfOps
+bfLoop = Repeat <$> between (char '[') (char ']') program
 
 parseBrainfuck :: String -> Either ParseError [Brainfuck]
-parseBrainfuck = parse program "brainfuck"
+parseBrainfuck = parse program "brainfuck" . filter (`elem` "+-<>.,[]")

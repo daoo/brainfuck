@@ -27,8 +27,8 @@ data Options = Options
 
 defaultOptions :: Options
 defaultOptions = Options
-  { optAction = Interpret
-  , optTarget = C99
+  { optAction   = Interpret
+  , optTarget   = C99
   , optOptimize = 1
   }
 

@@ -21,7 +21,7 @@ showHaskellIO ast = writeCode $ do
 
   where
     go = \case
-      Nop        -> return ()
+      Nop                  -> return ()
       Instruction fun next -> function fun >> go next
       Flow ctrl inner next -> control ctrl >> indentedM (go inner) >> go next
 
