@@ -2,6 +2,7 @@
 module Properties.Expressions where
 
 import Brainfuck.Data.Expr
+import Brainfuck.Optimization.Expression
 import Brainfuck.Optimization.Inlining
 import Control.Applicative ((<$>),(<*>))
 import Test.QuickCheck

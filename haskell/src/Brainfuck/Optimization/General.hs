@@ -4,6 +4,7 @@ module Brainfuck.Optimization.General where
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
+import Brainfuck.Optimization.Expression
 import qualified Data.Set as S
 
 -- |Optimize expressions
