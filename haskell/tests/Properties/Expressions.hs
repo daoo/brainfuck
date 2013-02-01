@@ -4,6 +4,7 @@ module Properties.Expressions where
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Expression
 import Brainfuck.Optimization.Inlining
+import Brainfuck.Optimization.Rule
 import Control.Applicative ((<$>),(<*>))
 import Test.QuickCheck
 
@@ -21,19 +22,19 @@ constOnly = sized $ \n -> expr n n
     leaf = mkInt <$> arbitrary
 
 propExprOptimizeConst :: Property
-propExprOptimizeConst = forAll constOnly (f . optimizeExpr)
+propExprOptimizeConst = forAll constOnly (f . (perhaps (loop exprRules)))
   where
     f = \case
       Value (Const _) -> True
       _               -> False
 
 propExprOptimizeTwice :: Expr -> Bool
-propExprOptimizeTwice e = let e' = optimizeExpr e in e' == optimizeExpr e'
+propExprOptimizeTwice e = let e' = (perhaps (loop exprRules)) e in e' == (perhaps (loop exprRules)) e'
 
 propExprEval :: Expr -> NonEmptyList Int -> Bool
-propExprEval e (NonEmpty xs) = eval f e == eval f (optimizeExpr e)
+propExprEval e (NonEmpty xs) = eval f e == eval f (perhaps (loop exprRules) e)
   where
     f = (!!) xs . (`mod` length xs)
 
 propExprOptimizeSmaller :: Expr -> Bool
-propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (optimizeExpr expr)
+propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (perhaps (loop exprRules) expr)

@@ -1,36 +1,86 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Optimization.Expression where
 
-import Control.Applicative ((<|>))
 import Brainfuck.Data.Expr
-import Data.Maybe
+import Brainfuck.Optimization.Rule
 
--- |Create the (computionally) shortest expression that have the same results
-optimizeExpr :: Expr -> Expr
-optimizeExpr = go
-  where
-    go e = maybe e go $ foldl (func e) Nothing pipeline
+exprRules :: [Expr -> Rule Expr]
+exprRules =
+  [ evalAdd1
+  , evalAdd2
+  , evalMul1
+  , evalMul2
+  , addZeroLeft
+  , addZeroRight
+  , evalNegate
+  , collapsNegate
+  , evalId
+  , moveConstRight
+  , swapConstDown
+  ]
 
-    pipeline = [mult, sort, listify, clean]
+evalAdd1 :: Expr -> Rule Expr
+evalAdd1 (BinaryOp Add (Value (Const a)) (Value (Const b))) = return $ mkInt (a + b)
+evalAdd1 e                                                  = fail (show e)
 
-    func e acc f = case acc of
-      Nothing -> treeOptimizer f e
-      Just e' -> Just $ fromMaybe e' (treeOptimizer f e')
+evalAdd2 :: Expr -> Rule Expr
+evalAdd2 (BinaryOp Add (Value (Const a)) (BinaryOp Add (Value (Const b)) c)) = return $ BinaryOp Add (mkInt (a + b)) c
+evalAdd2 e                                                                   = fail (show e)
 
-mult :: Expr -> Maybe Expr
-mult = \case
-  BinaryOp Add a b                  | a == b -> Just $ (Value $ Const 2) `mul` a
-  BinaryOp Add a (BinaryOp Add b c) | a == b -> Just $ (mkInt 2 `mul` a) `add` c
+evalMul1 :: Expr -> Rule Expr
+evalMul1 (BinaryOp Mul (Value (Const a)) (Value (Const b))) = return $ mkInt (a * b)
+evalMul1 e                                                  = fail (show e)
 
-  BinaryOp Add c (BinaryOp Mul (Value (Const a)) b) | b == c -> Just $ mkInt (a + 1) `mul` b
+evalMul2 :: Expr -> Rule Expr
+evalMul2 (BinaryOp Mul (Value (Const a)) (BinaryOp Mul (Value (Const b)) c)) = return $ BinaryOp Mul (mkInt (a * b)) c
+evalMul2 e                                                                   = fail (show e)
 
-  BinaryOp Add
-    (BinaryOp Mul (Value (Const a)) b)
-    (BinaryOp Mul (Value (Const c)) d) | b == d -> Just $ mkInt (a + c) `mul` b
+addZeroLeft :: Expr -> Rule Expr
+addZeroLeft (BinaryOp Add (Value (Const 0)) b) = return b
+addZeroLeft e                                  = fail (show e)
 
-  _ -> Nothing
+addZeroRight :: Expr -> Rule Expr
+addZeroRight (BinaryOp Add a (Value (Const 0))) = return a
+addZeroRight e                                  = fail (show e)
 
-sort :: Expr -> Maybe Expr
+evalNegate :: Expr -> Rule Expr
+evalNegate (UnaryOp Negate (Value (Const a))) = return $ mkInt (-a)
+evalNegate e                                  = fail (show e)
+
+collapsNegate :: Expr -> Rule Expr
+collapsNegate (UnaryOp Negate (UnaryOp Negate e)) = return e
+collapsNegate e                                   = fail (show e)
+
+evalId :: Expr -> Rule Expr
+evalId (UnaryOp Id e) = return e
+evalId e              = fail (show e)
+
+moveConstRight :: Expr -> Rule Expr
+moveConstRight (BinaryOp op a@(Value (Const _)) b@(Value (Get _))) = return $ BinaryOp op b a
+moveConstRight e                                                   = fail (show e)
+
+swapConstDown :: Expr -> Rule Expr
+swapConstDown
+  (BinaryOp Add
+    a@(Value (Const _))
+      (BinaryOp Add
+        b@(Value (Get _))
+        c)) = return $ BinaryOp Add b (BinaryOp Add a c)
+swapConstDown
+  (BinaryOp Mul
+    a@(Value (Const _))
+      (BinaryOp Mul
+        b@(Value (Get _))
+        c)) = return $ BinaryOp Mul b (BinaryOp Mul a c)
+swapConstDown e = fail (show e)
+
+-- BinaryOp Add c (BinaryOp Mul (Value (Const a)) b) | b == c -> Just $ mkInt (a + 1) `mul` b
+
+-- BinaryOp Add
+--  (BinaryOp Mul (Value (Const a)) b)
+--  (BinaryOp Mul (Value (Const c)) d) | b == d -> Just $ mkInt (a + c) `mul` b
+
+{-sort :: Expr -> Maybe Expr
 sort = \case
   BinaryOp Add a b -> case (a, b) of
     (Value a', Value b') -> case (a', b') of
@@ -56,12 +106,6 @@ listify = \case
 
 clean :: Expr -> Maybe Expr
 clean = \case
-  UnaryOp Id a                      -> Just a
-  UnaryOp Negate (UnaryOp Negate a) -> Just a
-  UnaryOp Negate (Value (Const a))  -> Just $ mkInt (-a)
-
-  BinaryOp Add (Value (Const 0)) b -> Just b
-  BinaryOp Add a (Value (Const 0)) -> Just a
 
   BinaryOp Add (Value (Const a')) (Value (Const b')) -> Just $ mkInt (a' + b')
 
@@ -80,35 +124,4 @@ clean = \case
     (Mul, Mul) -> Just $ mkInt (c1 * c2) `mul` e
 
   _ -> Nothing
-
--- |Recursivley optimize an Expr tree using a node-level optimization function.
--- Uses depth first recursion. Get and Const results in Nothing. Add and Mul
--- are a little more complex:
---   For a node e@(BinaryOp a b) we first recurse to its children
---
---     a' = treeOptimizer f a
---     b' = treeOptimizer f b
---
---   Then there are two cases:
---
---     * Both are Nothing, no optimization happend, we return (f e)
---
---     * a' or b' is just, an optimization has occured and therefore the
---       entire treeOptimizer call have to return (Just someExpr). Thus
---       we must rebuild the node and return either the optimization or
---       a MORE optimized expression.
-treeOptimizer :: (Expr -> Maybe Expr) -> Expr -> Maybe Expr
-treeOptimizer f = go
-  where
-    go = \case
-      Value _ -> Nothing
-
-      UnaryOp op a -> case go a of
-        Nothing -> f $ UnaryOp op a
-        Just a' -> let e' = UnaryOp op a'
-                    in go e' <|> Just e'
-
-      BinaryOp op a b -> case (go a, go b) of
-        (Nothing, Nothing) -> f $ BinaryOp op a b
-        (a', b')           -> let e' = BinaryOp op (fromMaybe a a') (fromMaybe b b')
-                              in go e' <|> Just e'
+-}
