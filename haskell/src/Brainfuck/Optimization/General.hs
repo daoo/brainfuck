@@ -13,13 +13,13 @@ optimizeExpressions :: AST -> AST
 optimizeExpressions = mapAST function control
   where
     function = \case
-      Set d e   -> Set d $ perhaps (loop exprRules) e
-      PutChar e -> PutChar $ perhaps (loop exprRules) e
+      Set d e   -> Set d $ tryMaybe (loop exprRules) e
+      PutChar e -> PutChar $ tryMaybe (loop exprRules) e
       x         -> x
 
     control = \case
-      If e    -> If $ perhaps (loop exprRules) e
-      While e -> While $ perhaps (loop exprRules) e
+      If e    -> If $ tryMaybe (loop exprRules) e
+      While e -> While $ tryMaybe (loop exprRules) e
       x       -> x
 
 -- |Remove instructions that provides no side effects

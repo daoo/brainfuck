@@ -5,8 +5,11 @@ import Brainfuck.Data.Expr
 import Control.Applicative
 import Data.Maybe
 
-perhaps :: (a -> Maybe a) -> a -> a
-perhaps f a = fromMaybe a (f a)
+try :: (Monad f, Alternative f) => (a -> f a) -> f a -> f a
+try f a = (f =<< a) <|> a
+
+tryMaybe :: (a -> Maybe a) -> a -> a
+tryMaybe f a = fromMaybe a (f a)
 
 type Rule a = Maybe a
 
@@ -14,17 +17,10 @@ class Ruled a where
   descend :: (a -> Rule a) -> a -> Rule a
 
 rules :: Ruled a => [a -> Rule a] -> a -> Rule a
-rules fs e = go fs Nothing
-  where
-    go [] acc     = acc
-    go (f:fs') acc = case acc of
-      Nothing -> go fs' (descend f e)
-      Just e' -> go fs' (descend f e' <|> acc)
+rules fs e = foldl (\acc f -> descend f (fromMaybe e acc) <|> acc) empty fs
 
 loop :: Ruled a => [a -> Rule a] -> a -> Rule a
-loop fs a = case rules fs a of
-  Nothing -> Nothing
-  Just a' -> loop fs a' <|> Just a'
+loop fs a = try (loop fs) (rules fs a)
 
 instance Ruled Expr where
   descend f e = case e of
@@ -32,10 +28,10 @@ instance Ruled Expr where
 
     UnaryOp op a -> case descend f a of
       Nothing -> f e
-      Just a' -> f (UnaryOp op a') <|> Just (UnaryOp op a')
+      Just a' -> try f (pure $ UnaryOp op a')
 
     BinaryOp op a b -> case (descend f a, descend f b) of
       (Nothing, Nothing) -> f e
-      (Just a', Nothing) -> f (BinaryOp op a' b) <|> Just (BinaryOp op a' b)
-      (Nothing, Just b') -> f (BinaryOp op a b') <|> Just (BinaryOp op a b')
-      (Just a', Just b') -> f (BinaryOp op a' b') <|> Just (BinaryOp op a' b')
+      (Just a', Nothing) -> try f (pure $ BinaryOp op a' b)
+      (Nothing, Just b') -> try f (pure $ BinaryOp op a b')
+      (Just a', Just b') -> try f (pure $ BinaryOp op a' b')

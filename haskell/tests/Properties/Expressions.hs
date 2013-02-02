@@ -22,19 +22,19 @@ constOnly = sized $ \n -> expr n n
     leaf = mkInt <$> arbitrary
 
 propExprOptimizeConst :: Property
-propExprOptimizeConst = forAll constOnly (f . (perhaps (loop exprRules)))
+propExprOptimizeConst = forAll constOnly (f . (tryMaybe (loop exprRules)))
   where
     f = \case
       Value (Const _) -> True
       _               -> False
 
 propExprOptimizeTwice :: Expr -> Bool
-propExprOptimizeTwice e = let e' = (perhaps (loop exprRules)) e in e' == (perhaps (loop exprRules)) e'
+propExprOptimizeTwice e = let e' = (tryMaybe (loop exprRules)) e in e' == (tryMaybe (loop exprRules)) e'
 
 propExprEval :: Expr -> NonEmptyList Int -> Bool
-propExprEval e (NonEmpty xs) = eval f e == eval f (perhaps (loop exprRules) e)
+propExprEval e (NonEmpty xs) = eval f e == eval f (tryMaybe (loop exprRules) e)
   where
     f = (!!) xs . (`mod` length xs)
 
 propExprOptimizeSmaller :: Expr -> Bool
-propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (perhaps (loop exprRules) expr)
+propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (tryMaybe (loop exprRules) expr)
