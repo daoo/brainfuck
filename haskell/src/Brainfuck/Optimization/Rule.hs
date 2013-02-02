@@ -24,14 +24,8 @@ loop fs a = try (loop fs) (rules fs a)
 
 instance Ruled Expr where
   descend f e = case e of
-    Value _ -> Nothing
-
-    UnaryOp op a -> case descend f a of
-      Nothing -> f e
-      Just a' -> try f (pure $ UnaryOp op a')
-
-    BinaryOp op a b -> case (descend f a, descend f b) of
-      (Nothing, Nothing) -> f e
-      (Just a', Nothing) -> try f (pure $ BinaryOp op a' b)
-      (Nothing, Just b') -> try f (pure $ BinaryOp op a b')
-      (Just a', Just b') -> try f (pure $ BinaryOp op a' b')
+    Value _         -> Nothing
+    UnaryOp op a    -> try f $ pure $ UnaryOp op (df a)
+    BinaryOp op a b -> try f $ pure $ BinaryOp op (df a) (df b)
+    where
+      df = tryMaybe (descend f)
