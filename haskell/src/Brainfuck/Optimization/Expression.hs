@@ -10,6 +10,7 @@ exprRules =
   , evalAdd2
   , evalMul1
   , evalMul2
+  , rotateAdd
   , addZeroLeft
   , addZeroRight
   , evalNegate
@@ -73,6 +74,10 @@ swapConstDown
         b@(Value (Get _))
         c)) = return $ BinaryOp Mul b (BinaryOp Mul a c)
 swapConstDown e = fail (show e)
+
+rotateAdd :: Expr -> Rule Expr
+rotateAdd (BinaryOp Add (BinaryOp Add a b) c) = return $ BinaryOp Add a (BinaryOp Add b c)
+rotateAdd e                                   = fail (show e)
 
 -- BinaryOp Add c (BinaryOp Mul (Value (Const a)) b) | b == c -> Just $ mkInt (a + 1) `mul` b
 
