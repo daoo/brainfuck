@@ -22,7 +22,7 @@ constOnly = sized $ \n -> expr n n
     leaf = mkInt <$> arbitrary
 
 propExprOptimizeConst :: Property
-propExprOptimizeConst = forAll constOnly (f . (tryMaybe (loop exprRules)))
+propExprOptimizeConst = forAll constOnly (f . tryMaybe (loop exprRules))
   where
     f = \case
       Value (Const _) -> True
