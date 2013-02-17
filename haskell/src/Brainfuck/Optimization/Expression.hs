@@ -10,12 +10,12 @@ exprRules =
   , evalAdd2
   , evalMul1
   , evalMul2
+  , evalId
+  , evalNegate
   , rotateBinary
   , addZeroLeft
   , addZeroRight
-  , evalNegate
   , collapsNegate
-  , evalId
   , moveConstRight
   , swapConstDown
   ]
@@ -36,6 +36,14 @@ evalMul2 :: Expr -> Rule Expr
 evalMul2 (BinaryOp Mul (Value (Const a)) (BinaryOp Mul (Value (Const b)) c)) = return $ BinaryOp Mul (mkInt (a * b)) c
 evalMul2 e                                                                   = fail (show e)
 
+evalNegate :: Expr -> Rule Expr
+evalNegate (UnaryOp Negate (Value (Const a))) = return $ mkInt (-a)
+evalNegate e                                  = fail (show e)
+
+evalId :: Expr -> Rule Expr
+evalId (UnaryOp Id e) = return e
+evalId e              = fail (show e)
+
 addZeroLeft :: Expr -> Rule Expr
 addZeroLeft (BinaryOp Add (Value (Const 0)) b) = return b
 addZeroLeft e                                  = fail (show e)
@@ -44,17 +52,9 @@ addZeroRight :: Expr -> Rule Expr
 addZeroRight (BinaryOp Add a (Value (Const 0))) = return a
 addZeroRight e                                  = fail (show e)
 
-evalNegate :: Expr -> Rule Expr
-evalNegate (UnaryOp Negate (Value (Const a))) = return $ mkInt (-a)
-evalNegate e                                  = fail (show e)
-
 collapsNegate :: Expr -> Rule Expr
 collapsNegate (UnaryOp Negate (UnaryOp Negate e)) = return e
 collapsNegate e                                   = fail (show e)
-
-evalId :: Expr -> Rule Expr
-evalId (UnaryOp Id e) = return e
-evalId e              = fail (show e)
 
 moveConstRight :: Expr -> Rule Expr
 moveConstRight (BinaryOp op a@(Value (Const _)) b@(Value (Get _))) = return $ BinaryOp op b a
