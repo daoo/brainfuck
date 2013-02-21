@@ -3,7 +3,6 @@ module Brainfuck.Optimization.Rule where
 
 import Brainfuck.Data.Expr
 import Control.Applicative
-import Data.List
 import Data.Maybe
 
 try :: (Monad f, Alternative f) => (a -> f a) -> f a -> f a
@@ -12,27 +11,41 @@ try f a = (f =<< a) <|> a
 tryMaybe :: (a -> Maybe a) -> a -> a
 tryMaybe f a = fromMaybe a (f a)
 
+toRule :: (Bool, a) -> Rule a
+toRule (True, a) = Just a
+toRule _         = Nothing
+
+fromRule :: a -> Rule a -> (Bool, a)
+fromRule _ (Just b) = (True, b)
+fromRule a Nothing  = (False, a)
+
 type Rule a = Maybe a
 
 class Ruled a where
-  descend :: (a -> Rule a) -> a -> Rule a
+  rewrite :: [a -> Rule a] -> a -> Rule a
 
-rules :: Ruled a => [a -> Rule a] -> a -> Rule a
-rules fs e = foldl' (\acc f -> descend f (fromMaybe e acc) <|> acc) empty fs
+applyRules :: [a -> Rule a] -> a -> (Bool, a)
+applyRules rules expr = go rules (False, expr)
+  where
+    go [] acc         = acc
+    go (f:fs) (b, e') = let (b', e'') = fromRule e' (f e')
+                         in go fs (b || b', e'')
 
 loop :: Ruled a => [a -> Rule a] -> a -> Rule a
-loop fs a = try (loop fs) (rules fs a)
+loop fs a = try (loop fs) (rewrite fs a)
 
 instance Ruled Expr where
-  descend f e = case e of
-    Value _ -> Nothing
+  rewrite fs = toRule . go
 
-    UnaryOp op a -> case descend f a of
-      Nothing -> f e
-      Just a' -> f (UnaryOp op a')
+    where
+      go = \case
+        e@(Value _) -> (False, e)
 
-    BinaryOp op a b -> case (descend f a, descend f b) of
-      (Nothing, Nothing) -> f e
-      (Just a', Nothing) -> f $ BinaryOp op a' b
-      (Nothing, Just b') -> f $ BinaryOp op a b'
-      (Just a', Just b') -> f $ BinaryOp op a' b'
+        UnaryOp op a -> let (m1, a') = go a
+                            (m2, e)  = applyRules fs (UnaryOp op a')
+                         in (m1 || m2, e)
+
+        BinaryOp op a b -> let (m1, a') = go a
+                               (m2, b') = go b
+                               (m3, e)  = applyRules fs (BinaryOp op a' b')
+                            in (m1 || m2 || m3, e)
