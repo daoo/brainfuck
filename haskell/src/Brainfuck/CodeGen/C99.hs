@@ -30,7 +30,7 @@ showExpr = \case
     paren Mul = \case
       BinaryOp Add _ _ -> True
       BinaryOp Mul _ _ -> False
-      UnaryOp Id a    -> paren Mul a
+      UnaryOp Id a     -> paren Mul a
       UnaryOp Negate _ -> True
       Value _          -> False
 

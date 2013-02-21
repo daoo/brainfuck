@@ -67,6 +67,15 @@ instance Arbitrary Expr where
     UnaryOp op a    -> a : zipWith UnaryOp (cycle (shrink op)) (shrink a)
     BinaryOp op a b -> a : b : zipWith3 BinaryOp (cycle (shrink op)) (shrink a) (shrink b)
 
+instance Num Expr where
+  (+) = BinaryOp Add
+  (*) = BinaryOp Mul
+
+  abs    = undefined
+  signum = undefined
+
+  fromInteger = Value . Const . fromInteger
+
 unfold :: (UnaryOp -> a -> a) -> (BinaryOp -> a -> a -> a) -> (Value -> a) -> Expr -> a
 unfold unary binary value = \case
   Value v         -> value v
