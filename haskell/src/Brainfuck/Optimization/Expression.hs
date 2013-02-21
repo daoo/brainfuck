@@ -7,17 +7,17 @@ import Brainfuck.Optimization.Rule
 exprRules :: [Expr -> Rule Expr]
 exprRules =
   [ evalAdd1
-  , evalAdd2
   , evalMul1
-  , evalMul2
   , evalId
   , evalNegate
-  , rotateBinary
   , addZeroLeft
   , addZeroRight
   , collapsNegate
-  , moveConstRight
+  , swapConstGet
   , swapConstDown
+  , rotateBinary
+  , evalAdd2
+  , evalMul2
   ]
 
 evalAdd1 :: Expr -> Rule Expr
@@ -25,7 +25,7 @@ evalAdd1 (BinaryOp Add (Value (Const a)) (Value (Const b))) = return $ mkInt (a 
 evalAdd1 e                                                  = fail (show e)
 
 evalAdd2 :: Expr -> Rule Expr
-evalAdd2 (BinaryOp Add (Value (Const a)) (BinaryOp Add (Value (Const b)) c)) = return $ BinaryOp Add (mkInt (a + b)) c
+evalAdd2 (BinaryOp Add (Value (Const a)) (BinaryOp Add b (Value (Const c)))) = return $ BinaryOp Add (mkInt (a + c)) b
 evalAdd2 e                                                                   = fail (show e)
 
 evalMul1 :: Expr -> Rule Expr
@@ -33,7 +33,7 @@ evalMul1 (BinaryOp Mul (Value (Const a)) (Value (Const b))) = return $ mkInt (a 
 evalMul1 e                                                  = fail (show e)
 
 evalMul2 :: Expr -> Rule Expr
-evalMul2 (BinaryOp Mul (Value (Const a)) (BinaryOp Mul (Value (Const b)) c)) = return $ BinaryOp Mul (mkInt (a * b)) c
+evalMul2 (BinaryOp Mul (Value (Const a)) (BinaryOp Mul b (Value (Const c)))) = return $ BinaryOp Mul (mkInt (a * c)) b
 evalMul2 e                                                                   = fail (show e)
 
 evalNegate :: Expr -> Rule Expr
@@ -56,9 +56,10 @@ collapsNegate :: Expr -> Rule Expr
 collapsNegate (UnaryOp Negate (UnaryOp Negate e)) = return e
 collapsNegate e                                   = fail (show e)
 
-moveConstRight :: Expr -> Rule Expr
-moveConstRight (BinaryOp op a@(Value (Const _)) b@(Value (Get _))) = return $ BinaryOp op b a
-moveConstRight e                                                   = fail (show e)
+swapConstGet :: Expr -> Rule Expr
+swapConstGet (BinaryOp Add a@(Value (Const _)) b@(Value (Get _))) = return $ BinaryOp Add b a
+swapConstGet (BinaryOp Mul a@(Value (Const _)) b@(Value (Get _))) = return $ BinaryOp Mul b a
+swapConstGet e                                                    = fail (show e)
 
 swapConstDown :: Expr -> Rule Expr
 swapConstDown
