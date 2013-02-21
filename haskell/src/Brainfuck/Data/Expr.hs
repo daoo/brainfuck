@@ -4,7 +4,7 @@ module Brainfuck.Data.Expr where
 import Control.Applicative ((<$>),(<*>))
 import Test.QuickCheck
 
-data Value = Get Int | Const Int
+data Value = Get !Int | Const !Int
   deriving (Ord, Eq, Show)
 
 data UnaryOp = Id | Negate
