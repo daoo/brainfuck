@@ -7,7 +7,8 @@ import Brainfuck.Compiler.Brainfuck
 import Brainfuck.Compiler.Parser
 import Brainfuck.Data.AST
 import Brainfuck.Interpreter
-import Brainfuck.Optimization.Pipeline
+import Brainfuck.Optimization.AST
+import Brainfuck.Optimization.Rewriting
 import Data.Foldable (toList)
 import Data.Word
 import Ext
@@ -59,7 +60,7 @@ main = do
   let optimize =
         case optOptimize opts of
           0 -> id
-          _ -> optimizeAll
+          _ -> tryMaybe (rewrite astRules)
 
   let codegen =
         case optTarget opts of

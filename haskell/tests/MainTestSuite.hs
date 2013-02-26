@@ -3,7 +3,6 @@ module Main where
 import Properties.Compiler
 import Properties.Expressions
 import Properties.Misc
-import Properties.Optimization
 import Properties.Programs
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
@@ -32,15 +31,7 @@ tests =
       , testProperty "Evaluation" propExprEval
       ]
     , testGroup "Optimization"
-      [ testProperty "Clean Up" propOptimizeCleanUp
-      , testProperty "Copy Loop Reduction" propOptimizeCopies
-      , testProperty "Expressions" propOptimizeExpressions
-      , testProperty "Inline Initial Values" propOptimizeInlineZeros
-      , testProperty "Move Put and Get" propOptimizeMovePutGet
-      , testProperty "Move Shifts" propOptimizeMoveShifts
-      , testProperty "Minimal Assignments" propOptimizeSets
-      , testProperty "All Optimizations" propOptimizeAll
-      ]
+      [ ]
     , testGroup "Programs"
       [ testProperty "Reverse" propReverse
       , testProperty "ASCII Values" propASCIIValues
