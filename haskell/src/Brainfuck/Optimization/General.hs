@@ -6,6 +6,7 @@ import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expression
 import Brainfuck.Optimization.Rule
+import Ext
 import qualified Data.Set as S
 
 -- |Optimize expressions
@@ -13,13 +14,13 @@ optimizeExpressions :: AST -> AST
 optimizeExpressions = mapAST function control
   where
     function = \case
-      Set d e   -> Set d $ tryMaybe (loop exprRules) e
-      PutChar e -> PutChar $ tryMaybe (loop exprRules) e
+      Set d e   -> Set d $ tryMaybe (rewrite exprRules) e
+      PutChar e -> PutChar $ tryMaybe (rewrite exprRules) e
       x         -> x
 
     control = \case
-      If e    -> If $ tryMaybe (loop exprRules) e
-      While e -> While $ tryMaybe (loop exprRules) e
+      If e    -> If $ tryMaybe (rewrite exprRules) e
+      While e -> While $ tryMaybe (rewrite exprRules) e
       x       -> x
 
 -- |Remove instructions that provides no side effects

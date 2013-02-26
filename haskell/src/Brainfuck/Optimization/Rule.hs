@@ -1,51 +1,43 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Optimization.Rule where
+module Brainfuck.Optimization.Rule
+  ( Ruled (..)
+  , Rule
+  ) where
 
 import Brainfuck.Data.Expr
-import Control.Applicative
-import Data.Maybe
-
-try :: (Monad f, Alternative f) => (a -> f a) -> f a -> f a
-try f a = (f =<< a) <|> a
-
-tryMaybe :: (a -> Maybe a) -> a -> a
-tryMaybe f a = fromMaybe a (f a)
-
-toRule :: (Bool, a) -> Rule a
-toRule (True, a) = Just a
-toRule _         = Nothing
-
-fromRule :: a -> Rule a -> (Bool, a)
-fromRule _ (Just b) = (True, b)
-fromRule a Nothing  = (False, a)
+import Control.Monad.State
 
 type Rule a = Maybe a
 
 class Ruled a where
   rewrite :: [a -> Rule a] -> a -> Rule a
 
-applyRules :: [a -> Rule a] -> a -> (Bool, a)
-applyRules rules expr = go rules (False, expr)
-  where
-    go [] acc         = acc
-    go (f:fs) (b, e') = let (b', e'') = fromRule e' (f e')
-                         in go fs (b || b', e'')
-
-loop :: Ruled a => [a -> Rule a] -> a -> Rule a
-loop fs a = try (loop fs) (rewrite fs a)
-
 instance Ruled Expr where
-  rewrite fs = toRule . go
-
+  rewrite fs expr = toRule $ runState (go expr) False
     where
-      go = \case
-        e@(Value _) -> (False, e)
+      go = loop $ \case
+        e@(Value _) -> return e
 
-        UnaryOp op a -> let (m1, a') = go a
-                            (m2, e)  = applyRules fs (UnaryOp op a')
-                         in (m1 || m2, e)
+        UnaryOp op a -> do
+          a' <- go a
+          applyRules fs (UnaryOp op a')
 
-        BinaryOp op a b -> let (m1, a') = go a
-                               (m2, b') = go b
-                               (m3, e)  = applyRules fs (BinaryOp op a' b')
-                            in (m1 || m2 || m3, e)
+        BinaryOp op a b -> do
+          a' <- go a
+          b' <- go b
+          applyRules fs (BinaryOp op a' b')
+
+toRule :: (a, Bool) -> Rule a
+toRule (a, True) = Just a
+toRule _         = Nothing
+
+applyRules :: [a -> Rule a] -> a -> State Bool a
+applyRules [] e     = return e
+applyRules (f:fs) e = case f e of
+  Nothing -> applyRules fs e
+  Just e' -> put True >> applyRules fs e'
+
+loop :: (a -> State Bool a) -> a -> State Bool a
+loop f a = case runState (f a) False of
+  (a', True) -> put True >> loop f a'
+  (_, False) -> return a

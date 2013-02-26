@@ -6,6 +6,7 @@ import Brainfuck.Optimization.Expression
 import Brainfuck.Optimization.Inlining
 import Brainfuck.Optimization.Rule
 import Control.Applicative ((<$>),(<*>))
+import Ext
 import Test.QuickCheck
 
 constOnly :: Gen Expr
@@ -22,19 +23,19 @@ constOnly = sized $ \n -> expr n n
     leaf = mkInt <$> arbitrary
 
 propExprOptimizeConst :: Property
-propExprOptimizeConst = forAll constOnly (f . tryMaybe (loop exprRules))
+propExprOptimizeConst = forAll constOnly (f . tryMaybe (rewrite exprRules))
   where
     f = \case
       Value (Const _) -> True
       _               -> False
 
 propExprOptimizeTwice :: Expr -> Bool
-propExprOptimizeTwice e = let e' = (tryMaybe (loop exprRules)) e in e' == (tryMaybe (loop exprRules)) e'
+propExprOptimizeTwice e = let e' = (tryMaybe (rewrite exprRules)) e in e' == (tryMaybe (rewrite exprRules)) e'
 
 propExprEval :: Expr -> NonEmptyList Int -> Bool
-propExprEval e (NonEmpty xs) = eval f e == eval f (tryMaybe (loop exprRules) e)
+propExprEval e (NonEmpty xs) = eval f e == eval f (tryMaybe (rewrite exprRules) e)
   where
     f = (!!) xs . (`mod` length xs)
 
 propExprOptimizeSmaller :: Expr -> Bool
-propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (tryMaybe (loop exprRules) expr)
+propExprOptimizeSmaller expr = exprComplexity expr >= exprComplexity (tryMaybe (rewrite exprRules) expr)

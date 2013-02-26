@@ -2,6 +2,10 @@
 module Ext where
 
 import Control.Arrow
+import Data.Maybe
+
+tryMaybe :: (a -> Maybe a) -> a -> a
+tryMaybe f a = fromMaybe a (f a)
 
 -- |Repeat a function a certain ammount of times
 times :: (a -> a) -> Int -> a -> a
