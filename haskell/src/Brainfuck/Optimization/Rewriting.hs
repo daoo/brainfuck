@@ -5,6 +5,7 @@ module Brainfuck.Optimization.Rewriting
   ) where
 
 import Brainfuck.Data.Expr
+import Control.Applicative
 import Control.Monad.State
 
 type Rule a = Maybe a
@@ -18,14 +19,9 @@ instance Rewritable Expr where
       go = loop $ \case
         e@(Value _) -> return e
 
-        UnaryOp op a -> do
-          a' <- go a
-          applyRules fs (UnaryOp op a')
+        UnaryOp op a -> UnaryOp op <$> go a >>= applyRules fs
 
-        BinaryOp op a b -> do
-          a' <- go a
-          b' <- go b
-          applyRules fs (BinaryOp op a' b')
+        BinaryOp op a b -> BinaryOp op <$> go a <*> go b >>= applyRules fs
 
 toRule :: (a, Bool) -> Rule a
 toRule (a, True) = Just a
