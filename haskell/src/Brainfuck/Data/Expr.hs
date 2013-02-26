@@ -33,7 +33,7 @@ instance Arbitrary Value where
 
   shrink = \case
     Const i -> map Const (shrink i)
-    Get i   -> Const 0 : map Get (shrink i)
+    Get i   -> map Get (shrink i) ++ [Const 0]
 
 instance Arbitrary UnaryOp where
   arbitrary = oneof [return Id, return Negate]
@@ -64,8 +64,12 @@ instance Arbitrary Expr where
 
   shrink = \case
     Value v         -> map Value $ shrink v
-    UnaryOp op a    -> a : zipWith UnaryOp (cycle (shrink op)) (shrink a)
-    BinaryOp op a b -> a : b : zipWith3 BinaryOp (cycle (shrink op)) (shrink a) (shrink b)
+    UnaryOp op a    -> a : zipWith UnaryOp (cycle' (shrink op)) (shrink a)
+    BinaryOp op a b -> a : b : zipWith3 BinaryOp (cycle' (shrink op)) (shrink a) (shrink b)
+
+    where
+      cycle' [] = []
+      cycle' xs = cycle xs
 
 instance Num Expr where
   (+) = BinaryOp Add
