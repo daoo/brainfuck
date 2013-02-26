@@ -12,6 +12,8 @@ exprRules =
   , evalNegate
   , addZeroLeft
   , addZeroRight
+  , mulOneLeft
+  , mulOneRight
   , collapsNegate
   , swapConstGet
   , swapConstDown
@@ -51,6 +53,14 @@ addZeroLeft e                                  = fail (show e)
 addZeroRight :: Expr -> Rule Expr
 addZeroRight (BinaryOp Add a (Value (Const 0))) = return a
 addZeroRight e                                  = fail (show e)
+
+mulOneLeft :: Expr -> Rule Expr
+mulOneLeft (BinaryOp Mul (Value (Const 1)) b) = return b
+mulOneLeft e                                  = fail (show e)
+
+mulOneRight :: Expr -> Rule Expr
+mulOneRight (BinaryOp Mul a (Value (Const 1))) = return a
+mulOneRight e                                  = fail (show e)
 
 collapsNegate :: Expr -> Rule Expr
 collapsNegate (UnaryOp Negate (UnaryOp Negate e)) = return e
