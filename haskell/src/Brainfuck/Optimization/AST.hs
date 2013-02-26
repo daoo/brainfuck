@@ -19,7 +19,6 @@ astRules = [ reflectiveSet
            , moveShifts
            , reduceCopyLoops
            , whileToIf
-           , removeFromEnd
            ]
 
 expressions :: AST -> Rule AST
@@ -109,12 +108,6 @@ whileToIf ast@(Flow (While e@(Value (Get d))) inner next) =
     else fail (show ast)
 
 whileToIf ast = fail (show ast)
-
--- |Remove side effect free instructions from the end
-removeFromEnd :: AST -> Rule AST
-removeFromEnd (Instruction (Set _ _) Nop) = return Nop
-removeFromEnd (Instruction (Shift _) Nop) = return Nop
-removeFromEnd ast                         = fail (show ast)
 
 -- |Inline initial zeroes
 inlineZeros :: AST -> AST
