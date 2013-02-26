@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Optimization.Rule
-  ( Ruled (..)
+module Brainfuck.Optimization.Rewriting
+  ( Rewritable (..)
   , Rule
   ) where
 
@@ -9,10 +9,10 @@ import Control.Monad.State
 
 type Rule a = Maybe a
 
-class Ruled a where
+class Rewritable a where
   rewrite :: [a -> Rule a] -> a -> Rule a
 
-instance Ruled Expr where
+instance Rewritable Expr where
   rewrite fs expr = toRule $ runState (go expr) False
     where
       go = loop $ \case

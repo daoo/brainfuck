@@ -5,7 +5,7 @@ import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expression
-import Brainfuck.Optimization.Rule
+import Brainfuck.Optimization.Rewriting
 import Ext
 import qualified Data.Set as S
 

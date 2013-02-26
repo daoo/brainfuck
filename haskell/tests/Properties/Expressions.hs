@@ -4,7 +4,7 @@ module Properties.Expressions where
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Expression
 import Brainfuck.Optimization.Inlining
-import Brainfuck.Optimization.Rule
+import Brainfuck.Optimization.Rewriting
 import Control.Applicative ((<$>),(<*>))
 import Ext
 import Test.QuickCheck
