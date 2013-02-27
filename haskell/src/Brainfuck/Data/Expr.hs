@@ -7,15 +7,15 @@ import Test.QuickCheck
 data Value = Get !Int | Const !Int
   deriving (Ord, Eq, Show)
 
-data UnaryOp = Id | Negate
+data UnaryOperator = Id | Negate
   deriving (Ord, Eq, Show)
 
-data BinaryOp = Add | Mul
+data BinaryOperator = Add | Mul
   deriving (Ord, Eq, Show)
 
 data Expr = Value Value
-          | UnaryOp UnaryOp Expr
-          | BinaryOp BinaryOp Expr Expr
+          | OperateUnary UnaryOperator Expr
+          | OperateBinary BinaryOperator Expr Expr
   deriving (Ord, Eq, Show)
 
 mkInt, mkGet :: Int -> Expr
@@ -23,8 +23,8 @@ mkInt = Value . Const
 mkGet = Value . Get
 
 add, mul :: Expr -> Expr -> Expr
-add = BinaryOp Add
-mul = BinaryOp Mul
+add = OperateBinary Add
+mul = OperateBinary Mul
 
 instance Arbitrary Value where
   arbitrary = frequency
@@ -35,14 +35,14 @@ instance Arbitrary Value where
     Const i -> map Const (shrink i)
     Get i   -> map Get (shrink i) ++ [Const 0]
 
-instance Arbitrary UnaryOp where
+instance Arbitrary UnaryOperator where
   arbitrary = oneof [return Id, return Negate]
 
   shrink = \case
     Id     -> []
     Negate -> [Id]
 
-instance Arbitrary BinaryOp where
+instance Arbitrary BinaryOperator where
   arbitrary = oneof [return Add, return Mul]
 
   shrink = \case
@@ -56,47 +56,47 @@ instance Arbitrary Expr where
       expr n s = oneof [leaf, branch n s]
 
       branch n s = frequency
-        [ (1, UnaryOp <$> arbitrary <*> (expr (n - 1) s))
-        , (4, BinaryOp <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
+        [ (1, OperateUnary <$> arbitrary <*> (expr (n - 1) s))
+        , (4, OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
         ]
 
       leaf = Value <$> arbitrary
 
   shrink = \case
     Value v         -> map Value $ shrink v
-    UnaryOp op a    -> a : zipWith UnaryOp (cycle' (shrink op)) (shrink a)
-    BinaryOp op a b -> a : b : zipWith3 BinaryOp (cycle' (shrink op)) (shrink a) (shrink b)
+    OperateUnary op a    -> a : zipWith OperateUnary (cycle' (shrink op)) (shrink a)
+    OperateBinary op a b -> a : b : zipWith3 OperateBinary (cycle' (shrink op)) (shrink a) (shrink b)
 
     where
       cycle' [] = []
       cycle' xs = cycle xs
 
 instance Num Expr where
-  (+) = BinaryOp Add
-  (*) = BinaryOp Mul
+  (+) = OperateBinary Add
+  (*) = OperateBinary Mul
 
   abs    = undefined
   signum = undefined
 
   fromInteger = Value . Const . fromInteger
 
-unfold :: (UnaryOp -> a -> a) -> (BinaryOp -> a -> a -> a) -> (Value -> a) -> Expr -> a
+unfold :: (UnaryOperator -> a -> a) -> (BinaryOperator -> a -> a -> a) -> (Value -> a) -> Expr -> a
 unfold unary binary value = \case
-  Value v         -> value v
-  UnaryOp op a    -> unary op (unfold' a)
-  BinaryOp op a b -> binary op (unfold' a) (unfold' b)
+  Value v              -> value v
+  OperateUnary op a    -> unary op (unfold' a)
+  OperateBinary op a b -> binary op (unfold' a) (unfold' b)
   where
     unfold' = unfold unary binary value
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
-inlineExpr d1 e = unfold UnaryOp BinaryOp f
+inlineExpr d1 e = unfold OperateUnary OperateBinary f
   where
     f = \case
       Get d2 | d1 == d2 -> e
       v                 -> Value v
 
 modifyValues :: (Value -> Expr) -> Expr -> Expr
-modifyValues = unfold UnaryOp BinaryOp
+modifyValues = unfold OperateUnary OperateBinary
 
 eval :: (Int -> Int) -> Expr -> Int
 eval f = unfold unary binary value
@@ -115,12 +115,12 @@ eval f = unfold unary binary value
 
 nodeCount :: Expr -> Int
 nodeCount = \case
-  Value _        -> 1
-  UnaryOp _ a    -> 1 + nodeCount a
-  BinaryOp _ a b -> 1 + nodeCount a + nodeCount b
+  Value _             -> 1
+  OperateUnary _ a    -> 1 + nodeCount a
+  OperateBinary _ a b -> 1 + nodeCount a + nodeCount b
 
 heigth :: Expr -> Int
 heigth = \case
-  Value _        -> 1
-  UnaryOp _ a    -> 1 + heigth a
-  BinaryOp _ a b -> 1 + max (heigth a) (heigth b)
+  Value _             -> 1
+  OperateUnary _ a    -> 1 + heigth a
+  OperateBinary _ a b -> 1 + max (heigth a) (heigth b)

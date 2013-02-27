@@ -10,9 +10,9 @@ import Text.CodeWriter
 
 showExpr :: Expr -> ShowS
 showExpr = \case
-  Value v         -> value v
-  UnaryOp op a    -> unary op a
-  BinaryOp op a b -> binary op a b
+  Value v              -> value v
+  OperateUnary op a    -> unary op a
+  OperateBinary op a b -> binary op a b
 
   where
     unary op a = case op of
@@ -28,16 +28,16 @@ showExpr = \case
       Get d   -> showString "ptr[" . shows d . showString "]"
 
     paren Mul = \case
-      BinaryOp Add _ _ -> True
-      BinaryOp Mul _ _ -> False
-      UnaryOp Id a     -> paren Mul a
-      UnaryOp Negate _ -> True
-      Value _          -> False
+      OperateBinary Add _ _ -> True
+      OperateBinary Mul _ _ -> False
+      OperateUnary Id a     -> paren Mul a
+      OperateUnary Negate _ -> True
+      Value _               -> False
 
     paren Add = \case
-      UnaryOp Negate _ -> True
-      UnaryOp Id a     -> paren Add a
-      _                -> False
+      OperateUnary Negate _ -> True
+      OperateUnary Id a     -> paren Add a
+      _                     -> False
 
 showC :: AST -> String
 showC ast = writeCode $ do

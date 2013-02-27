@@ -20,9 +20,9 @@ instance Rewritable Expr where
       go = loop $ \case
         e@(Value _) -> return e
 
-        UnaryOp op a -> UnaryOp op <$> go a >>= applyRules fs
+        OperateUnary op a -> OperateUnary op <$> go a >>= applyRules fs
 
-        BinaryOp op a b -> BinaryOp op <$> go a <*> go b >>= applyRules fs
+        OperateBinary op a b -> OperateBinary op <$> go a <*> go b >>= applyRules fs
 
 instance Rewritable AST where
   rewrite fs ast = toRule $ runState (go ast) False

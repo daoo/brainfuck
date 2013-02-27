@@ -40,8 +40,8 @@ copyLoop d xs = do
       _        -> Nothing
 
     constantAddOnly = \case
-      (d1, BinaryOp Add (Value (Get d2)) (Value (Const c))) -> Just (d1, d2, c)
-      (d1, BinaryOp Add (Value (Const c)) (Value (Get d2))) -> Just (d1, d2, c)
+      (d1, OperateBinary Add (Value (Get d2)) (Value (Const c))) -> Just (d1, d2, c)
+      (d1, OperateBinary Add (Value (Const c)) (Value (Get d2))) -> Just (d1, d2, c)
       _                                                     -> Nothing
 
     -- Filter the decrement operation

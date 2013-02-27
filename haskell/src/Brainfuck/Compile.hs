@@ -28,8 +28,8 @@ decompile = \case
   _ -> error "unsupported by decompile"
   where
     tokenize = \case
-      Set 0 (BinaryOp Add (Value (Const 1)) (Value (Get 0)))    -> Token $ Plus
-      Set 0 (BinaryOp Add (Value (Const (-1))) (Value (Get 0))) -> Token $ Minus
+      Set 0 (OperateBinary Add (Value (Const 1)) (Value (Get 0)))    -> Token $ Plus
+      Set 0 (OperateBinary Add (Value (Const (-1))) (Value (Get 0))) -> Token $ Minus
 
       Shift 1                 -> Token $ ShiftRight
       Shift (-1)              -> Token $ ShiftLeft

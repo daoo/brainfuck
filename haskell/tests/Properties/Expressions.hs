@@ -16,8 +16,8 @@ constOnly = sized $ \n -> expr n n
     expr n s = oneof [leaf, branch n s]
 
     branch n s = frequency
-      [ (1, UnaryOp <$> arbitrary <*> (expr (n - 1) s))
-      , (4, BinaryOp <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
+      [ (1, OperateUnary <$> arbitrary <*> (expr (n - 1) s))
+      , (4, OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
       ]
 
     leaf = mkInt <$> arbitrary

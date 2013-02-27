@@ -23,70 +23,70 @@ exprRules =
   ]
 
 evalAdd1 :: Expr -> Rule Expr
-evalAdd1 (BinaryOp Add (Value (Const a)) (Value (Const b))) = return $ mkInt (a + b)
-evalAdd1 e                                                  = fail (show e)
+evalAdd1 (OperateBinary Add (Value (Const a)) (Value (Const b))) = return $ mkInt (a + b)
+evalAdd1 e                                                       = fail (show e)
 
 evalAdd2 :: Expr -> Rule Expr
-evalAdd2 (BinaryOp Add (Value (Const a)) (BinaryOp Add b (Value (Const c)))) = return $ BinaryOp Add (mkInt (a + c)) b
-evalAdd2 e                                                                   = fail (show e)
+evalAdd2 (OperateBinary Add (Value (Const a)) (OperateBinary Add b (Value (Const c)))) = return $ OperateBinary Add (mkInt (a + c)) b
+evalAdd2 e                                                                             = fail (show e)
 
 evalMul1 :: Expr -> Rule Expr
-evalMul1 (BinaryOp Mul (Value (Const a)) (Value (Const b))) = return $ mkInt (a * b)
-evalMul1 e                                                  = fail (show e)
+evalMul1 (OperateBinary Mul (Value (Const a)) (Value (Const b))) = return $ mkInt (a * b)
+evalMul1 e                                                       = fail (show e)
 
 evalMul2 :: Expr -> Rule Expr
-evalMul2 (BinaryOp Mul (Value (Const a)) (BinaryOp Mul b (Value (Const c)))) = return $ BinaryOp Mul (mkInt (a * c)) b
-evalMul2 e                                                                   = fail (show e)
+evalMul2 (OperateBinary Mul (Value (Const a)) (OperateBinary Mul b (Value (Const c)))) = return $ OperateBinary Mul (mkInt (a * c)) b
+evalMul2 e                                                                             = fail (show e)
 
 evalNegate :: Expr -> Rule Expr
-evalNegate (UnaryOp Negate (Value (Const a))) = return $ mkInt (-a)
-evalNegate e                                  = fail (show e)
+evalNegate (OperateUnary Negate (Value (Const a))) = return $ mkInt (-a)
+evalNegate e                                       = fail (show e)
 
 evalId :: Expr -> Rule Expr
-evalId (UnaryOp Id e) = return e
-evalId e              = fail (show e)
+evalId (OperateUnary Id e) = return e
+evalId e                   = fail (show e)
 
 addZeroLeft :: Expr -> Rule Expr
-addZeroLeft (BinaryOp Add (Value (Const 0)) b) = return b
-addZeroLeft e                                  = fail (show e)
+addZeroLeft (OperateBinary Add (Value (Const 0)) b) = return b
+addZeroLeft e                                       = fail (show e)
 
 addZeroRight :: Expr -> Rule Expr
-addZeroRight (BinaryOp Add a (Value (Const 0))) = return a
-addZeroRight e                                  = fail (show e)
+addZeroRight (OperateBinary Add a (Value (Const 0))) = return a
+addZeroRight e                                       = fail (show e)
 
 mulOneLeft :: Expr -> Rule Expr
-mulOneLeft (BinaryOp Mul (Value (Const 1)) b) = return b
-mulOneLeft e                                  = fail (show e)
+mulOneLeft (OperateBinary Mul (Value (Const 1)) b) = return b
+mulOneLeft e                                       = fail (show e)
 
 mulOneRight :: Expr -> Rule Expr
-mulOneRight (BinaryOp Mul a (Value (Const 1))) = return a
-mulOneRight e                                  = fail (show e)
+mulOneRight (OperateBinary Mul a (Value (Const 1))) = return a
+mulOneRight e                                       = fail (show e)
 
 collapsNegate :: Expr -> Rule Expr
-collapsNegate (UnaryOp Negate (UnaryOp Negate e)) = return e
-collapsNegate e                                   = fail (show e)
+collapsNegate (OperateUnary Negate (OperateUnary Negate e)) = return e
+collapsNegate e                                             = fail (show e)
 
 swapConstGet :: Expr -> Rule Expr
-swapConstGet (BinaryOp Add a@(Value (Const _)) b@(Value (Get _))) = return $ BinaryOp Add b a
-swapConstGet (BinaryOp Mul a@(Value (Const _)) b@(Value (Get _))) = return $ BinaryOp Mul b a
-swapConstGet e                                                    = fail (show e)
+swapConstGet (OperateBinary Add a@(Value (Const _)) b@(Value (Get _))) = return $ OperateBinary Add b a
+swapConstGet (OperateBinary Mul a@(Value (Const _)) b@(Value (Get _))) = return $ OperateBinary Mul b a
+swapConstGet e                                                         = fail (show e)
 
 swapConstDown :: Expr -> Rule Expr
 swapConstDown
-  (BinaryOp Add
+  (OperateBinary Add
     a@(Value (Const _))
-      (BinaryOp Add
+      (OperateBinary Add
         b@(Value (Get _))
-        c)) = return $ BinaryOp Add b (BinaryOp Add a c)
+        c)) = return $ OperateBinary Add b (OperateBinary Add a c)
 swapConstDown
-  (BinaryOp Mul
+  (OperateBinary Mul
     a@(Value (Const _))
-      (BinaryOp Mul
+      (OperateBinary Mul
         b@(Value (Get _))
-        c)) = return $ BinaryOp Mul b (BinaryOp Mul a c)
+        c)) = return $ OperateBinary Mul b (OperateBinary Mul a c)
 swapConstDown e = fail (show e)
 
 rotateBinary :: Expr -> Rule Expr
-rotateBinary (BinaryOp Add (BinaryOp Add a b) c) = return $ BinaryOp Add a (BinaryOp Add b c)
-rotateBinary (BinaryOp Mul (BinaryOp Mul a b) c) = return $ BinaryOp Mul a (BinaryOp Mul b c)
-rotateBinary e                                   = fail (show e)
+rotateBinary (OperateBinary Add (OperateBinary Add a b) c) = return $ OperateBinary Add a (OperateBinary Add b c)
+rotateBinary (OperateBinary Mul (OperateBinary Mul a b) c) = return $ OperateBinary Mul a (OperateBinary Mul b c)
+rotateBinary e                                             = fail (show e)
