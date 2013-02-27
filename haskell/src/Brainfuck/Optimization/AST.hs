@@ -71,17 +71,15 @@ movePutGet ast = fail (show ast)
 moveShifts :: AST -> Rule AST
 moveShifts (Instruction (Shift s) (Instruction fun next)) = case fun of
 
-  GetChar d -> return $ Instruction (GetChar (s + d)) (cont s next)
-  PutChar e -> return $ Instruction (PutChar (expr s e)) (cont s next)
-  Set d e   -> return $ Instruction (Set (s + d) (expr s e)) (cont s next)
+  GetChar d -> return $ Instruction (GetChar (s + d))        $ Instruction (Shift s) next
+  PutChar e -> return $ Instruction (PutChar (expr s e))     $ Instruction (Shift s) next
+  Set d e   -> return $ Instruction (Set (s + d) (expr s e)) $ Instruction (Shift s) next
   Shift s'  -> return $ Instruction (Shift (s + s')) next
 
   where
-    cont = Instruction . Shift
-
     expr s' = modifyValues (\case
       Get d -> Value $ Get (s' + d)
-      e     -> Value e)
+      v     -> Value v)
 
 moveShifts ast = fail (show ast)
 
