@@ -1,8 +1,8 @@
 module Properties.Compiler where
 
-import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Parser
+import Brainfuck.Compile
 import Brainfuck.Data.Brainfuck
+import Brainfuck.Parse
 
 propCompileDecompile :: [Brainfuck] -> Bool
 propCompileDecompile bf = bf == decompile (compile bf)

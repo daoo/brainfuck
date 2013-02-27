@@ -2,7 +2,7 @@ module Code where
 
 import Brainfuck.CodeGen.Indented
 import Brainfuck.Data.AST
-import Brainfuck.Interpreter
+import Brainfuck.Interpret
 import Brainfuck.Optimization.Analysis
 import Data.Foldable
 import Data.ListZipper

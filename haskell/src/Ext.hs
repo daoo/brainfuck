@@ -48,6 +48,3 @@ mapAccumL' f acc (x:xs) = (acc'', maybe ys (:ys) y)
   where
     (acc', y)   = f acc x
     (acc'', ys) = mapAccumL' f acc' xs
-
-tailp :: (a -> a -> a) -> t -> a -> a -> a
-tailp f _ = f

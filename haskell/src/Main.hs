@@ -3,12 +3,12 @@ module Main where
 import Brainfuck.CodeGen.C99
 import Brainfuck.CodeGen.Haskell
 import Brainfuck.CodeGen.Indented
-import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Parser
+import Brainfuck.Compile
 import Brainfuck.Data.AST
-import Brainfuck.Interpreter
+import Brainfuck.Interpret
 import Brainfuck.Optimization.AST
 import Brainfuck.Optimization.Rewriting
+import Brainfuck.Parse
 import Data.Foldable (toList)
 import Data.Word
 import Ext

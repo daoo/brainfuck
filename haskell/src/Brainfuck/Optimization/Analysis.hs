@@ -6,11 +6,10 @@ import Brainfuck.Data.Expr
 import Control.Applicative ((<$>), (<|>))
 import Data.List
 import Data.Maybe
-import Ext
 
 -- |Check if an expression uses the value of a certain memory offset
 exprDepends :: Int -> Expr -> Bool
-exprDepends d = unfold (flip const) (tailp (||)) f
+exprDepends d = unfold (flip const) (const (||)) f
   where
     f (Get d') = d == d'
     f _        = False
@@ -24,16 +23,16 @@ exprDepends d = unfold (flip const) (tailp (||)) f
 -- If the supplied instruction isn't a Loop, we will return Nothing.
 copyLoop :: Int -> AST -> Maybe [(Int, Int)]
 copyLoop d xs = do
-  instrs <- instructionsOnly xs
-  sets <- mapM setsOnly instrs
+  funs <- funsOnly xs
+  sets <- mapM setsOnly funs
   adds <- mapM constantAddOnly sets
   let (dec, copies) = partition (g d) adds
   _ <- listToMaybe dec
   mapM h copies
   where
-    instructionsOnly = \case
+    funsOnly = \case
       Nop                  -> Just []
-      Instruction fun next -> (fun :) <$> instructionsOnly next
+      Instruction fun next -> (fun :) <$> funsOnly next
       Flow _ _ _           -> Nothing
 
     setsOnly = \case
@@ -46,8 +45,7 @@ copyLoop d xs = do
       _                                                     -> Nothing
 
     -- Filter the decrement operation
-    g d1 (d2, d3, -1) = d1 == d2 && d1 == d3
-    g _ _             = False
+    g d1 (d2, d3, i) = d1 == d2 && d1 == d3 && i == -1
 
     h (d1, d2, c) | d1 == d2  = Just (d1, c)
                   | otherwise = Nothing
@@ -70,7 +68,7 @@ memorySize = \case
       While e -> expr e
       _       -> (0, 0)
 
-    expr = unfold (flip const) (tailp (<+>)) (\case
+    expr = unfold (flip const) (const (<+>)) (\case
       Get d -> g d
       _     -> g 0)
 
@@ -91,7 +89,7 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar e -> unfold (flip const) (tailp (||)) g e
+      PutChar e -> unfold (flip const) (const (||)) g e
       Set _ _   -> True
       GetChar _ -> True
       Shift _   -> True

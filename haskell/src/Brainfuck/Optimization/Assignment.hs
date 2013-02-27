@@ -10,11 +10,9 @@ import qualified Data.Graph as G
 import qualified Data.Map as M
 
 -- |Merge sequences of Set ILs
-optimizeSets :: AST -> AST
-optimizeSets = \case
-  Nop -> Nop
-
-  x@(Instruction (Set _ _) _) -> uncurry join $ (mergeSets . optimalSets) *** optimizeSets $ splitSets x
+optimizeSets :: AST -> Rule AST
+optimizeSets x@(Instruction (Set _ _) _) = uncurry join $ (mergeSets . optimalSets) *** optimizeSets $ splitSets x
+optimizeSets ast                         = fail (show ast)
 
   Instruction fun next -> Instruction fun (optimizeSets next)
   Flow ctrl inner next -> Flow ctrl (optimizeSets inner) (optimizeSets next)
@@ -22,7 +20,7 @@ optimizeSets = \case
   where
     splitSets = \case
       Instruction (Set d e) next -> mapFst ((d, e) :) $ splitSets next
-      y                            -> ([], y)
+      y                          -> ([], y)
 
     mergeSets = foldr (\(d, e) x -> Instruction (Set d e) x) Nop
 

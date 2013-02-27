@@ -1,4 +1,4 @@
-module Brainfuck.Compiler.Parser (parseBrainfuck) where
+module Brainfuck.Parse (parseBrainfuck) where
 
 import Brainfuck.Data.Brainfuck
 import Control.Applicative ((<$>))

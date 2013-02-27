@@ -1,8 +1,8 @@
 module Tests.Programs where
 
-import Brainfuck.Compiler.Brainfuck
-import Brainfuck.Compiler.Parser
+import Brainfuck.Compile
 import Brainfuck.Data.AST
+import Brainfuck.Parse
 
 parseCompile :: String -> AST
 parseCompile = (\(Right bf) -> compile bf) . parseBrainfuck

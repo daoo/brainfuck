@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Interpreter where
+module Brainfuck.Interpret where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
