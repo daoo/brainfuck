@@ -7,7 +7,7 @@ import Control.Applicative ((<$>), (<|>))
 import Data.List
 import Data.Maybe
 
--- |Check if an expression uses the value of a certain memory offset
+-- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
 exprDepends d = unfold (flip const) (const (||)) f
   where
@@ -50,6 +50,7 @@ copyLoop d xs = do
     h (d1, d2, c) | d1 == d2  = Just (d1, c)
                   | otherwise = Nothing
 
+-- |Heuristically decide how much memory a program uses.
 memorySize :: AST -> (Int, Int)
 memorySize = \case
   Nop                  -> (0, 0)
@@ -80,7 +81,7 @@ memorySize = \case
 
     (a, b) <+> (c, d) = (a + c, b + d)
 
--- |Check if the list of ILs make use of the memory or the global pointer
+-- |Check if some program uses the memory or the global pointer
 usesMemory :: AST -> Bool
 usesMemory = \case
   Nop                  -> False
@@ -97,7 +98,7 @@ usesMemory = \case
     g (Get _) = True
     g _       = False
 
--- |Check if a memory position is set to zero by some ILs
+-- |Check if a memory position is set to zero a program
 setToZero :: Int -> AST -> Bool
 setToZero d1 ast = maybe False (== 0) (go Nothing ast)
   where
