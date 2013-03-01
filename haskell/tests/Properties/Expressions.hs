@@ -2,7 +2,7 @@
 module Properties.Expressions where
 
 import Brainfuck.Data.Expr
-import Brainfuck.Optimization.Expression
+import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Inlining
 import Brainfuck.Optimization.Rewriting
 import Control.Applicative ((<$>),(<*>))
