@@ -4,6 +4,7 @@ module Brainfuck.Optimization.AST where
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
+import Brainfuck.Optimization.Assignment
 import Brainfuck.Optimization.Expression
 import Brainfuck.Optimization.Rewriting
 import qualified Data.Set as S
@@ -19,6 +20,7 @@ astRules = [ reflectiveSet
            --, moveShifts
            , reduceCopyLoops
            , whileToIf
+           --, optimizeSets
            ]
 
 expressions :: AST -> Rule AST

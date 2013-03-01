@@ -3,7 +3,7 @@ module Brainfuck.Optimization.Assignment where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
-import Control.Arrow
+import Brainfuck.Optimization.Rewriting
 import Data.Maybe
 import Ext
 import qualified Data.Graph as G
@@ -11,18 +11,15 @@ import qualified Data.Map as M
 
 -- |Merge sequences of Set ILs
 optimizeSets :: AST -> Rule AST
-optimizeSets x@(Instruction (Set _ _) _) = uncurry join $ (mergeSets . optimalSets) *** optimizeSets $ splitSets x
-optimizeSets ast                         = fail (show ast)
-
-  Instruction fun next -> Instruction fun (optimizeSets next)
-  Flow ctrl inner next -> Flow ctrl (optimizeSets inner) (optimizeSets next)
-
+optimizeSets x@(Instruction (Set _ _) _) = return $ uncurry join $ mapFst (mergeSets . optimalSets) $ splitSets x
   where
     splitSets = \case
       Instruction (Set d e) next -> mapFst ((d, e) :) $ splitSets next
       y                          -> ([], y)
 
-    mergeSets = foldr (\(d, e) x -> Instruction (Set d e) x) Nop
+    mergeSets = foldr (\(d, e) x' -> Instruction (Set d e) x') Nop
+
+optimizeSets ast = fail (show ast)
 
 -- Initial Code:
 -- Set 2 (Get 1)
@@ -72,6 +69,6 @@ topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
-    get = unfold (flip const) (tailp (++)) (\case
+    get = unfold (flip const) (const (++)) (\case
       Get d -> [d]
       _     -> [])
