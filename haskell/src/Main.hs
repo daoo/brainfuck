@@ -1,8 +1,8 @@
 module Main where
 
-import Brainfuck.CodeGen.C99
-import Brainfuck.CodeGen.Haskell
-import Brainfuck.CodeGen.Indented
+import Brainfuck.CodeGen.C99 as C99
+import Brainfuck.CodeGen.Haskell as Haskell
+import Brainfuck.CodeGen.Indented as Indented
 import Brainfuck.Compile
 import Brainfuck.Data.AST
 import Brainfuck.Interpret
@@ -64,9 +64,9 @@ main = do
 
   let codegen =
         case optTarget opts of
-          Indented -> showIndented
-          C99      -> showC
-          Haskell  -> showHaskellIO
+          Indented -> Indented.showAST
+          C99      -> C99.showAST
+          Haskell  -> Haskell.showAST
 
   case optAction opts of
     Help      -> printHelp

@@ -5,8 +5,8 @@ import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Text.CodeWriter
 
-showHaskellIO :: AST -> String
-showHaskellIO ast = writeCode $ do
+showAST :: AST -> String
+showAST ast = writeCode $ do
   line "import Brainfuck.Data.Expr"
   line "import Brainfuck.Data.IOMemory"
   line ""

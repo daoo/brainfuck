@@ -1,6 +1,6 @@
 module Code where
 
-import Brainfuck.CodeGen.Indented
+import Brainfuck.CodeGen.Indented as Indented
 import Brainfuck.Data.AST
 import Brainfuck.Interpret
 import Brainfuck.Optimization.Analysis
@@ -28,7 +28,7 @@ instance Arbitrary PrettyAST where
   arbitrary = fmap PrettyAST arbitrary
 
 instance Show PrettyAST where
-  show (PrettyAST ast) = showIndented ast
+  show (PrettyAST ast) = Indented.showAST ast
 
 compareState :: (Integral a) => Int -> State a -> State a -> Bool
 compareState i (State _ out1 m1) (State _ out2 m2) =

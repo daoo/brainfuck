@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.C99 (showC) where
+module Brainfuck.CodeGen.C99 where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
@@ -39,8 +39,8 @@ showExpr = \case
       OperateUnary Id a     -> paren Add a
       _                     -> False
 
-showC :: AST -> String
-showC ast = writeCode $ do
+showAST :: AST -> String
+showAST ast = writeCode $ do
   line "#include <stdio.h>"
   line ""
   line "int main() {"
