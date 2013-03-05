@@ -3,7 +3,7 @@
 # using vimdiff.
 
 bf="dist/build/brainfuck/brainfuck"
-dir="/tmp/brainfuck/"
+dir="/tmp/brainfuck"
 
 infile="$1"
 
@@ -19,10 +19,10 @@ else
 
   if [[ -f "$new" ]]; then
     mv "$new" "$old"
-    exec $bf -c "$1" > "$new"
+    $bf -c "$infile" > "$new"
     vimdiff "$new" "$old"
   else
-    exec $bf -c "$1" > "$new"
+    exec $bf -c "$infile" > "$new"
     echo "Nothing to compare with. Maybe next time..."
   fi
 fi
