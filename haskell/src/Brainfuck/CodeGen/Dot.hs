@@ -105,5 +105,5 @@ showAST ast = writeCode $ do
     exprNode n l e = do
       node n l
       ne <- newId
-      edge ne n "black"
+      edge n ne "red"
       showExpr e
