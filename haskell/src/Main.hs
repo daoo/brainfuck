@@ -1,6 +1,7 @@
 module Main where
 
 import Brainfuck.CodeGen.C99 as C99
+import Brainfuck.CodeGen.Dot as Dot
 import Brainfuck.CodeGen.Haskell as Haskell
 import Brainfuck.CodeGen.Indented as Indented
 import Brainfuck.Compile
@@ -18,7 +19,7 @@ import System.Exit
 import System.IO
 
 data Action = Compile | Interpret | Help deriving (Show, Read)
-data Target = Indented | C99 | Haskell deriving (Show, Read)
+data Target = Indented | C99 | Haskell | Dot deriving (Show, Read)
 
 data Options = Options
   { optAction :: Action
@@ -43,7 +44,7 @@ printHelp = putStrLn (usageInfo header options)
 options :: [OptDescr (Options -> Options)]
 options =
   [ Option "c" ["compile"] (NoArg (\opt -> opt { optAction = Compile })) "compile input"
-  , Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "{Indented|C99|Haskell}") "target language"
+  , Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "{Indented|C99|Haskell|Dot}") "target language"
   , Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1}") "optimizations"
   , Option "h" ["help"] (NoArg (\opt -> opt { optAction = Help})) "show help"
   ]
@@ -67,6 +68,7 @@ main = do
           Indented -> Indented.showAST
           C99      -> C99.showAST
           Haskell  -> Haskell.showAST
+          Dot      -> Dot.showAST
 
   case optAction opts of
     Help      -> printHelp
