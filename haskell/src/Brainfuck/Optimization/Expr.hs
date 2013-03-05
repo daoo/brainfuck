@@ -15,6 +15,8 @@ exprRules =
   , addZeroR
   , mulOneL
   , mulOneR
+  , mulNegOneL
+  , mulNegOneR
   , swapConstGet
   , swapConstDown
   , rotateBinary
@@ -43,6 +45,14 @@ mulOneL e                                       = fail (show e)
 mulOneR :: Expr -> Rule Expr
 mulOneR (OperateBinary Mul a (Value (Const 1))) = return a
 mulOneR e                                       = fail (show e)
+
+mulNegOneL :: Expr -> Rule Expr
+mulNegOneL (OperateBinary Mul (Value (Const (-1))) b) = return $ OperateUnary Negate b
+mulNegOneL e                                          = fail (show e)
+
+mulNegOneR :: Expr -> Rule Expr
+mulNegOneR (OperateBinary Mul a (Value (Const (-1)))) = return $ OperateUnary Negate a
+mulNegOneR e                                          = fail (show e)
 
 negConstant :: Expr -> Rule Expr
 negConstant (OperateUnary Negate (Value (Const a))) = return $ mkInt (-a)
