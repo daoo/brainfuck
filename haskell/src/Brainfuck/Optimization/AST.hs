@@ -10,6 +10,7 @@ import qualified Data.Set as S
 
 astRules :: [AST -> Rule AST]
 astRules = [ reflectiveSet
+           , expressions
            , shiftZero
            , flowInnerNop
            , flowNever
