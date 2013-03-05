@@ -16,9 +16,9 @@ astRules = [ reflectiveSet
            , flowOnce
            , flowConst
            , movePutGet
-           --, moveShifts
+           , moveShifts
            , reduceCopyLoops
-           , whileToIf
+           -- , whileToIf
            ]
 
 expressions :: AST -> Rule AST
