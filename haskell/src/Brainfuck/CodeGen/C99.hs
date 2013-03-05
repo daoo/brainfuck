@@ -54,7 +54,7 @@ showAST ast = writeCode $ do
     line "return 0;"
   line "}"
   where
-    go :: AST -> CodeWriter
+    go :: AST -> CodeWriter ()
     go = \case
       Nop -> return ()
       Instruction fun next -> lineM (function fun >> string ";") >> go next
@@ -67,7 +67,7 @@ showAST ast = writeCode $ do
       Never   -> block "if" (mkInt 0)
       If e    -> block "if" e
 
-    block :: String -> Expr -> AST -> CodeWriter
+    block :: String -> Expr -> AST -> CodeWriter ()
     block word e ys = do
       lineM $ string word >> string " (" >> (string $ showExpr e ") {")
       indentedM $ go ys
@@ -82,7 +82,7 @@ showAST ast = writeCode $ do
       PutChar e -> string "putchar(" >> string (showExpr e ")")
       GetChar p -> ptr p "=" "getchar()"
 
-    ptr :: Int -> String -> String -> CodeWriter
+    ptr :: Int -> String -> String -> CodeWriter ()
     ptr d op b = do
       string "ptr["
       string $ show d
