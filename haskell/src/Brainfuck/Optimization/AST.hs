@@ -16,7 +16,7 @@ astRules = [ reflectiveSet
            , flowNever
            , flowOnce
            , flowConst
-           , movePutGet
+           , movePut
            , moveShifts
            , reduceCopyLoops
            -- , whileToIf
@@ -64,10 +64,10 @@ flowConst (Flow (If (Value (Const i))) inner next)    | i == 0    = return next
                                                       | otherwise = return $ inner `join` next
 flowConst ast                                                     = fail (show ast)
 
-movePutGet :: AST -> Rule AST
-movePutGet (Instruction s@(Set d e1) (Instruction (PutChar e2) next)) =
+movePut :: AST -> Rule AST
+movePut (Instruction s@(Set d e1) (Instruction (PutChar e2) next)) =
   return $ Instruction (PutChar (inlineExpr d e1 e2)) (Instruction s next)
-movePutGet ast = fail (show ast)
+movePut ast = fail (show ast)
 
 moveShifts :: AST -> Rule AST
 moveShifts (Instruction (Shift s) (Instruction fun next)) = case fun of
