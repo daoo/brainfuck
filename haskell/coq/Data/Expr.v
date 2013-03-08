@@ -41,7 +41,10 @@ Section Expr_defs.
     unfold OperateUnary OperateBinary (fun v => match v with
       | Get d2 => if Z.eqb d1 d2 then this else Return (Get d2)
       | v      => Return v
-    end) into.
+      end) into.
+
+  Definition modifyValues (f: Value -> Expr) (e: Expr) : Expr :=
+    unfold OperateUnary OperateBinary f e.
 
   Definition eval (f: Z -> Z) (expr: Expr) : Z :=
     unfold
@@ -59,6 +62,17 @@ Section Expr_defs.
       end)
       expr.
 
+  Theorem addC: forall (f: Z -> Z) (a b: Expr),
+    eval f (OperateBinary Add a b) = eval f (OperateBinary Add b a).
+  Proof. intros f a b; unfold eval; unfold unfold; rewrite Z.add_comm; reflexivity. Qed.
+
+  Theorem addA: forall (f: Z -> Z) (a b c: Expr),
+    eval f (OperateBinary Add a (OperateBinary Add b c)) =
+      eval f (OperateBinary Add (OperateBinary Add a b) c).
+  Proof.
+    intros f a b c; unfold eval; unfold unfold; rewrite Z.add_assoc; reflexivity.
+  Qed.
+
   Theorem add0e: forall (f: Z -> Z) (e: Expr),
     eval f (OperateBinary Add (Return (Const 0)) e) = eval f e.
   Proof. unfold eval; unfold unfold; reflexivity. Qed.
@@ -66,4 +80,6 @@ Section Expr_defs.
   Theorem adde0: forall (f: Z -> Z) (e: Expr),
     eval f (OperateBinary Add e (Return (Const 0))) = eval f e.
   Proof. intros f e; unfold eval; unfold unfold; rewrite Z.add_comm; reflexivity. Qed.
+
+
 End Expr_defs.
