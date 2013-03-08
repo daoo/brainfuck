@@ -10,7 +10,7 @@ import Text.CodeWriter
 
 showExpr :: Expr -> ShowS
 showExpr = \case
-  Value v              -> value v
+  Return v             -> value v
   OperateUnary op a    -> unary op a
   OperateBinary op a b -> binary op a b
 
@@ -32,7 +32,7 @@ showExpr = \case
       OperateBinary Mul _ _ -> False
       OperateUnary Id a     -> paren Mul a
       OperateUnary Negate _ -> True
-      Value _               -> False
+      Return _              -> False
 
     paren Add = \case
       OperateUnary Negate _ -> True
@@ -61,10 +61,10 @@ showAST ast = writeCode $ do
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
-      Forever -> block "while" (mkInt 1)
+      Forever -> block "while" (int 1)
       While e -> block "while" e
-      Once    -> block "if" (mkInt 1)
-      Never   -> block "if" (mkInt 0)
+      Once    -> block "if" (int 1)
+      Never   -> block "if" (int 0)
       If e    -> block "if" e
 
     block :: String -> Expr -> AST -> CodeWriter ()
@@ -76,7 +76,7 @@ showAST ast = writeCode $ do
     function x = case x of
       Set d e -> ptr d "=" (showExpr e "")
 
-      PutChar (Value (Const c)) -> string "putchar(" >> string (show $ chr c) >> string ")"
+      PutChar (Return (Const c)) -> string "putchar(" >> string (show $ chr c) >> string ")"
 
       Shift s   -> string "ptr += " >> string (show s)
       PutChar e -> string "putchar(" >> string (showExpr e ")")

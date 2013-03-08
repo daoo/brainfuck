@@ -40,9 +40,9 @@ copyLoop d xs = do
       _        -> Nothing
 
     constantAddOnly = \case
-      (d1, OperateBinary Add (Value (Get d2)) (Value (Const c))) -> Just (d1, d2, c)
-      (d1, OperateBinary Add (Value (Const c)) (Value (Get d2))) -> Just (d1, d2, c)
-      _                                                     -> Nothing
+      (d1, OperateBinary Add (Return (Get d2)) (Return (Const c))) -> Just (d1, d2, c)
+      (d1, OperateBinary Add (Return (Const c)) (Return (Get d2))) -> Just (d1, d2, c)
+      _                                                            -> Nothing
 
     -- Filter the decrement operation
     g d1 (d2, d3, i) = d1 == d2 && d1 == d3 && i == -1
@@ -108,5 +108,5 @@ setToZero d1 ast = maybe False (== 0) (go Nothing ast)
       Flow _ _ _           -> Nothing
 
     f = \case
-      Set d2 (Value (Const i)) | d1 == d2 -> Just i
-      _                                   -> Nothing
+      Set d2 (Return (Const i)) | d1 == d2 -> Just i
+      _                                    -> Nothing

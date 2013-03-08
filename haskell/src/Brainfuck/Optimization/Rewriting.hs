@@ -18,7 +18,7 @@ instance Rewritable Expr where
   rewrite fs expr = toRule $ runState (go expr) False
     where
       go = loop $ \case
-        e@(Value _) -> return e
+        e@(Return _) -> return e
 
         OperateUnary op a -> OperateUnary op <$> go a >>= applyRules fs
 

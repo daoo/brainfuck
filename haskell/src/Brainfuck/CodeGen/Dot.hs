@@ -2,7 +2,7 @@
 module Brainfuck.CodeGen.Dot (showExpr, showAST) where
 
 import Brainfuck.Data.AST
-import Brainfuck.Data.Expr
+import Brainfuck.Data.Expr hiding (get)
 import Control.Monad.State
 import Text.CodeWriter
 
@@ -39,7 +39,7 @@ makeEdge from to = lift $ lineM $ do
 
 showExpr :: Expr -> DotState ()
 showExpr = \case
-  Value v -> do
+  Return v -> do
     n <- get
     makeNode Ellipse n (value v)
 

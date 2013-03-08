@@ -38,8 +38,8 @@ expressions (Flow (While e) inner next) = do
 expressions ast = fail (show ast)
 
 reflectiveSet :: AST -> Rule AST
-reflectiveSet (Instruction (Set d1 (Value (Get d2))) next) | d1 == d2 = return next
-reflectiveSet ast                                                     = fail (show ast)
+reflectiveSet (Instruction (Set d1 (Return (Get d2))) next) | d1 == d2 = return next
+reflectiveSet ast                                                      = fail (show ast)
 
 shiftZero :: AST -> Rule AST
 shiftZero (Instruction (Shift 0) next) = return next
@@ -58,9 +58,9 @@ flowOnce (Flow Once inner next) = return $ inner `join` next
 flowOnce ast                    = fail (show ast)
 
 flowConst :: AST -> Rule AST
-flowConst (Flow (While (Value (Const i))) inner next) | i == 0    = return next
+flowConst (Flow (While (Return (Const i))) inner next) | i == 0   = return next
                                                       | otherwise = return $ Flow Forever inner next
-flowConst (Flow (If (Value (Const i))) inner next)    | i == 0    = return next
+flowConst (Flow (If (Return (Const i))) inner next)    | i == 0   = return next
                                                       | otherwise = return $ inner `join` next
 flowConst ast                                                     = fail (show ast)
 
@@ -79,19 +79,19 @@ moveShifts (Instruction (Shift s) (Instruction fun next)) = case fun of
 
   where
     expr s' = modifyValues (\case
-      Get d -> Value $ Get (s' + d)
-      v     -> Value v)
+      Get d -> get (s' + d)
+      v     -> Return v)
 
 moveShifts ast = fail (show ast)
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: AST -> Rule AST
-reduceCopyLoops (Flow (While (Value (Get d))) inner next) = do
+reduceCopyLoops (Flow (While (Return (Get d))) inner next) = do
   x <- copyLoop d inner
 
-  let instr = Instruction (Set d $ mkInt 0) Nop
+  let instr = Instruction (Set d $ int 0) Nop
 
-      f d' (ds, v) = Set ds $ mkGet ds `add` (mkInt v `mul` mkGet d')
+      f d' (ds, v) = Set ds $ (get ds) `add` ((int v) `mul` (get d'))
 
       x' = foldr Instruction instr $ map (f d) x
 
@@ -101,7 +101,7 @@ reduceCopyLoops ast = fail (show ast)
 
 -- |Convert while loops that are only run once to if statements
 whileToIf :: AST -> Rule AST
-whileToIf ast@(Flow (While e@(Value (Get d))) inner next) =
+whileToIf ast@(Flow (While e@(Return (Get d))) inner next) =
   if setToZero d inner
     then return $ Flow (If e) inner next
     else fail (show ast)
@@ -124,6 +124,6 @@ inlineZeros = go S.empty
 
     inl :: S.Set Int -> Expr -> Expr
     inl s = modifyValues (\case
-      Get i | S.member i s -> mkGet i
-            | otherwise    -> mkInt 0
-      e                    -> Value e)
+      Get i | S.member i s -> Return $ Get i
+            | otherwise    -> Return $ Const 0
+      e                    -> Return e)

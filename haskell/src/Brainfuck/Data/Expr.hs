@@ -13,14 +13,14 @@ data UnaryOperator = Id | Negate
 data BinaryOperator = Add | Mul
   deriving (Ord, Eq, Show)
 
-data Expr = Value Value
+data Expr = Return Value
           | OperateUnary UnaryOperator Expr
           | OperateBinary BinaryOperator Expr Expr
   deriving (Ord, Eq, Show)
 
-mkInt, mkGet :: Int -> Expr
-mkInt = Value . Const
-mkGet = Value . Get
+int, get :: Int -> Expr
+int = Return . Const
+get = Return . Get
 
 add, mul :: Expr -> Expr -> Expr
 add = OperateBinary Add
@@ -60,10 +60,10 @@ instance Arbitrary Expr where
         , (4, OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
         ]
 
-      leaf = Value <$> arbitrary
+      leaf = Return <$> arbitrary
 
   shrink = \case
-    Value v         -> map Value $ shrink v
+    Return v             -> map Return $ shrink v
     OperateUnary op a    -> a : zipWith OperateUnary (cycle' (shrink op)) (shrink a)
     OperateBinary op a b -> a : b : zipWith3 OperateBinary (cycle' (shrink op)) (shrink a) (shrink b)
 
@@ -78,11 +78,11 @@ instance Num Expr where
   abs    = undefined
   signum = undefined
 
-  fromInteger = Value . Const . fromInteger
+  fromInteger = int . fromInteger
 
 unfold :: (UnaryOperator -> a -> a) -> (BinaryOperator -> a -> a -> a) -> (Value -> a) -> Expr -> a
 unfold unary binary value = \case
-  Value v              -> value v
+  Return v             -> value v
   OperateUnary op a    -> unary op (unfold' a)
   OperateBinary op a b -> binary op (unfold' a) (unfold' b)
   where
@@ -93,7 +93,7 @@ inlineExpr d1 e = unfold OperateUnary OperateBinary f
   where
     f = \case
       Get d2 | d1 == d2 -> e
-      v                 -> Value v
+      v                 -> Return v
 
 modifyValues :: (Value -> Expr) -> Expr -> Expr
 modifyValues = unfold OperateUnary OperateBinary
@@ -115,12 +115,12 @@ eval f = unfold unary binary value
 
 nodeCount :: Expr -> Int
 nodeCount = \case
-  Value _             -> 1
+  Return _            -> 1
   OperateUnary _ a    -> 1 + nodeCount a
   OperateBinary _ a b -> 1 + nodeCount a + nodeCount b
 
 heigth :: Expr -> Int
 heigth = \case
-  Value _             -> 1
+  Return _            -> 1
   OperateUnary _ a    -> 1 + heigth a
   OperateBinary _ a b -> 1 + max (heigth a) (heigth b)

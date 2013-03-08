@@ -2,7 +2,7 @@
 module Brainfuck.Optimization.Assignment where
 
 import Brainfuck.Data.AST
-import Brainfuck.Data.Expr
+import Brainfuck.Data.Expr hiding (get)
 import Data.Maybe
 import Ext
 import qualified Data.Graph as G
@@ -68,8 +68,8 @@ findOptimal = topSort . go M.empty
 
     f :: M.Map Int Expr -> Expr -> Expr
     f m = modifyValues (\case
-      e@(Get i) -> fromMaybe (Value e) $ M.lookup i m
-      e         -> Value e)
+      e@(Get i) -> fromMaybe (Return e) $ M.lookup i m
+      e         -> Return e)
 
 topSort :: [SetOp] -> [SetOp]
 topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
