@@ -112,15 +112,3 @@ eval f = unfold unary binary value
     value = \case
       Const i -> i
       Get i   -> f i
-
-nodeCount :: Expr -> Int
-nodeCount = \case
-  Return _            -> 1
-  OperateUnary _ a    -> 1 + nodeCount a
-  OperateBinary _ a b -> 1 + nodeCount a + nodeCount b
-
-heigth :: Expr -> Int
-heigth = \case
-  Return _            -> 1
-  OperateUnary _ a    -> 1 + heigth a
-  OperateBinary _ a b -> 1 + max (heigth a) (heigth b)
