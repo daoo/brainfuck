@@ -107,6 +107,31 @@ Section Theorems.
     by rewrite mulzC mul1z.
   Qed.
 
+  Theorem optMulNegOneL: forall (f: int -> int) (e: Expr),
+    eval f (mulNegOneL e) = eval f e.
+  Proof.
+    move=> f.
+    do 7?case=> //=.
+    move=> e.
+    case: eval => n //=.
+  Admitted.
+
+  Theorem optMulNegOneR: forall (f: int -> int) (e: Expr),
+    eval f (mulNegOneR e) = eval f e.
+  Proof. Admitted.
+
+  Theorem optNegConstant: forall (f: int -> int) (e: Expr),
+    eval f (negConstant e) = eval f e.
+  Proof. Admitted.
+
+  Theorem optNegCollaps: forall (f: int -> int) (e: Expr),
+    eval f (negCollaps e) = eval f e.
+  Proof. Admitted.
+
+  Theorem optIdAny: forall (f: int -> int) (e: Expr),
+    eval f (idAny e) = eval f e.
+  Proof. Admitted.
+
   Theorem optSwapConstGet: forall (f: int -> int) (e: Expr),
     eval f (swapConstGet e) = eval f e.
   Proof.
