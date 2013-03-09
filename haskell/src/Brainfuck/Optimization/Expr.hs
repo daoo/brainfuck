@@ -13,6 +13,8 @@ exprRules =
   , negConstant
   , addZeroL
   , addZeroR
+  , mulZeroL
+  , mulZeroR
   , mulOneL
   , mulOneR
   , mulNegOneL
@@ -38,6 +40,14 @@ mulConsts :: Expr -> Rule Expr
 mulConsts (OperateBinary Mul (Return (Const a)) (Return (Const b))) = return $ int (a * b)
 mulConsts e                                                         = fail (show e)
 
+mulZeroL :: Expr -> Rule Expr
+mulZeroL (OperateBinary Mul (Return (Const 0)) _) = return $ int 0
+mulZeroL e                                        = fail (show e)
+
+mulZeroR :: Expr -> Rule Expr
+mulZeroR (OperateBinary Mul _ (Return (Const 0))) = return $ int 0
+mulZeroR e                                        = fail (show e)
+
 mulOneL :: Expr -> Rule Expr
 mulOneL (OperateBinary Mul (Return (Const 1)) b) = return b
 mulOneL e                                        = fail (show e)
@@ -59,11 +69,11 @@ negConstant (OperateUnary Negate (Return (Const a))) = return $ int (-a)
 negConstant e                                        = fail (show e)
 
 negCollaps :: Expr -> Rule Expr
-negCollaps (OperateUnary Negate (OperateUnary Negate e)) = return e
+negCollaps (OperateUnary Negate (OperateUnary Negate a)) = return a
 negCollaps e                                             = fail (show e)
 
 idAny :: Expr -> Rule Expr
-idAny (OperateUnary Id e) = return e
+idAny (OperateUnary Id a) = return a
 idAny e                   = fail (show e)
 
 swapConstGet :: Expr -> Rule Expr
