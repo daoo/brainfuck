@@ -106,4 +106,24 @@ Section Theorems.
     do 5?case=> //=.
     by rewrite mulzC mul1z.
   Qed.
+
+  Theorem optSwapConstGet: forall (f: int -> int) (e: Expr),
+    eval f (swapConstGet e) = eval f e.
+  Proof.
+    move=> f.
+    do 3?case=> //=.
+    case=> i //=.
+    case=> //=.
+    case=> i' //=.
+    by rewrite addzC.
+    case=> //=.
+    case=> i //=.
+    case=> //=.
+    case=> i' //=.
+    by rewrite mulzC.
+    case=> //=.
+    case=> i' //=.
+    case f => n //=.
+    by rewrite mulnC.
+  Qed.
 End Theorems.

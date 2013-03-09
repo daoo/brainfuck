@@ -71,4 +71,11 @@ Section Expr_Optimize_defs.
     | OperateUnary Id a => a
     | _                 => e
     end.
+
+  Definition swapConstGet (e: Expr) : Expr :=
+    match e with
+    | OperateBinary Add (Return (Const _) as a) (Return (Get _) as b) => OperateBinary Add b a
+    | OperateBinary Mul (Return (Const _) as a) (Return (Get _) as b) => OperateBinary Mul b a
+    | _                                                               => e
+    end.
 End Expr_Optimize_defs.
