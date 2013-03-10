@@ -78,4 +78,11 @@ Section Expr_Optimize_defs.
     | OperateBinary Mul (Return (Const _) as a) (Return (Get _) as b) => OperateBinary Mul b a
     | _                                                               => e
     end.
+
+  Definition swapConstDown (e: Expr) : Expr :=
+    match e with
+    | OperateBinary Add (Return (Const _) as a) (OperateBinary Add (Return (Get _) as b) c) => OperateBinary Add b (OperateBinary Add a c)
+    | OperateBinary Mul (Return (Const _) as a) (OperateBinary Mul (Return (Get _) as b) c) => OperateBinary Mul b (OperateBinary Mul a c)
+    | _                                                                                     => e
+    end.
 End Expr_Optimize_defs.

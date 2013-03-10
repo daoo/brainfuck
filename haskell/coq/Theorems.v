@@ -160,4 +160,28 @@ Section Theorems.
     case f => n //=.
     by rewrite mulnC.
   Qed.
+
+  Theorem optSwapConstDown: forall (f: int -> int) (e: Expr),
+    eval f (swapConstDown e) = eval f e.
+  Proof.
+    move=> f.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    case=> i //=.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    move=> i' e.
+    by rewrite addzA [X in addz X _]addzC addzA.
+    case=> //=.
+    case=> i //=.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    move=> i' e.
+    by rewrite mulzA [X in mulz X _]mulzC mulzA.
+  Qed.
 End Theorems.
