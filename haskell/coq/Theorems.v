@@ -113,24 +113,33 @@ Section Theorems.
     move=> f.
     do 7?case=> //=.
     move=> e.
-    case: eval => n //=.
+    case: eval => //=.
   Admitted.
 
   Theorem optMulNegOneR: forall (f: int -> int) (e: Expr),
     eval f (mulNegOneR e) = eval f e.
-  Proof. Admitted.
+  Proof.
+    move=> f.
+    case=> //=.
+    case=> e //=.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+  Admitted.
 
   Theorem optNegConstant: forall (f: int -> int) (e: Expr),
     eval f (negConstant e) = eval f e.
-  Proof. Admitted.
+  Proof. move=> f. by do 4?case=> //=. Qed.
 
   Theorem optNegCollaps: forall (f: int -> int) (e: Expr),
     eval f (negCollaps e) = eval f e.
-  Proof. Admitted.
+  Proof. move=> f. do 4?case=> //=. move=> e. by rewrite oppzK. Qed.
 
   Theorem optIdAny: forall (f: int -> int) (e: Expr),
     eval f (idAny e) = eval f e.
-  Proof. Admitted.
+  Proof. move=> f. by do 4?case=> //=. Qed.
 
   Theorem optSwapConstGet: forall (f: int -> int) (e: Expr),
     eval f (swapConstGet e) = eval f e.
