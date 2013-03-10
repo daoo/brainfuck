@@ -1,4 +1,4 @@
-Require Import Expr OptExpr ssreflect ssrnat ssrint.
+Require Import Expr OptExpr ssreflect ssrnat ssrint ssralg ssrfun.
 Import intZmod intRing.
 
 Set Implicit Arguments.

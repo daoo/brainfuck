@@ -1,4 +1,4 @@
-Require Import ssreflect ssrnat ssrint ssrbool eqtype.
+Require Import ssreflect ssrnat ssrint ssrbool eqtype ssralg ssrfun.
 Import intZmod intRing.
 
 Set Implicit Arguments.
