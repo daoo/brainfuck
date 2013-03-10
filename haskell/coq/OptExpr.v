@@ -85,4 +85,11 @@ Section Expr_Optimize_defs.
     | OperateBinary Mul (Return (Const _) as a) (OperateBinary Mul (Return (Get _) as b) c) => OperateBinary Mul b (OperateBinary Mul a c)
     | _                                                                                     => e
     end.
+
+  Definition rotateBinary (e: Expr) : Expr :=
+    match e with
+    | OperateBinary Add (OperateBinary Add a b) c => OperateBinary Add a (OperateBinary Add b c)
+    | OperateBinary Mul (OperateBinary Mul a b) c => OperateBinary Mul a (OperateBinary Mul b c)
+    | _                                           => e
+    end.
 End Expr_Optimize_defs.

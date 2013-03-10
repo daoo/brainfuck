@@ -184,4 +184,18 @@ Section Theorems.
     move=> i' e.
     by rewrite mulzA [X in mulz X _]mulzC mulzA.
   Qed.
+
+  Theorem optRotateBinary: forall (f: int -> int) (e: Expr),
+    eval f (rotateBinary e) = eval f e.
+  Proof.
+    move=> f.
+    case=> //=.
+    case=> //=.
+    case=> //=.
+    case=> a b c //=.
+    by rewrite addzA.
+    case=> //=.
+    case=> a b c //=.
+    by rewrite mulzA.
+  Qed.
 End Theorems.
