@@ -3,6 +3,11 @@ coqc = coqc $(opts)
 
 all: Expr.vo OptExpr.vo Theorems.vo
 
+extraction: Expr.hs
+
+Expr.hs: Extraction.v
+	$(coqc) Extraction.v
+
 Expr.vo: Expr.v
 	$(coqc) Expr.v
 
@@ -13,6 +18,6 @@ Theorems.vo: Expr.vo OptExpr.vo Theorems.v
 	$(coqc) Theorems.v
 
 clean:
-	$(RM) *.vo *.glob *.*~
+	$(RM) *.vo *.glob *.*~ *.hs
 
 .PHONY: clean
