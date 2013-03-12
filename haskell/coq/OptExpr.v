@@ -44,13 +44,13 @@ Section Expr_Optimize_defs.
 
   Definition mulNegOneL (e: Expr) : Expr :=
     match e with
-    | OperateBinary Mul (Return (Const (Negz 1))) b => OperateUnary Negate b
+    | OperateBinary Mul (Return (Const (Negz 0))) b => OperateUnary Negate b
     | _                                             => e
     end.
 
   Definition mulNegOneR (e: Expr) : Expr :=
     match e with
-    | OperateBinary Mul a (Return (Const (Negz 1))) => OperateUnary Negate a
+    | OperateBinary Mul a (Return (Const (Negz 0))) => OperateUnary Negate a
     | _                                             => e
     end.
 

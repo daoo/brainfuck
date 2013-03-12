@@ -101,8 +101,8 @@ Section Theorems.
     eval f (mulOneR e) = eval f e.
   Proof.
     move=> f.
-    case=> //=.
-    case=> e //=.
+    do 2?case=> //=.
+    move=> e.
     do 5?case=> //=.
     by rewrite mulzC mul1z.
   Qed.
@@ -111,23 +111,24 @@ Section Theorems.
     eval f (mulNegOneL e) = eval f e.
   Proof.
     move=> f.
-    do 7?case=> //=.
+    do 6?case=> //=.
     move=> e.
-    case: eval => //=.
-  Admitted.
+    case: eval => n //=.
+    by rewrite muln1.
+    by rewrite mul1n.
+  Qed.
 
   Theorem optMulNegOneR: forall (f: int -> int) (e: Expr),
     eval f (mulNegOneR e) = eval f e.
   Proof.
     move=> f.
-    case=> //=.
-    case=> e //=.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-  Admitted.
+    do 2?case=> //=.
+    move=> e.
+    do 4?case=> //=.
+    case: eval => n //=.
+    by rewrite muln1.
+    by rewrite muln1.
+  Qed.
 
   Theorem optNegConstant: forall (f: int -> int) (e: Expr),
     eval f (negConstant e) = eval f e.
