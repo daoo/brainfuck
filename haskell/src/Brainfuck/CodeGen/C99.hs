@@ -61,10 +61,10 @@ showAST ast = writeCode $ do
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
-      Forever -> block "while" (int 1)
+      Forever -> block "while" (mkInt 1)
       While e -> block "while" e
-      Once    -> block "if" (int 1)
-      Never   -> block "if" (int 0)
+      Once    -> block "if" (mkInt 1)
+      Never   -> block "if" (mkInt 0)
       If e    -> block "if" e
 
     block :: String -> Expr -> AST -> CodeWriter ()

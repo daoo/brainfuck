@@ -2,7 +2,7 @@
 module Brainfuck.CodeGen.Dot (showExpr, showAST) where
 
 import Brainfuck.Data.AST
-import Brainfuck.Data.Expr hiding (get)
+import Brainfuck.Data.Expr
 import Control.Monad.State
 import Text.CodeWriter
 

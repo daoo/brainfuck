@@ -18,9 +18,9 @@ data Expr = Return Value
           | OperateBinary BinaryOperator Expr Expr
   deriving (Ord, Eq, Show)
 
-int, get :: Int -> Expr
-int = Return . Const
-get = Return . Get
+mkInt, mkGet :: Int -> Expr
+mkInt = Return . Const
+mkGet = Return . Get
 
 add, mul :: Expr -> Expr -> Expr
 add = OperateBinary Add
@@ -78,7 +78,7 @@ instance Num Expr where
   abs    = undefined
   signum = undefined
 
-  fromInteger = int . fromInteger
+  fromInteger = mkInt . fromInteger
 
 unfold :: (UnaryOperator -> a -> a) -> (BinaryOperator -> a -> a -> a) -> (Value -> a) -> Expr -> a
 unfold unary binary value = \case

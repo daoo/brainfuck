@@ -8,15 +8,15 @@ import Brainfuck.Data.Expr
 compile :: [Brainfuck] -> AST
 compile = \case
   []             -> Nop
-  Repeat ys : xs -> Flow (While (get 0)) (compile ys) (compile xs)
+  Repeat ys : xs -> Flow (While (mkGet 0)) (compile ys) (compile xs)
   Token t : xs   -> Instruction (token t) (compile xs)
   where
     token = \case
-      Plus       -> Set 0 $ int 1 `add` get 0
-      Minus      -> Set 0 $ int (-1) `add` get 0
+      Plus       -> Set 0 $ mkInt 1 `add` mkGet 0
+      Minus      -> Set 0 $ mkInt (-1) `add` mkGet 0
       ShiftRight -> Shift 1
       ShiftLeft  -> Shift (-1)
-      Output     -> PutChar $ get 0
+      Output     -> PutChar $ mkGet 0
       Input      -> GetChar 0
 
 decompile :: AST -> [Brainfuck]

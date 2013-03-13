@@ -20,7 +20,7 @@ constOnly = sized $ \n -> expr n n
       , (4, OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
       ]
 
-    leaf = int <$> arbitrary
+    leaf = mkInt <$> arbitrary
 
 propExprOptimizeConst :: Property
 propExprOptimizeConst = forAll constOnly (f . tryMaybe (rewrite exprRules))

@@ -25,7 +25,7 @@ exprRules =
   ]
 
 addConsts :: Expr -> Rule Expr
-addConsts (OperateBinary Add (Return (Const a)) (Return (Const b))) = return $ int (a + b)
+addConsts (OperateBinary Add (Return (Const a)) (Return (Const b))) = return $ mkInt (a + b)
 addConsts e                                                         = fail (show e)
 
 addZeroL :: Expr -> Rule Expr
@@ -37,15 +37,15 @@ addZeroR (OperateBinary Add a (Return (Const 0))) = return a
 addZeroR e                                        = fail (show e)
 
 mulConsts :: Expr -> Rule Expr
-mulConsts (OperateBinary Mul (Return (Const a)) (Return (Const b))) = return $ int (a * b)
+mulConsts (OperateBinary Mul (Return (Const a)) (Return (Const b))) = return $ mkInt (a * b)
 mulConsts e                                                         = fail (show e)
 
 mulZeroL :: Expr -> Rule Expr
-mulZeroL (OperateBinary Mul (Return (Const 0)) _) = return $ int 0
+mulZeroL (OperateBinary Mul (Return (Const 0)) _) = return $ mkInt 0
 mulZeroL e                                        = fail (show e)
 
 mulZeroR :: Expr -> Rule Expr
-mulZeroR (OperateBinary Mul _ (Return (Const 0))) = return $ int 0
+mulZeroR (OperateBinary Mul _ (Return (Const 0))) = return $ mkInt 0
 mulZeroR e                                        = fail (show e)
 
 mulOneL :: Expr -> Rule Expr
@@ -65,7 +65,7 @@ mulNegOneR (OperateBinary Mul a (Return (Const (-1)))) = return $ OperateUnary N
 mulNegOneR e                                           = fail (show e)
 
 negConstant :: Expr -> Rule Expr
-negConstant (OperateUnary Negate (Return (Const a))) = return $ int (-a)
+negConstant (OperateUnary Negate (Return (Const a))) = return $ mkInt (-a)
 negConstant e                                        = fail (show e)
 
 negCollaps :: Expr -> Rule Expr

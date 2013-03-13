@@ -79,7 +79,7 @@ moveShifts (Instruction (Shift s) (Instruction fun next)) = case fun of
 
   where
     expr s' = modifyValues (\case
-      Get d -> get (s' + d)
+      Get d -> mkGet (s' + d)
       v     -> Return v)
 
 moveShifts ast = fail (show ast)
@@ -89,9 +89,9 @@ reduceCopyLoops :: AST -> Rule AST
 reduceCopyLoops (Flow (While (Return (Get d))) inner next) = do
   x <- copyLoop d inner
 
-  let instr = Instruction (Set d $ int 0) Nop
+  let instr = Instruction (Set d $ mkInt 0) Nop
 
-      f d' (ds, v) = Set ds $ (get ds) `add` ((int v) `mul` (get d'))
+      f d' (ds, v) = Set ds $ (mkGet ds) `add` ((mkInt v) `mul` (mkGet d'))
 
       x' = foldr Instruction instr $ map (f d) x
 

@@ -2,7 +2,7 @@
 module Brainfuck.Optimization.Assignment where
 
 import Brainfuck.Data.AST
-import Brainfuck.Data.Expr hiding (get)
+import Brainfuck.Data.Expr
 import Data.Maybe
 import Ext
 import qualified Data.Graph as G
