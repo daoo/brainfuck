@@ -6,6 +6,15 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Section Theorems.
+  Theorem evals: forall (f: int -> int) (e: Expr),
+    eval f e = eval' f e.
+  Proof.
+    move=> f.
+    elim=> //=.
+      by move=> op e IH; case: op => //=; rewrite /eval' IH //=.
+      by move=> op a IHa b IHb; case: op => //=; rewrite IHa IHb //=.
+  Qed.
+
   Theorem addC: forall (f: int -> int) (a b: Expr),
     eval f (OperateBinary Add a b) = eval f (OperateBinary Add b a).
   Proof. move=> ? ? ?. by rewrite /eval addzC. Qed.
