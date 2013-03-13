@@ -11,8 +11,8 @@ Section Theorems.
   Proof.
     move=> f.
     elim=> //=.
-      by move=> op e IH; case: op => //=; rewrite /eval' IH //=.
-      by move=> op a IHa b IHb; case: op => //=; rewrite IHa IHb //=.
+      by move=> op e IH; rewrite IH.
+      by move=> op a IHa b IHb; rewrite IHa IHb.
   Qed.
 
   Theorem unfoldId: forall (e: Expr),
@@ -25,54 +25,54 @@ Section Theorems.
 
   Theorem addC: forall (f: int -> int) (a b: Expr),
     eval f (OperateBinary Add a b) = eval f (OperateBinary Add b a).
-  Proof. move=> ? ? ?. by rewrite /eval addzC. Qed.
+  Proof. by move=> ? ? ?; rewrite /eval addzC. Qed.
 
   Theorem addA: forall (f: int -> int) (a b c: Expr),
     eval f (OperateBinary Add a (OperateBinary Add b c)) =
       eval f (OperateBinary Add (OperateBinary Add a b) c).
-  Proof. move=> ? ? ? ?. by rewrite /eval addzA. Qed.
+  Proof. by move=> ? ? ? ?; rewrite /eval addzA. Qed.
 
   Theorem add0e: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Add (Return (Const 0)) e) = eval f e.
-  Proof. move=> ? ?. by rewrite /eval add0z. Qed.
+  Proof. by move=> ? ?; rewrite /eval add0z. Qed.
 
   Theorem adde0: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Add e (Return (Const 0))) = eval f e.
-  Proof. move=> ? ?. by rewrite /eval addzC add0z. Qed.
+  Proof. by move=> ? ?; rewrite /eval addzC add0z. Qed.
 
   Theorem addnn: forall (f: int -> int) (a b: int),
     eval f (OperateBinary Add (Return (Const a)) (Return (Const b))) =
       eval f (Return (Const (addz a b))).
-  Proof. done. Qed.
+  Proof. by []. Qed.
 
   Theorem mulC: forall (f: int -> int) (a b: Expr),
     eval f (OperateBinary Mul a b) = eval f (OperateBinary Mul b a).
-  Proof. move=> ? ? ?. by rewrite /eval mulzC. Qed.
+  Proof. by move=> ? ? ?; rewrite /eval mulzC. Qed.
 
   Theorem mulA: forall (f: int -> int) (a b c: Expr),
     eval f (OperateBinary Mul a (OperateBinary Mul b c)) =
       eval f (OperateBinary Mul (OperateBinary Mul a b) c).
-  Proof. move=> ? ? ? ?. by rewrite /eval mulzA. Qed.
+  Proof. by move=> ? ? ? ?; rewrite /eval mulzA. Qed.
 
   Theorem mul0e: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul (Return (Const 0)) e) = 0.
-  Proof. move=> ? ?. by rewrite /eval mul0z. Qed.
+  Proof. by move=> ? ?; rewrite /eval mul0z. Qed.
 
   Theorem mule0: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul e (Return (Const 0))) = 0.
-  Proof. move=> ? ?. by rewrite /eval mulz0. Qed.
+  Proof. by move=> ? ?; rewrite /eval mulz0. Qed.
 
   Theorem mul1e: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul (Return (Const 1)) e) = eval f e.
-  Proof. move=> ? ?. by rewrite /eval mul1z. Qed.
+  Proof. by move=> ? ?; rewrite /eval mul1z. Qed.
 
   Theorem mule1: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul e (Return (Const 1))) = eval f e.
-  Proof. move=> ? ?. by rewrite /eval mulzC mul1z. Qed.
+  Proof. by move=> ? ?; rewrite /eval mulzC mul1z. Qed.
 
   Theorem optAddConsts: forall (f: int -> int) (e: Expr),
     eval f (addConsts e) = eval f e.
-  Proof. move=> ?. do 4?case=> //=. move=> ?. by do 2?case=> //=. Qed.
+  Proof. by move=> ?; do 4?case=> //=; move=> ?; do ?case=> //=. Qed.
 
   Theorem optAddZeroL: forall (f: int -> int) (e: Expr),
     eval f (addZeroL e) = eval f e.
