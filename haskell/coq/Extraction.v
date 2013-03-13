@@ -19,4 +19,4 @@ Extract Constant fst => "Prelude.fst".
 Extract Constant snd => "Prelude.snd".
 Extraction Inline fst snd.
 
-Extraction "Expr.hs" unfold inlineExpr modifyValues eval.
+Extraction "Expr.hs" mkInt mkGet add mul unfold inlineExpr modifyValues eval.
