@@ -5,7 +5,7 @@ all: Expr.vo OptExpr.vo Theorems.vo
 
 extraction: Expr.hs
 
-Expr.hs: Extraction.v
+Expr.hs: Extraction.v Expr.vo
 	$(coqc) Extraction.v
 
 Expr.vo: Expr.v
