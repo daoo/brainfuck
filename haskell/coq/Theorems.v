@@ -15,6 +15,14 @@ Section Theorems.
       by move=> op a IHa b IHb; case: op => //=; rewrite IHa IHb //=.
   Qed.
 
+  Theorem unfoldId: forall (e: Expr),
+    unfold OperateUnary OperateBinary Return e = e.
+  Proof.
+    elim=> //=.
+      by move=> op e IH; rewrite IH.
+      by move=> op a IHa b IHb; rewrite IHa IHb.
+  Qed.
+
   Theorem addC: forall (f: int -> int) (a b: Expr),
     eval f (OperateBinary Add a b) = eval f (OperateBinary Add b a).
   Proof. move=> ? ? ?. by rewrite /eval addzC. Qed.
