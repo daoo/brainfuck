@@ -1,4 +1,4 @@
-Require Import ssreflect ssrnat ssrint ssrbool eqtype ssralg ssrfun.
+Require Import Basics ssreflect ssrnat ssrint ssrbool eqtype ssralg ssrfun.
 Import intZmod intRing.
 
 Set Implicit Arguments.
@@ -23,10 +23,10 @@ Section Expr_defs.
     | OperateUnary: UnaryOperator -> Expr -> Expr
     | OperateBinary: BinaryOperator -> Expr -> Expr -> Expr.
 
-  (*Definition int := compose Return Const.
-  Definition get := compose Return Get.
-  Definition add := OperateBinary Add.
-  Definition mul := OperateBinary Mul.*)
+  Definition mkInt := compose Return Const.
+  Definition mkGet := compose Return Get.
+  Definition add   := OperateBinary Add.
+  Definition mul   := OperateBinary Mul.
 
   Fixpoint unfold (A: Type)
     (unary: UnaryOperator -> A -> A)
