@@ -8,6 +8,9 @@ extraction: Expr.hs
 Expr.hs: Extraction.v Expr.vo
 	$(coqc) Extraction.v
 
+AST.vo: Expr.vo AST.v
+	$(coqc) Expr.v
+
 Aux.vo: Aux.v
 	$(coqc) Aux.v
 

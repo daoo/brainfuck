@@ -1,15 +1,17 @@
 Require Import Expr.
+Require Import Basics ssreflect ssrnat ssrint ssrbool eqtype ssralg ssrfun.
+Import intZmod intRing.
 
 Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
 
 Section AST_defs.
-  Variable Int: Set.
-
   Inductive Function: Type :=
-    | Assign: Int -> Expr -> Function
-    | Shift: Int -> Function
+    | Assign: int -> Expr -> Function
+    | Shift: int -> Function
     | PutChar: Expr -> Function
-    | GetChar: Int -> Function.
+    | GetChar: int -> Function.
 
   Inductive Control: Type :=
     | Forever: Control
@@ -22,4 +24,14 @@ Section AST_defs.
     | Nop: AST
     | Instruction: Function -> AST -> AST
     | Flow: Control -> AST -> AST -> AST.
+
+  Fixpoint initAST (ast: AST) : AST :=
+    match ast with
+    | Nop                  => Nop
+    | Instruction _ Nop    => Nop
+    | Flow _ Nop _         => Nop
+    | Flow _ _ Nop         => Nop
+    | Instruction f next   => Instruction f (initAST next)
+    | Flow ctrl inner next => Flow ctrl (initAST inner) (initAST next)
+    end.
 End AST_defs.

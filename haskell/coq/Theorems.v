@@ -1,4 +1,4 @@
-Require Import Expr OptExpr.
+Require Import Expr OptExpr AST.
 Require Import ssreflect ssrnat ssrint ssralg ssrfun.
 Import intZmod intRing.
 
