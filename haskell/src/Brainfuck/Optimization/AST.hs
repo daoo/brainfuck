@@ -9,7 +9,7 @@ import Brainfuck.Optimization.Rewriting
 import qualified Data.Set as S
 
 astRules :: [AST -> Rule AST]
-astRules = [ reflectiveSet
+astRules = [ reflectiveAssign
            , expressions
            , shiftZero
            , flowInnerNop
@@ -23,9 +23,9 @@ astRules = [ reflectiveSet
            ]
 
 expressions :: AST -> Rule AST
-expressions (Instruction (Set d e) next) = do
+expressions (Instruction (Assign d e) next) = do
   e' <- rewrite exprRules e
-  return $ Instruction (Set d e') next
+  return $ Instruction (Assign d e') next
 expressions (Instruction (PutChar e) next) = do
   e' <- rewrite exprRules e
   return $ Instruction (PutChar e') next
@@ -37,9 +37,9 @@ expressions (Flow (While e) inner next) = do
   return $ Flow (While e') inner next
 expressions ast = fail (show ast)
 
-reflectiveSet :: AST -> Rule AST
-reflectiveSet (Instruction (Set d1 (Return (Get d2))) next) | d1 == d2 = return next
-reflectiveSet ast                                                      = fail (show ast)
+reflectiveAssign :: AST -> Rule AST
+reflectiveAssign (Instruction (Assign d1 (Return (Get d2))) next) | d1 == d2 = return next
+reflectiveAssign ast                                                         = fail (show ast)
 
 shiftZero :: AST -> Rule AST
 shiftZero (Instruction (Shift 0) next) = return next
@@ -65,17 +65,17 @@ flowConst (Flow (If (Return (Const i))) inner next)    | i == 0   = return next
 flowConst ast                                                     = fail (show ast)
 
 movePut :: AST -> Rule AST
-movePut (Instruction s@(Set d e1) (Instruction (PutChar e2) next)) =
+movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
   return $ Instruction (PutChar (inlineExpr d e1 e2)) (Instruction s next)
 movePut ast = fail (show ast)
 
 moveShifts :: AST -> Rule AST
 moveShifts (Instruction (Shift s) (Instruction fun next)) = case fun of
 
-  GetChar d -> return $ Instruction (GetChar (s + d))        $ Instruction (Shift s) next
-  PutChar e -> return $ Instruction (PutChar (expr s e))     $ Instruction (Shift s) next
-  Set d e   -> return $ Instruction (Set (s + d) (expr s e)) $ Instruction (Shift s) next
-  Shift s'  -> return $ Instruction (Shift (s + s')) next
+  GetChar d  -> return $ Instruction (GetChar (s + d))           $ Instruction (Shift s) next
+  PutChar e  -> return $ Instruction (PutChar (expr s e))        $ Instruction (Shift s) next
+  Assign d e -> return $ Instruction (Assign (s + d) (expr s e)) $ Instruction (Shift s) next
+  Shift s'   -> return $ Instruction (Shift (s + s')) next
 
   where
     expr s' = modifyValues (\case
@@ -89,9 +89,9 @@ reduceCopyLoops :: AST -> Rule AST
 reduceCopyLoops (Flow (While (Return (Get d))) inner next) = do
   x <- copyLoop d inner
 
-  let instr = Instruction (Set d $ mkInt 0) Nop
+  let instr = Instruction (Assign d $ mkInt 0) Nop
 
-      f d' (ds, v) = Set ds $ (mkGet ds) `add` ((mkInt v) `mul` (mkGet d'))
+      f d' (ds, v) = Assign ds $ (mkGet ds) `add` ((mkInt v) `mul` (mkGet d'))
 
       x' = foldr Instruction instr $ map (f d) x
 
@@ -115,10 +115,11 @@ inlineZeros = go S.empty
     go :: S.Set Int -> AST -> AST
     go s = \case
       Instruction fun next -> case fun of
-        Set i e   -> Instruction (Set i (inl s e)) (go (S.insert i s) next)
-        PutChar e -> Instruction (PutChar (inl s e)) (go s next)
-        GetChar d -> Instruction fun (go (S.delete d s) next)
-        Shift _   -> Instruction fun next
+
+        Assign i e -> Instruction (Assign i (inl s e)) (go (S.insert i s) next)
+        PutChar e  -> Instruction (PutChar (inl s e)) (go s next)
+        GetChar d  -> Instruction fun (go (S.delete d s) next)
+        Shift _    -> Instruction fun next
 
       ast -> ast
 

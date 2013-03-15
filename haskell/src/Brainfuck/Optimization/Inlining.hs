@@ -13,12 +13,12 @@ occurs d = \case
   Nop                  -> []
   Instruction fun next -> case fun of
 
-    Set d' e | d == d'     -> SetOnce : expr e ++ occurs d next
-             | otherwise   -> expr e ++ occurs d next
-    PutChar e              -> expr e ++ occurs d next
-    GetChar d' | d == d'   -> SetOnce : occurs d next
-               | otherwise -> occurs d next
-    Shift s                -> occurs (d - s) next
+    Assign d' e | d == d'   -> SetOnce : expr e ++ occurs d next
+                | otherwise -> expr e ++ occurs d next
+    PutChar e               -> expr e ++ occurs d next
+    GetChar d' | d == d'    -> SetOnce : occurs d next
+               | otherwise  -> occurs d next
+    Shift s                 -> occurs (d - s) next
 
   Flow ctrl inner next -> case ctrl of
 
@@ -80,7 +80,7 @@ ilComplexity = \case
 
   where
     function = \case
-      Set _ e    -> 1 + exprComplexity e
+      Assign _ e -> 1 + exprComplexity e
       Shift _    -> 1
       PutChar e  -> 1 + exprComplexity e
       GetChar _  -> 1
@@ -95,16 +95,16 @@ ilComplexity = \case
 
 inline :: Int -> Expr -> AST -> AST
 inline d e = \case
-  Nop -> Instruction (Set d e) Nop
+  Nop -> Instruction (Assign d e) Nop
 
   x@(Instruction fun next) -> case fun of
 
-    Set d' e' | d == d'                -> Instruction (Set d' (ie e')) next
-              | not (exprDepends d' e) -> Instruction (Set d' (ie e')) (inline d e next)
+    Assign d' e' | d == d'                -> Instruction (Assign d' (ie e')) next
+                 | not (exprDepends d' e) -> Instruction (Assign d' (ie e')) (inline d e next)
 
     PutChar e' -> Instruction (PutChar (ie e')) (inline d e next)
 
-    _ -> Instruction (Set d e) x
+    _ -> Instruction (Assign d e) x
 
   x@(Flow ctrl inner next) -> case ctrl of
     -- Inline into If
@@ -112,9 +112,9 @@ inline d e = \case
     -- the value has to change even if the condition evaluates to false.
     -- But we also inline into each expression within the if, this can reduce
     -- some += expressions to constant assigns.
-    If e' -> Instruction (Set d e) (Flow (If (ie e')) (inline d e inner) next)
+    If e' -> Instruction (Assign d e) (Flow (If (ie e')) (inline d e inner) next)
 
-    _ -> Instruction (Set d e) x
+    _ -> Instruction (Assign d e) x
 
   where
     ie = inlineExpr d e

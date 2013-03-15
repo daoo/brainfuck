@@ -74,7 +74,7 @@ showAST ast = writeCode $ do
       line "}"
 
     function x = case x of
-      Set d e -> ptr d "=" (showExpr e "")
+      Assign d e -> ptr d "=" (showExpr e "")
 
       PutChar (Return (Const c)) -> string "putchar(" >> string (show $ chr c) >> string ")"
 

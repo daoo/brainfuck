@@ -6,7 +6,7 @@ Section AST_defs.
   Variable Int: Set.
 
   Inductive Function: Type :=
-    | Set: Int -> Expr -> Function
+    | Assign: Int -> Expr -> Function
     | Shift: Int -> Function
     | PutChar: Expr -> Function
     | GetChar: Int -> Function.

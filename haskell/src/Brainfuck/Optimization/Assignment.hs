@@ -8,61 +8,61 @@ import Ext
 import qualified Data.Graph as G
 import qualified Data.Map as M
 
--- |Merge sequences of Set ILs using full program analysis
-optimizeSets :: AST -> AST
-optimizeSets = \case
+-- |Merge sequences of Assign ILs using full program analysis
+optimizeAssign :: AST -> AST
+optimizeAssign = \case
   Nop -> Nop
 
-  x@(Instruction (Set _ _) _) -> uncurry join $ modify $ splitSets x
+  x@(Instruction (Assign _ _) _) -> uncurry join $ modify $ splitAssign x
 
-  Instruction fun next -> Instruction fun (optimizeSets next)
+  Instruction fun next -> Instruction fun (optimizeAssign next)
 
-  Flow ctrl inner next -> Flow ctrl (optimizeSets inner) (optimizeSets next)
+  Flow ctrl inner next -> Flow ctrl (optimizeAssign inner) (optimizeAssign next)
 
   where
-    modify (x, y) = (makeAST $ findOptimal x, optimizeSets y)
+    modify (x, y) = (makeAST $ findOptimal x, optimizeAssign y)
 
-    splitSets = \case
-      Instruction (Set d e) next -> mapFst ((d, e) :) $ splitSets next
-      y                          -> ([], y)
+    splitAssign = \case
+      Instruction (Assign d e) next -> mapFst ((d, e) :) $ splitAssign next
+      y                             -> ([], y)
 
-    makeAST = foldr (Instruction . uncurry Set) Nop
+    makeAST = foldr (Instruction . uncurry Assign) Nop
 
 -- Initial Code:
--- Set 2 (Get 1)
--- Set 1 (Get 0)
--- Set 0 (Get 2)
+-- Assign 2 (Get 1)
+-- Assign 1 (Get 0)
+-- Assign 0 (Get 2)
 --
 -- 0: Get 1
 -- 1: Get 0
 -- 2: Get 1
 --
--- After Optimal Sets:
--- Set 2 (Get 1)
--- Set 1 (Get 0)
--- Set 0 (Get 1)
+-- After Optimal Assign:
+-- Assign 2 (Get 1)
+-- Assign 1 (Get 0)
+-- Assign 0 (Get 1)
 --
 -- 0: Get 0
 -- 1: Get 0
 -- 2: Get 1
 --
 -- After Topologic Sort:
--- Set 2 (Get 1)
--- Set 0 (Get 1)
--- Set 1 (Get 2)
+-- Assign 2 (Get 1)
+-- Assign 0 (Get 1)
+-- Assign 1 (Get 2)
 --
 -- 0; Get 1
 -- 1: Get 1
 -- 2: Get 1
 
-type SetOp = (Int, Expr)
+type AssignOp = (Int, Expr)
 
--- |Calculate the optimal representation of some Set ILs
+-- |Calculate the optimal representation of some Assign ILs
 -- TODO: Handle cyclical dependencies
-findOptimal :: [SetOp] -> [SetOp]
+findOptimal :: [AssignOp] -> [AssignOp]
 findOptimal = topSort . go M.empty
   where
-    go :: M.Map Int Expr -> [SetOp] -> [SetOp]
+    go :: M.Map Int Expr -> [AssignOp] -> [AssignOp]
     go m []          = M.assocs m
     go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
 
@@ -71,7 +71,7 @@ findOptimal = topSort . go M.empty
       e@(Get i) -> fromMaybe (Return e) $ M.lookup i m
       e         -> Return e)
 
-topSort :: [SetOp] -> [SetOp]
+topSort :: [AssignOp] -> [AssignOp]
 topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs

@@ -40,10 +40,10 @@ run state = \case
       If e    -> if isZero e state' then state' else run state' inner
 
     evalFunction state'@(State inp out mem) = \case
-      PutChar e -> state' { output = out |> evalExpr' mem e }
-      GetChar d -> state' { input  = tail inp, memory = applyAt' (head inp) d mem }
-      Set d e   -> state' { memory = applyAt' (evalExpr' mem e) d mem }
-      Shift s   -> state' { memory = move s mem }
+      PutChar e  -> state' { output = out |> evalExpr' mem e }
+      GetChar d  -> state' { input  = tail inp, memory = applyAt' (head inp) d mem }
+      Assign d e -> state' { memory = applyAt' (evalExpr' mem e) d mem }
+      Shift s    -> state' { memory = move s mem }
 
     isZero e = (== 0) . (`evalExpr` e) . flip peek . memory
 

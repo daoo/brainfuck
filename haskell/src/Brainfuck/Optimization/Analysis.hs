@@ -36,8 +36,8 @@ copyLoop d xs = do
       Flow _ _ _           -> Nothing
 
     setsOnly = \case
-      Set d' e -> Just (d', e)
-      _        -> Nothing
+      Assign d' e -> Just (d', e)
+      _           -> Nothing
 
     constantAddOnly = \case
       (d1, OperateBinary Add (Return (Get d2)) (Return (Const c))) -> Just (d1, d2, c)
@@ -59,10 +59,10 @@ memorySize = \case
 
   where
     function = \case
-      Set d e   -> g d <+> expr e
-      Shift d   -> g d
-      PutChar e -> expr e
-      GetChar d -> g d
+      Assign d e -> g d <+> expr e
+      Shift d    -> g d
+      PutChar e  -> expr e
+      GetChar d  -> g d
 
     control = \case
       If e    -> expr e
@@ -90,10 +90,10 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar e -> unfold (flip const) (const (||)) g e
-      Set _ _   -> True
-      GetChar _ -> True
-      Shift _   -> True
+      PutChar e  -> unfold (flip const) (const (||)) g e
+      Assign _ _ -> True
+      GetChar _  -> True
+      Shift _    -> True
 
     g (Get _) = True
     g _       = False
@@ -108,5 +108,5 @@ setToZero d1 ast = maybe False (== 0) (go Nothing ast)
       Flow _ _ _           -> Nothing
 
     f = \case
-      Set d2 (Return (Const i)) | d1 == d2 -> Just i
-      _                                    -> Nothing
+      Assign d2 (Return (Const i)) | d1 == d2 -> Just i
+      _                                       -> Nothing

@@ -88,10 +88,10 @@ showAST ast = writeCode $ do
       Instruction fun next -> do
         n <- get
         case fun of
-          Set d e   -> exprNode Box n (showString "Set " $ show d) e
-          Shift i   -> makeNode Box n (showString "Shift " $ show i)
-          PutChar e -> exprNode Box n "PutChar" e
-          GetChar d -> makeNode Box n (showString "GetChar " $ show d)
+          Assign d e -> exprNode Box n (showString "Assign " $ show d) e
+          Shift i    -> makeNode Box n (showString "Shift " $ show i)
+          PutChar e  -> exprNode Box n "PutChar" e
+          GetChar d  -> makeNode Box n (showString "GetChar " $ show d)
 
         nextNode n next
 

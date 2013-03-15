@@ -34,7 +34,7 @@ showAST ast = writeCode $ do
 
     -- TODO: Do not use ++
     function = \case
-      Set d e    -> line $ "set " ++ show d ++ " $ " ++ show e
+      Assign d e -> line $ "set " ++ show d ++ " $ " ++ show e
       PutChar e  -> line $ "put $ " ++ show e
       GetChar d  -> line $ "get " ++ show d
       Shift d    -> line $ "shift (" ++ show d ++ ")"

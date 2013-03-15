@@ -5,7 +5,7 @@ import Brainfuck.Data.Expr
 import Control.Applicative
 import Test.QuickCheck
 
-data Function = Set Int Expr | Shift Int | PutChar Expr | GetChar Int
+data Function = Assign Int Expr | Shift Int | PutChar Expr | GetChar Int
   deriving (Eq, Show)
 
 data Control = Forever | Once | Never | If Expr | While Expr
@@ -20,15 +20,15 @@ data AST = Nop
   deriving (Eq, Show)
 
 instance Arbitrary Function where
-  arbitrary = frequency [ (4, liftA2 Set (choose (-4, 10)) arbitrary)
+  arbitrary = frequency [ (4, liftA2 Assign (choose (-4, 10)) arbitrary)
                         , (2, liftA Shift (choose (-4, 10)))
                         , (1, liftA PutChar arbitrary)
                         ]
   shrink = \case
-    Set i e   -> map (Set i) $ shrink e
-    Shift i   -> map Shift $ shrink i
-    PutChar e -> map PutChar $ shrink e
-    GetChar i -> map GetChar $ shrink i
+    Assign i e -> map (Assign i) $ shrink e
+    Shift i    -> map Shift $ shrink i
+    PutChar e  -> map PutChar $ shrink e
+    GetChar i  -> map GetChar $ shrink i
 
 instance Arbitrary Control where
   arbitrary = oneof [ return Once

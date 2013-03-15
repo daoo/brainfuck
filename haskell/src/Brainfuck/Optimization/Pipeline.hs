@@ -7,4 +7,4 @@ import Brainfuck.Optimization.Rewriting
 import Ext
 
 fullOptimization :: AST -> AST
-fullOptimization = tryMaybe (rewrite [expressions]) . optimizeSets . tryMaybe (rewrite astRules)
+fullOptimization = tryMaybe (rewrite [expressions]) . optimizeAssign . tryMaybe (rewrite astRules)
