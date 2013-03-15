@@ -17,8 +17,8 @@ Extract Inlined Constant negb => "Prelude.not".
 Extract Inductive nat => "Int" [ "0" "(+1)" ].
 Extract Inductive int => "Int" [ "id" "negate" ].
 
-Extract Inlined Constant eq_op => "(Prelude.==)".
 Extract Inlined Constant eqn => "(Prelude.==)".
+Extract Inlined Constant eqz => "(Prelude.==)".
 
 Extract Inlined Constant pred => "(Prelude.subtract 1)".
 Extract Inlined Constant plus => "(Prelude.+)".
