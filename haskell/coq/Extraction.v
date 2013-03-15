@@ -1,4 +1,5 @@
-Require Import Expr Basics ssreflect ssrint ssrnat ssralg eqtype.
+Require Import Aux Expr.
+Require Import Basics ssreflect ssrint ssrnat ssralg eqtype.
 Import intZmod intRing.
 
 Extraction Language Haskell.

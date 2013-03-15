@@ -1,3 +1,4 @@
+Require Import Aux.
 Require Import Basics ssreflect ssrnat ssrint ssrbool eqtype ssralg ssrfun.
 Import intZmod intRing.
 
@@ -41,7 +42,7 @@ Section Expr_defs.
 
   Definition inlineExpr (d1: int) (this into: Expr) : Expr :=
     unfold OperateUnary OperateBinary (fun v => match v with
-      | Get d2 => if d1 == d2 then this else Return (Get d2)
+      | Get d2 => if eqz d1 d2 then this else Return (Get d2)
       | v      => Return v
       end) into.
 
