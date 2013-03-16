@@ -6,7 +6,7 @@ import Test.QuickCheck.Arbitrary
 
 data ListZipper a = ListZipper
   { left :: [a]
-  , focus :: a
+  , focus :: !a
   , right :: [a]
   } deriving (Show, Eq)
 
