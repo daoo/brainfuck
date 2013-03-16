@@ -2,6 +2,7 @@
 module Ext where
 
 import Control.Arrow
+import Control.Monad
 import Data.Maybe
 
 tryMaybe :: (a -> Maybe a) -> a -> a
@@ -48,3 +49,9 @@ mapAccumL' f acc (x:xs) = (acc'', maybe ys (:ys) y)
   where
     (acc', y)   = f acc x
     (acc'', ys) = mapAccumL' f acc' xs
+
+when' :: Monad m => m Bool -> m () -> m ()
+when' f g = f >>= (`when` g)
+
+while :: Monad m => m Bool -> m a -> m ()
+while f g = when' f (g >> while f g)

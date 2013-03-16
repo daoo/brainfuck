@@ -30,18 +30,18 @@ instance Arbitrary PrettyAST where
 instance Show PrettyAST where
   show (PrettyAST ast) = Indented.showAST ast
 
-compareState :: Int -> State -> State -> Bool
-compareState i (State _ out1 m1) (State _ out2 m2) =
+compareMachine :: Int -> Machine -> Machine -> Bool
+compareMachine i (Machine _ out1 m1) (Machine _ out2 m2) =
   cut i m1 == cut i m2 && out1 == out2
 
-compareOutput :: State -> State -> Bool
+compareOutput :: Machine -> Machine -> Bool
 compareOutput s1 s2 = output s1 == output s2
 
-testCode :: (State -> State -> Bool) -> AST -> AST -> Bool
+testCode :: (Machine -> Machine -> Bool) -> AST -> AST -> Bool
 testCode f ast ast' = f (run1 ast) (run1 ast')
 
 checkTransform :: (AST -> AST) -> AST -> Bool
-checkTransform f ast = testCode (compareState s) ast ast'
+checkTransform f ast = testCode (compareMachine s) ast ast'
   where
     ast' = f ast
 
@@ -49,8 +49,8 @@ checkTransform f ast = testCode (compareState s) ast ast'
             (ysMin, ysMax) = memorySize ast'
          in 1 + abs xsMin + abs xsMax + abs ysMin + abs ysMax
 
-run1 :: AST -> State
-run1 = run (State [1..] empty newMemory)
+run1 :: AST -> Machine
+run1 = run (Machine [1..] empty newMemory)
 
 run2 :: String -> AST -> String
-run2 inp = map (chr . fromIntegral) . toList . output . run (newState inp)
+run2 inp = map (chr . fromIntegral) . toList . output . run (newMachine inp)

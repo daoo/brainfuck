@@ -1,14 +1,17 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Interpret where
+module Brainfuck.Interpret (Machine(..), newMachine, newMemory, run) where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Control.Applicative hiding (empty)
+import Control.Monad.State
 import Data.Char
 import Data.ListZipper
 import Data.Sequence
 import Data.Word
+import Ext
 
-data State = State
+data Machine = Machine
   { input :: [Word8]
   , output :: Seq Word8
   , memory :: ListZipper Word8
@@ -18,48 +21,47 @@ newMemory :: ListZipper Word8
 newMemory = ListZipper zeros 0 zeros
   where zeros = repeat 0
 
-newState :: String -> State
-newState inp = State (map (fromIntegral . ord) inp) empty newMemory
+newMachine :: String -> Machine
+newMachine inp = Machine (map (fromIntegral . ord) inp) empty newMemory
 
-run :: State -> AST -> State
-run state = \case
-  Nop                  -> state
-  Instruction fun next -> run (evalFunction state fun) next
-  Flow ctrl inner next -> run (evalFlow state inner ctrl) next
+fout :: (Seq Word8 -> Seq Word8) -> State Machine ()
+fout f = modify $ \s -> s { output = f (output s) }
+
+finp :: ([Word8] -> [Word8]) -> State Machine ()
+finp f = modify $ \s -> s { input = f (input s) }
+
+fmem :: (ListZipper Word8 -> ListZipper Word8) -> State Machine ()
+fmem f = modify $ \s -> s { memory = f (memory s) }
+
+run :: Machine -> AST -> Machine
+run m ast = execState (go ast) m
   where
-    evalFlow state' inner = \case
-      Forever -> error "infinite loop"
-      Never   -> state'
-      Once    -> run state' inner
-      While e -> until (isZero e) (`run` inner) state'
-      If e    -> if isZero e state' then state' else run state' inner
+    go :: AST -> State Machine ()
+    go = \case
+      Nop                  -> return ()
+      Instruction fun next -> function fun >> go next
+      Flow ctrl inner next -> flow inner ctrl >> go next
 
-    evalFunction state' = \case
-      PutChar e  -> out (evalExpr' (memory state') e) state'
-      GetChar d  -> finput tail $ fmem (set (head (input state')) d) state'
-      Assign d e -> fmem (set (evalExpr' (memory state') e) d) state'
-      Shift s    -> fmem (move s) state'
+    function = \case
+      Shift s    -> fmem (move s)
+      Assign d e -> eval' e >>= \x -> fmem (set x d)
+      PutChar e  -> eval' e >>= \x -> fout (|> x)
+      GetChar d  -> head <$> input <$> get >>= \x -> fmem (set x d) >> finp tail
 
-    isZero e = (== 0) . (`evalExpr` e) . flip peek . memory
+    flow inner = \case
+      Forever -> forever (go inner)
+      Never   -> return ()
+      Once    -> go inner
+      While e -> while (continue e) (go inner)
+      If e    -> when' (continue e) (go inner)
 
-    evalExpr' mem = evalExpr (`peek` mem)
-    set           = applyAt . const
+    continue e = do
+      x <- eval' e
+      return $ x /= (0 :: Word8)
 
-    out x s    = s { output = output s |> x }
-    finput f s = s { input  = f (input s) }
-    fmem f s   = s { memory = f (memory s) }
+    eval' :: Expr -> State Machine Word8
+    eval' e = do
+      Machine _ _ mem <- get
+      return $ fromIntegral $ eval (fromIntegral . (`peek` mem)) e
 
-evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
-evalExpr f = unfold unary binary value
-  where
-    unary op a = case op of
-      Id     -> a
-      Negate -> -a
-
-    binary op a b = case op of
-      Add -> a + b
-      Mul -> a * b
-
-    value = \case
-      Const v -> fromIntegral v
-      Get o   -> f o
+    set = applyAt . const

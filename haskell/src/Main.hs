@@ -85,4 +85,4 @@ main = do
         Right bf -> return $ compile bf
 
     runBF :: String -> AST -> String
-    runBF inp = map (chr . fromIntegral) . toList . output . run (newState inp)
+    runBF inp = map (chr . fromIntegral) . toList . output . run (newMachine inp)
