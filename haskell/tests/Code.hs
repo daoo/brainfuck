@@ -4,10 +4,10 @@ import Brainfuck.CodeGen.Indented as Indented
 import Brainfuck.Data.AST
 import Brainfuck.Interpret
 import Brainfuck.Optimization.Analysis
+import Data.Char
 import Data.Foldable
 import Data.ListZipper
 import Data.Sequence hiding (replicate)
-import Data.Word
 import Test.QuickCheck hiding (output)
 
 printableChar :: Gen Char
@@ -30,14 +30,14 @@ instance Arbitrary PrettyAST where
 instance Show PrettyAST where
   show (PrettyAST ast) = Indented.showAST ast
 
-compareState :: (Integral a) => Int -> State a -> State a -> Bool
+compareState :: Int -> State -> State -> Bool
 compareState i (State _ out1 m1) (State _ out2 m2) =
   cut i m1 == cut i m2 && out1 == out2
 
-compareOutput :: (Integral a) => State a -> State a -> Bool
+compareOutput :: State -> State -> Bool
 compareOutput s1 s2 = output s1 == output s2
 
-testCode :: (State Word8 -> State Word8 -> Bool) -> AST -> AST -> Bool
+testCode :: (State -> State -> Bool) -> AST -> AST -> Bool
 testCode f ast ast' = f (run1 ast) (run1 ast')
 
 checkTransform :: (AST -> AST) -> AST -> Bool
@@ -49,8 +49,8 @@ checkTransform f ast = testCode (compareState s) ast ast'
             (ysMin, ysMax) = memorySize ast'
          in 1 + abs xsMin + abs xsMax + abs ysMin + abs ysMax
 
-run1 :: AST -> State Word8
+run1 :: AST -> State
 run1 = run (State [1..] empty newMemory)
 
 run2 :: String -> AST -> String
-run2 inp = map chrIntegral . toList . output . run (newState inp :: State Word8)
+run2 inp = map (chr . fromIntegral) . toList . output . run (newState inp)

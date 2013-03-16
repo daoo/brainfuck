@@ -9,8 +9,8 @@ import Brainfuck.Data.AST
 import Brainfuck.Interpret
 import Brainfuck.Optimization.Pipeline
 import Brainfuck.Parse
+import Data.Char
 import Data.Foldable (toList)
-import Data.Word
 import Ext
 import System.Console.GetOpt
 import System.Environment
@@ -85,4 +85,4 @@ main = do
         Right bf -> return $ compile bf
 
     runBF :: String -> AST -> String
-    runBF inp = map chrIntegral . toList . output . run (newState inp :: State Word8)
+    runBF inp = map (chr . fromIntegral) . toList . output . run (newState inp)

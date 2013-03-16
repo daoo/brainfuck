@@ -6,27 +6,22 @@ import Brainfuck.Data.Expr
 import Data.Char
 import Data.ListZipper
 import Data.Sequence
+import Data.Word
 
-data State a = State
-  { input :: [a]
-  , output :: Seq a
-  , memory :: ListZipper a
+data State = State
+  { input :: [Word8]
+  , output :: Seq Word8
+  , memory :: ListZipper Word8
   } deriving (Show, Eq)
 
-chrIntegral :: (Integral a) => a -> Char
-chrIntegral = chr . fromIntegral
-
-ordIntegral :: (Integral a) => Char -> a
-ordIntegral = fromIntegral . ord
-
-newMemory :: (Integral a) => ListZipper a
+newMemory :: ListZipper Word8
 newMemory = ListZipper zeros 0 zeros
   where zeros = repeat 0
 
-newState :: (Integral a) => String -> State a
-newState inp = State (map ordIntegral inp) empty newMemory
+newState :: String -> State
+newState inp = State (map (fromIntegral . ord) inp) empty newMemory
 
-run :: (Integral a) => State a -> AST -> State a
+run :: State -> AST -> State
 run state = \case
   Nop                  -> state
   Instruction fun next -> run (evalFunction state fun) next
@@ -39,16 +34,20 @@ run state = \case
       While e -> until (isZero e) (`run` inner) state'
       If e    -> if isZero e state' then state' else run state' inner
 
-    evalFunction state'@(State inp out mem) = \case
-      PutChar e  -> state' { output = out |> evalExpr' mem e }
-      GetChar d  -> state' { input  = tail inp, memory = applyAt' (head inp) d mem }
-      Assign d e -> state' { memory = applyAt' (evalExpr' mem e) d mem }
-      Shift s    -> state' { memory = move s mem }
+    evalFunction state' = \case
+      PutChar e  -> out (evalExpr' (memory state') e) state'
+      GetChar d  -> finput tail $ fmem (set (head (input state')) d) state'
+      Assign d e -> fmem (set (evalExpr' (memory state') e) d) state'
+      Shift s    -> fmem (move s) state'
 
     isZero e = (== 0) . (`evalExpr` e) . flip peek . memory
 
     evalExpr' mem = evalExpr (`peek` mem)
-    applyAt'      = applyAt . const
+    set           = applyAt . const
+
+    out x s    = s { output = output s |> x }
+    finput f s = s { input  = f (input s) }
+    fmem f s   = s { memory = f (memory s) }
 
 evalExpr :: (Integral a) => (Int -> a) -> Expr -> a
 evalExpr f = unfold unary binary value
