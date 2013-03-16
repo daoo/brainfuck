@@ -70,17 +70,35 @@ movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
 movePut ast = fail (show ast)
 
 moveShifts :: AST -> Rule AST
-moveShifts (Instruction (Shift s) (Instruction fun next)) = case fun of
+moveShifts (Instruction (Shift s) next) = case next of
+  Instruction fun next' -> return $ case fun of
 
-  GetChar d  -> return $ Instruction (GetChar (s + d))           $ Instruction (Shift s) next
-  PutChar e  -> return $ Instruction (PutChar (expr s e))        $ Instruction (Shift s) next
-  Assign d e -> return $ Instruction (Assign (s + d) (expr s e)) $ Instruction (Shift s) next
-  Shift s'   -> return $ Instruction (Shift (s + s')) next
+    GetChar d  -> Instruction (GetChar (s + d))           $ Instruction (Shift s) next'
+    PutChar e  -> Instruction (PutChar (expr s e))        $ Instruction (Shift s) next'
+    Assign d e -> Instruction (Assign (s + d) (expr s e)) $ Instruction (Shift s) next'
+    Shift s'   -> Instruction (Shift (s + s')) next'
+
+  Flow ctrl inner next' -> return $ Flow (control s ctrl) (mapAST (function s) (control s) inner) $ Instruction (Shift s) next'
+
+  Nop -> fail (show Nop)
 
   where
     expr s' = modifyValues (\case
       Get d -> mkGet (s' + d)
       v     -> Return v)
+
+    function s' = \case
+      GetChar d  -> GetChar (s' + d)
+      PutChar e  -> PutChar (expr s' e)
+      Assign d e -> Assign (s' + d) (expr s' e)
+      Shift s''  -> Shift s''
+
+    control s' = \case
+      Forever -> Forever
+      Once    -> Once
+      Never   -> Never
+      If e    -> If $ expr s' e
+      While e -> While $ expr s' e
 
 moveShifts ast = fail (show ast)
 
