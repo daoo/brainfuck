@@ -57,12 +57,12 @@ main = do
 
   let opts = pipe flags defaultOptions
 
-  let optimize =
+      optimize =
         case optOptimize opts of
           0 -> id
           _ -> fullOptimization
 
-  let codegen =
+      codegen =
         case optTarget opts of
           Indented -> Indented.showAST
           C99      -> C99.showAST
