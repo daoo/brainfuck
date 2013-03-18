@@ -22,6 +22,7 @@ exprRules =
   , swapConstGet
   , swapConstDown
   , rotateBinary
+  , sortGets
   ]
 
 addConsts :: Expr -> Rule Expr
@@ -100,3 +101,10 @@ rotateBinary :: Expr -> Rule Expr
 rotateBinary (OperateBinary Add (OperateBinary Add a b) c) = return $ OperateBinary Add a (OperateBinary Add b c)
 rotateBinary (OperateBinary Mul (OperateBinary Mul a b) c) = return $ OperateBinary Mul a (OperateBinary Mul b c)
 rotateBinary e                                             = fail (show e)
+
+sortGets :: Expr -> Rule Expr
+sortGets (OperateBinary Add a@(Return (Get a')) b@(Return (Get b')))                       | a' > b' = return $ OperateBinary Add b a
+sortGets (OperateBinary Mul a@(Return (Get a')) b@(Return (Get b')))                       | a' > b' = return $ OperateBinary Mul b a
+sortGets (OperateBinary Add a@(Return (Get a')) (OperateBinary Add b@(Return (Get b')) c)) | a' > b' = return $ OperateBinary Add b (OperateBinary Add a c)
+sortGets (OperateBinary Mul a@(Return (Get a')) (OperateBinary Mul b@(Return (Get b')) c)) | a' > b' = return $ OperateBinary Mul b (OperateBinary Mul a c)
+sortGets e                                                                                           = fail (show e)

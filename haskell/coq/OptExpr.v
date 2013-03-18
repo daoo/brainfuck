@@ -1,4 +1,4 @@
-Require Import Expr.
+Require Import Aux Expr.
 Require Import ssreflect ssrnat ssrint.
 Import intZmod intRing.
 
@@ -93,4 +93,14 @@ Section Expr_Optimize_defs.
     | OperateBinary Mul (OperateBinary Mul a b) c => OperateBinary Mul a (OperateBinary Mul b c)
     | _                                           => e
     end.
+
+  Definition sortGets (e: Expr) : Expr :=
+    match e with
+    | OperateBinary Add (Return (Get a') as a) (Return (Get b') as b)                       => if gtz a' b' then OperateBinary Add b a else e
+    | OperateBinary Mul (Return (Get a') as a) (Return (Get b') as b)                       => if gtz a' b' then OperateBinary Mul b a else e
+    | OperateBinary Add (Return (Get a') as a) (OperateBinary Add (Return (Get b') as b) c) => if gtz a' b' then OperateBinary Add b (OperateBinary Add a c) else e
+    | OperateBinary Mul (Return (Get a') as a) (OperateBinary Mul (Return (Get b') as b) c) => if gtz a' b' then OperateBinary Mul b (OperateBinary Mul a c) else e
+    | _                                                                                     => e
+    end.
+
 End Expr_Optimize_defs.

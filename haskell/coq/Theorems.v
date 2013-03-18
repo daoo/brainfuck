@@ -217,4 +217,30 @@ Section Theorems.
     case=> a b c //=.
     by rewrite mulzA.
   Qed.
+
+  Theorem optSortGets: forall (f: int -> int) (e: Expr),
+    eval f (sortGets e) = eval f e.
+  Proof.
+    move=> f.
+    do 4?case=> //=.
+    move=> a.
+      case=> //=. case=> b //=.
+      case: Aux.gtz => //=.
+      by rewrite addzC.
+
+      do 3?case=> //=.
+      move=> b c.
+      case: Aux.gtz => //=.
+      by rewrite addzA [X in addz X _]addzC addzA.
+
+    move=> a.
+      case=> //=. case=> b //=.
+      case Aux.gtz => //=.
+      by rewrite mulzC.
+
+      do 3?case=> //=.
+      move=> b c.
+      case Aux.gtz => //=.
+      by rewrite mulzA [X in mulz X _]mulzC mulzA.
+  Qed.
 End Theorems.
