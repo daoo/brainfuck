@@ -11,35 +11,35 @@ Section Theorems.
     eval f e = eval' f e.
   Proof.
     move=> f.
-    elim=> //=.
-      by move=> op e IH; rewrite IH.
-      by move=> op a IHa b IHb; rewrite IHa IHb.
+    elim=> //= [op e IH | op a IHa b IHb].
+      by rewrite IH.
+      by rewrite IHa IHb.
   Qed.
 
   Theorem unfoldId: forall (e: Expr),
     unfold OperateUnary OperateBinary Return e = e.
   Proof.
-    elim=> //=.
-      by move=> op e IH; rewrite IH.
-      by move=> op a IHa b IHb; rewrite IHa IHb.
+    elim=> //= [op e IH | op a IHa b IHb].
+      by rewrite IH.
+      by rewrite IHa IHb.
   Qed.
 
   Theorem addC: forall (f: int -> int) (a b: Expr),
     eval f (OperateBinary Add a b) = eval f (OperateBinary Add b a).
-  Proof. by move=> ? ? ?; rewrite /eval addzC. Qed.
+  Proof. move=> ? ? ?. by rewrite /eval addzC. Qed.
 
   Theorem addA: forall (f: int -> int) (a b c: Expr),
     eval f (OperateBinary Add a (OperateBinary Add b c)) =
       eval f (OperateBinary Add (OperateBinary Add a b) c).
-  Proof. by move=> ? ? ? ?; rewrite /eval addzA. Qed.
+  Proof. move=> ? ? ? ?. by rewrite /eval addzA. Qed.
 
   Theorem add0e: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Add (Return (Const 0)) e) = eval f e.
-  Proof. by move=> ? ?; rewrite /eval add0z. Qed.
+  Proof. move=> ? ?. by rewrite /eval add0z. Qed.
 
   Theorem adde0: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Add e (Return (Const 0))) = eval f e.
-  Proof. by move=> ? ?; rewrite /eval addzC add0z. Qed.
+  Proof. move=> ? ?. by rewrite /eval addzC add0z. Qed.
 
   Theorem addnn: forall (f: int -> int) (a b: int),
     eval f (OperateBinary Add (Return (Const a)) (Return (Const b))) =
@@ -48,39 +48,39 @@ Section Theorems.
 
   Theorem mulC: forall (f: int -> int) (a b: Expr),
     eval f (OperateBinary Mul a b) = eval f (OperateBinary Mul b a).
-  Proof. by move=> ? ? ?; rewrite /eval mulzC. Qed.
+  Proof. move=> ? ? ?. by rewrite /eval mulzC. Qed.
 
   Theorem mulA: forall (f: int -> int) (a b c: Expr),
     eval f (OperateBinary Mul a (OperateBinary Mul b c)) =
       eval f (OperateBinary Mul (OperateBinary Mul a b) c).
-  Proof. by move=> ? ? ? ?; rewrite /eval mulzA. Qed.
+  Proof. move=> ? ? ? ?. by rewrite /eval mulzA. Qed.
 
   Theorem mul0e: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul (Return (Const 0)) e) = 0.
-  Proof. by move=> ? ?; rewrite /eval mul0z. Qed.
+  Proof. move=> ? ?. by rewrite /eval mul0z. Qed.
 
   Theorem mule0: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul e (Return (Const 0))) = 0.
-  Proof. by move=> ? ?; rewrite /eval mulz0. Qed.
+  Proof. move=> ? ?. by rewrite /eval mulz0. Qed.
 
   Theorem mul1e: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul (Return (Const 1)) e) = eval f e.
-  Proof. by move=> ? ?; rewrite /eval mul1z. Qed.
+  Proof. move=> ? ?. by rewrite /eval mul1z. Qed.
 
   Theorem mule1: forall (f: int -> int) (e: Expr),
     eval f (OperateBinary Mul e (Return (Const 1))) = eval f e.
-  Proof. by move=> ? ?; rewrite /eval mulzC mul1z. Qed.
+  Proof. move=> ? ?. by rewrite /eval mulzC mul1z. Qed.
 
   Theorem optAddConsts: forall (f: int -> int) (e: Expr),
     eval f (addConsts e) = eval f e.
-  Proof. by move=> ?; do 4?case=> //=; move=> ?; do ?case=> //=. Qed.
+  Proof. move=> ?. do 4?case=> //=. move=> ?. by do ?case=> //=. Qed.
 
   Theorem optAddZeroL: forall (f: int -> int) (e: Expr),
     eval f (addZeroL e) = eval f e.
   Proof.
     move=> f.
-    do 5?case=> //=.
-    case=> e //=.
+    do 6?case=> //=.
+    move=> e.
     case: eval => n //=.
     by rewrite subn0.
   Qed.
@@ -89,8 +89,8 @@ Section Theorems.
     eval f (addZeroR e) = eval f e.
   Proof.
     move=> f.
-    case=> //=.
-    case=> e //=.
+    do 2?case=> //=.
+    move=> e.
     do 4?case=> //=.
     by rewrite addzC add0z.
   Qed.
@@ -143,9 +143,7 @@ Section Theorems.
     do 2?case=> //=.
     move=> e.
     do 4?case=> //=.
-    case: eval => n //=.
-    by rewrite muln1.
-    by rewrite muln1.
+    by case: eval => n //=; rewrite muln1.
   Qed.
 
   Theorem optNegConstant: forall (f: int -> int) (e: Expr),
@@ -164,43 +162,17 @@ Section Theorems.
     eval f (swapConstGet e) = eval f e.
   Proof.
     move=> f.
-    do 3?case=> //=.
-    case=> i //=.
-    case=> //=.
-    case=> i' //=.
+    do 4?case=> //=; move=> a; do 2?case=> //=; move=> b.
     by rewrite addzC.
-    case=> //=.
-    case=> i //=.
-    case=> //=.
-    case=> i' //=.
     by rewrite mulzC.
-    case=> //=.
-    case=> i' //=.
-    case f => n //=.
-    by rewrite mulnC.
   Qed.
 
   Theorem optSwapConstDown: forall (f: int -> int) (e: Expr),
     eval f (swapConstDown e) = eval f e.
   Proof.
     move=> f.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    case=> i //=.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    move=> i' e.
+    do 4?case=> //=; move=> a; do 4?case=> //=; move=> b c.
     by rewrite addzA [X in addz X _]addzC addzA.
-    case=> //=.
-    case=> i //=.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    move=> i' e.
     by rewrite mulzA [X in mulz X _]mulzC mulzA.
   Qed.
 
@@ -208,13 +180,8 @@ Section Theorems.
     eval f (rotateBinary e) = eval f e.
   Proof.
     move=> f.
-    case=> //=.
-    case=> //=.
-    case=> //=.
-    case=> a b c //=.
+    do 4?case=> //=; move=> a b c.
     by rewrite addzA.
-    case=> //=.
-    case=> a b c //=.
     by rewrite mulzA.
   Qed.
 
@@ -222,23 +189,25 @@ Section Theorems.
     eval f (sortGets e) = eval f e.
   Proof.
     move=> f.
-    do 4?case=> //=.
-    move=> a.
-      case=> //=. case=> b //=.
+    do 4?case=> //=; move=> a; do 2?case=> //=.
+      (* a + b *)
+      move=> b.
       case: Aux.gtz => //=.
       by rewrite addzC.
 
-      do 3?case=> //=.
+      (* a + (b + c) *)
+      do 2?case=> //=.
       move=> b c.
       case: Aux.gtz => //=.
       by rewrite addzA [X in addz X _]addzC addzA.
 
-    move=> a.
-      case=> //=. case=> b //=.
+      (* a * b *)
+      move=> b.
       case Aux.gtz => //=.
       by rewrite mulzC.
 
-      do 3?case=> //=.
+      (* a * (b * c) *)
+      do 2?case=> //=.
       move=> b c.
       case Aux.gtz => //=.
       by rewrite mulzA [X in mulz X _]mulzC mulzA.
