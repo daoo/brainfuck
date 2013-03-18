@@ -9,7 +9,7 @@ Expr.hs: Extraction.v Expr.vo
 	$(coqc) Extraction.v
 
 AST.vo: Expr.vo AST.v
-	$(coqc) Expr.v
+	$(coqc) AST.v
 
 Aux.vo: Aux.v
 	$(coqc) Aux.v
@@ -20,7 +20,7 @@ Expr.vo: Aux.vo Expr.v
 OptExpr.vo: Expr.vo OptExpr.v
 	$(coqc) OptExpr.v
 
-Theorems.vo: Expr.vo OptExpr.vo Theorems.v
+Theorems.vo: Expr.vo AST.vo OptExpr.vo Theorems.v
 	$(coqc) Theorems.v
 
 clean:
