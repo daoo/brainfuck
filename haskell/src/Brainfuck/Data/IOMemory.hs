@@ -3,7 +3,7 @@ module Brainfuck.Data.IOMemory where
 import Brainfuck.Data.Expr
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Data.Array.IO
 import Data.Char
 

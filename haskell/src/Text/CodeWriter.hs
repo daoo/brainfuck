@@ -9,8 +9,8 @@ module Text.CodeWriter
   , writeCode
   ) where
 
-import Control.Monad.Writer
-import Control.Monad.State
+import Control.Monad.State.Strict
+import Control.Monad.Writer.Strict
 
 type CodeWriter = StateT Int (Writer String)
 

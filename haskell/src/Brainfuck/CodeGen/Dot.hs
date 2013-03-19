@@ -3,7 +3,7 @@ module Brainfuck.CodeGen.Dot (showExpr, showAST) where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Text.CodeWriter
 
 type Id = Int

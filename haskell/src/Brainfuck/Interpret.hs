@@ -4,7 +4,7 @@ module Brainfuck.Interpret (Machine(..), newMachine, newMemory, run) where
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Control.Applicative hiding (empty)
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Data.Char
 import Data.ListZipper
 import Data.Sequence

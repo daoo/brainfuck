@@ -7,7 +7,7 @@ module Brainfuck.Optimization.Rewriting
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Control.Applicative
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 type Rule a = Maybe a
 
