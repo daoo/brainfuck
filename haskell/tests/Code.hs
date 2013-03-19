@@ -3,11 +3,6 @@ module Code where
 import Brainfuck.CodeGen.Indented as Indented
 import Brainfuck.Data.AST
 import Brainfuck.Interpret
-import Brainfuck.Optimization.Analysis
-import Data.Char
-import Data.Foldable
-import Data.ListZipper
-import Data.Sequence hiding (replicate)
 import Test.QuickCheck hiding (output)
 
 printableChar :: Gen Char
@@ -30,27 +25,8 @@ instance Arbitrary PrettyAST where
 instance Show PrettyAST where
   show (PrettyAST ast) = Indented.showAST ast
 
-compareMachine :: Int -> Machine -> Machine -> Bool
-compareMachine i (Machine _ out1 m1) (Machine _ out2 m2) =
-  cut i m1 == cut i m2 && out1 == out2
-
-compareOutput :: Machine -> Machine -> Bool
-compareOutput s1 s2 = output s1 == output s2
-
-testCode :: (Machine -> Machine -> Bool) -> AST -> AST -> Bool
-testCode f ast ast' = f (run1 ast) (run1 ast')
+testCode :: AST -> AST -> Bool
+testCode ast ast' = run [] ast == run [] ast'
 
 checkTransform :: (AST -> AST) -> AST -> Bool
-checkTransform f ast = testCode (compareMachine s) ast ast'
-  where
-    ast' = f ast
-
-    s = let (xsMin, xsMax) = memorySize ast
-            (ysMin, ysMax) = memorySize ast'
-         in 1 + abs xsMin + abs xsMax + abs ysMin + abs ysMax
-
-run1 :: AST -> Machine
-run1 = run (Machine [1..] empty newMemory)
-
-run2 :: String -> AST -> String
-run2 inp = map (chr . fromIntegral) . toList . output . run (newMachine inp)
+checkTransform f ast = testCode ast (f ast)

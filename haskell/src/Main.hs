@@ -5,12 +5,9 @@ import Brainfuck.CodeGen.Dot as Dot
 import Brainfuck.CodeGen.Haskell as Haskell
 import Brainfuck.CodeGen.Indented as Indented
 import Brainfuck.Compile
-import Brainfuck.Data.AST
 import Brainfuck.Interpret
 import Brainfuck.Optimization.Pipeline
 import Brainfuck.Parse
-import Data.Char
-import Data.Foldable (toList)
 import Ext
 import System.Console.GetOpt
 import System.Environment
@@ -75,7 +72,7 @@ main = do
     Interpret -> do
       ast <- astFrom file
       inp <- getContents
-      putStr $ runBF inp $ optimize ast
+      putStr $ run1 inp $ optimize ast
 
   where
     astFrom file = do
@@ -83,6 +80,3 @@ main = do
       case parseBrainfuck code of
         Left err -> error $ show err
         Right bf -> return $ compile bf
-
-    runBF :: String -> AST -> String
-    runBF inp = map (chr . fromIntegral) . toList . output . run (newMachine inp)
