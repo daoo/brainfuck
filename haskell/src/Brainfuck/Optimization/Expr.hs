@@ -11,6 +11,7 @@ exprRules =
   , idAny
   , negCollaps
   , negConstant
+  , negDistAdd
   , addZeroL
   , addZeroR
   , mulZeroL
@@ -19,6 +20,8 @@ exprRules =
   , mulOneR
   , mulNegOneL
   , mulNegOneR
+  , mulDistAddL
+  , mulDistAddR
   , swapConstGet
   , swapConstDown
   , rotateBinary
@@ -66,6 +69,14 @@ mulNegOneR :: Expr -> Rule Expr
 mulNegOneR (OperateBinary Mul a (Return (Const (-1)))) = return $ OperateUnary Negate a
 mulNegOneR e                                           = fail (show e)
 
+mulDistAddL :: Expr -> Rule Expr
+mulDistAddL (OperateBinary Mul a@(Return (Const _)) (OperateBinary Add b c)) = return $ OperateBinary Add (OperateBinary Mul a b) (OperateBinary Mul a c)
+mulDistAddL e                                                                = fail (show e)
+
+mulDistAddR :: Expr -> Rule Expr
+mulDistAddR (OperateBinary Mul (OperateBinary Add a b) c@(Return (Const _))) = return $ OperateBinary Add (OperateBinary Mul a c) (OperateBinary Mul b c)
+mulDistAddR e                                                                = fail (show e)
+
 negConstant :: Expr -> Rule Expr
 negConstant (OperateUnary Negate (Return (Const a))) = return $ mkInt (-a)
 negConstant e                                        = fail (show e)
@@ -73,6 +84,10 @@ negConstant e                                        = fail (show e)
 negCollaps :: Expr -> Rule Expr
 negCollaps (OperateUnary Negate (OperateUnary Negate a)) = return a
 negCollaps e                                             = fail (show e)
+
+negDistAdd :: Expr -> Rule Expr
+negDistAdd (OperateUnary Negate (OperateBinary Add a b)) = return $ OperateBinary Add (OperateUnary Negate a) (OperateUnary Negate b)
+negDistAdd e                                             = fail (show e)
 
 idAny :: Expr -> Rule Expr
 idAny (OperateUnary Id a) = return a
@@ -87,15 +102,11 @@ swapConstDown :: Expr -> Rule Expr
 swapConstDown
   (OperateBinary Add
     a@(Return (Const _))
-      (OperateBinary Add
-        b@(Return (Get _))
-        c)) = return $ OperateBinary Add b (OperateBinary Add a c)
+      (OperateBinary Add b c)) | not (isConst b) = return $ OperateBinary Add b (OperateBinary Add a c)
 swapConstDown
   (OperateBinary Mul
     a@(Return (Const _))
-      (OperateBinary Mul
-        b@(Return (Get _))
-        c)) = return $ OperateBinary Mul b (OperateBinary Mul a c)
+      (OperateBinary Mul b c)) | not (isConst b) = return $ OperateBinary Mul b (OperateBinary Mul a c)
 swapConstDown e = fail (show e)
 
 rotateBinary :: Expr -> Rule Expr

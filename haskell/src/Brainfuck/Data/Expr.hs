@@ -22,6 +22,10 @@ mkInt, mkGet :: Int -> Expr
 mkInt = Return . Const
 mkGet = Return . Get
 
+isConst :: Expr -> Bool
+isConst (Return (Const _)) = True
+isConst _                  = False
+
 add, mul :: Expr -> Expr -> Expr
 add = OperateBinary Add
 mul = OperateBinary Mul
