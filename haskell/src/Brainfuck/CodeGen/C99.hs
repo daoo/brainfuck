@@ -21,23 +21,18 @@ showExpr = \case
 
     binary op a b = case op of
       Add -> showExpr a . showString " + " . showExpr b
-      Mul -> showParen (paren Mul a) (showExpr a) . showString " * " . showParen (paren Mul b) (showExpr b)
+      Mul -> showParen (parenMul a) (showExpr a) . showString " * " . showParen (parenMul b) (showExpr b)
 
     value = \case
       Const c -> shows c
       Get d   -> showString "ptr[" . shows d . showString "]"
 
-    paren Mul = \case
+    parenMul = \case
       OperateBinary Add _ _ -> True
       OperateBinary Mul _ _ -> False
-      OperateUnary Id a     -> paren Mul a
+      OperateUnary Id a     -> parenMul a
       OperateUnary Negate _ -> True
       Return _              -> False
-
-    paren Add = \case
-      OperateUnary Negate _ -> True
-      OperateUnary Id a     -> paren Add a
-      _                     -> False
 
 showAST :: AST -> String
 showAST ast = writeCode $ do
@@ -56,7 +51,7 @@ showAST ast = writeCode $ do
   where
     go :: AST -> CodeWriter ()
     go = \case
-      Nop -> return ()
+      Nop                  -> return ()
       Instruction fun next -> lineM (function fun >> string ";") >> go next
       Flow ctrl inner next -> control ctrl inner >> go next
 
@@ -69,17 +64,17 @@ showAST ast = writeCode $ do
 
     block :: String -> Expr -> AST -> CodeWriter ()
     block word e ys = do
-      lineM $ string word >> string " (" >> (string $ showExpr e ") {")
+      line $ showString word $ showString " (" $ showExpr e ") {"
       indentedM $ go ys
       line "}"
 
-    function x = case x of
+    function = \case
       Assign d e -> ptr d "=" (showExpr e "")
 
-      PutChar (Return (Const c)) -> string "putchar(" >> string (show $ chr c) >> string ")"
+      PutChar (Return (Const c)) -> string $ showString "putchar(" $ shows (chr c) ")"
 
-      Shift s   -> string "ptr += " >> string (show s)
-      PutChar e -> string "putchar(" >> string (showExpr e ")")
+      Shift s   -> string $ showString "ptr += " $ show s
+      PutChar e -> string $ showString "putchar(" $ showExpr e ")"
       GetChar p -> ptr p "=" "getchar()"
 
     ptr :: Int -> String -> String -> CodeWriter ()

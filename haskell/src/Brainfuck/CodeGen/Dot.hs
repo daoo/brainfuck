@@ -21,8 +21,8 @@ instance Show Outline where
 newId :: DotState Id
 newId = modify (+1) >> get
 
-makeNode :: Outline -> Id -> String -> DotState ()
-makeNode outline n label = lift $ lineM $ do
+makeNode :: Outline -> String -> Id -> DotState ()
+makeNode outline label n = lift $ lineM $ do
   string (show n)
   string " [label=\""
   string label
@@ -39,18 +39,16 @@ makeEdge from to = lift $ lineM $ do
 
 showExpr :: Expr -> DotState ()
 showExpr = \case
-  Return v -> do
-    n <- get
-    makeNode Ellipse n (value v)
+  Return v -> get >>= makeNode Ellipse (value v)
 
   OperateUnary op a -> do
     n <- get
-    makeNode Ellipse n (unop op)
+    makeNode Ellipse (unop op) n
     next n a
 
   OperateBinary op a b -> do
     n <- get
-    makeNode Ellipse n (binop op)
+    makeNode Ellipse (binop op) n
     next n a
     next n b
 
@@ -81,28 +79,26 @@ showAST ast = writeCode $ do
   where
     go :: AST -> DotState ()
     go = \case
-      Nop -> do
-        n <- get
-        makeNode Box n "Nop"
+      Nop -> get >>= makeNode Box "Nop"
 
       Instruction fun next -> do
         n <- get
         case fun of
-          Assign d e -> exprNode Box n (showString "Assign " $ show d) e
-          Shift i    -> makeNode Box n (showString "Shift " $ show i)
-          PutChar e  -> exprNode Box n "PutChar" e
-          GetChar d  -> makeNode Box n (showString "GetChar " $ show d)
+          Assign d e -> exprNode Box (showString "Assign " $ show d) e n
+          Shift i    -> makeNode Box (showString "Shift " $ show i) n
+          PutChar e  -> exprNode Box "PutChar" e n
+          GetChar d  -> makeNode Box (showString "GetChar " $ show d) n
 
         nextNode n next
 
       Flow ctrl inner next -> do
         n <- get
         case ctrl of
-          Forever -> makeNode Diamond n "Forever"
-          Once    -> makeNode Diamond n "Once"
-          Never   -> makeNode Diamond n "Never"
-          If e    -> exprNode Diamond n "If" e
-          While e -> exprNode Diamond n "While" e
+          Forever -> makeNode Diamond "Forever" n
+          Once    -> makeNode Diamond "Once" n
+          Never   -> makeNode Diamond "Never" n
+          If e    -> exprNode Diamond "If" e n
+          While e -> exprNode Diamond "While" e n
 
         nextNode n inner
         nextNode n next
@@ -112,8 +108,7 @@ showAST ast = writeCode $ do
       makeEdge n n'
       go ast'
 
-    exprNode outline n l expr = do
-      makeNode outline n l
-      ne <- newId
-      makeEdge n ne
+    exprNode outline l expr n = do
+      makeNode outline l n
+      newId >>= makeEdge n
       showExpr expr

@@ -32,12 +32,11 @@ showAST ast = writeCode $ do
       Never   -> block "when" (Const 0)
       If e    -> block "when" e
 
-    -- TODO: Do not use ++
     function = \case
-      Assign d e -> line $ "set " ++ show d ++ " $ " ++ show e
-      PutChar e  -> line $ "put $ " ++ show e
-      GetChar d  -> line $ "get " ++ show d
-      Shift d    -> line $ "shift (" ++ show d ++ ")"
+      Assign d e -> line $ showString "set " $ shows d $ showString " $ " $ show e
+      PutChar e  -> line $ showString "put $ " $ show e
+      GetChar d  -> line $ showString "get " $ show d
+      Shift d    -> line $ showString "shift (" $ shows d ")"
 
     block str e = do
       lineM $ do
