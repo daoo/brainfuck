@@ -73,7 +73,14 @@ Section Theorems.
 
   Theorem optAddConsts: forall (f: int -> int) (e: Expr),
     eval f (addConsts e) = eval f e.
-  Proof. move=> ?. do 4?case=> //=. move=> ?. by do ?case=> //=. Qed.
+  Proof.
+    move=> f.
+    do 4?case=> //=.
+    move=> a.
+    do 4?case=> //=.
+    move=> b c.
+    by rewrite addzA.
+  Qed.
 
   Theorem optAddZeroL: forall (f: int -> int) (e: Expr),
     eval f (addZeroL e) = eval f e.

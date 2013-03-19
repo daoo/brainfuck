@@ -26,8 +26,9 @@ exprRules =
   ]
 
 addConsts :: Expr -> Rule Expr
-addConsts (OperateBinary Add (Return (Const a)) (Return (Const b))) = return $ mkInt (a + b)
-addConsts e                                                         = fail (show e)
+addConsts (OperateBinary Add (Return (Const a)) (Return (Const b)))                       = return $ mkInt (a + b)
+addConsts (OperateBinary Add (Return (Const a)) (OperateBinary Add (Return (Const b)) c)) = return $ OperateBinary Add (mkInt (a + b)) c
+addConsts e                                                                               = fail (show e)
 
 addZeroL :: Expr -> Rule Expr
 addZeroL (OperateBinary Add (Return (Const 0)) b) = return b

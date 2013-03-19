@@ -9,8 +9,9 @@ Unset Printing Implicit Defensive.
 Section Expr_Optimize_defs.
   Definition addConsts (e: Expr) : Expr :=
     match e with
-    | OperateBinary Add (Return (Const a)) (Return (Const b)) => Return (Const (addz a b))
-    | _                                                       => e
+    | OperateBinary Add (Return (Const a)) (Return (Const b))                       => Return (Const (addz a b))
+    | OperateBinary Add (Return (Const a)) (OperateBinary Add (Return (Const b)) c) => OperateBinary Add (Return (Const (addz a b))) c
+    | _                                                                             => e
     end.
 
   Definition addZeroL (e: Expr) : Expr :=
