@@ -1,7 +1,7 @@
 module Data.ListZipper where
 
+import Brainfuck.Utility
 import Control.Applicative
-import Ext
 import Test.QuickCheck.Arbitrary
 
 data ListZipper a = ListZipper

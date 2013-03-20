@@ -3,13 +3,13 @@ module Brainfuck.Interpret (run, run1) where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Utility
 import Control.Applicative
 import Control.Monad.State.Strict
 import Data.Char
 import Data.Foldable
 import Data.ListZipper
 import Data.Word
-import Ext
 import qualified Data.Sequence as S
 
 type Input  = [Word8]

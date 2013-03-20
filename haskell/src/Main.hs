@@ -8,7 +8,7 @@ import Brainfuck.Compile
 import Brainfuck.Interpret
 import Brainfuck.Optimization.Pipeline
 import Brainfuck.Parse
-import Ext
+import Brainfuck.Utility
 import System.Console.GetOpt
 import System.Environment
 import System.Exit

@@ -3,8 +3,8 @@ module Brainfuck.Optimization.Assignment where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Utility
 import Data.Maybe
-import Ext
 import qualified Data.Graph as G
 import qualified Data.Map as M
 
