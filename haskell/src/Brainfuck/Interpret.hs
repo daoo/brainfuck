@@ -5,17 +5,18 @@ import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Control.Applicative
 import Control.Monad.State.Strict
-import Control.Monad.Writer.Strict
 import Data.Char
+import Data.Foldable
 import Data.ListZipper
 import Data.Word
 import Ext
+import qualified Data.Sequence as S
 
 type Input  = [Word8]
-type Output = [Word8]
+type Output = S.Seq Word8
 type Memory = ListZipper Word8
 
-type Machine = StateT Memory (StateT Input (Writer Output))
+type Machine = StateT Memory (StateT Input (State Output))
 
 input :: Machine Word8
 input = do
@@ -24,7 +25,7 @@ input = do
   return x
 
 output :: Word8 -> Machine ()
-output = tell . (:[])
+output x = lift $ lift $ modify (S.|> x)
 
 expr :: Expr -> Machine Word8
 expr e = get >>= \mem -> return $ eval' (`peek` mem) e
@@ -36,10 +37,10 @@ newMemory = ListZipper zeros 0 zeros
   where zeros = repeat 0
 
 run1 :: String -> AST -> String
-run1 inp = map (chr . fromIntegral) . run (map (fromIntegral . ord) inp)
+run1 inp = map (chr . fromIntegral) . toList . run (map (fromIntegral . ord) inp)
 
 run :: Input -> AST -> Output
-run inp ast = execWriter (execStateT (execStateT (go ast) newMemory) inp)
+run inp ast = execState (execStateT (execStateT (go ast) newMemory) inp) S.empty
   where
     go = \case
       Nop                  -> return ()
