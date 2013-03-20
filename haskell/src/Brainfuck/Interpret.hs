@@ -3,6 +3,7 @@ module Brainfuck.Interpret (run, run1) where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Control.Applicative
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
 import Data.Char
@@ -25,6 +26,11 @@ input = do
 output :: Word8 -> Machine ()
 output = tell . (:[])
 
+expr :: Expr -> Machine Word8
+expr e = get >>= \mem -> return $ eval' (`peek` mem) e
+  where
+    eval' f = fromIntegral . eval (fromIntegral . f)
+
 newMemory :: Memory
 newMemory = ListZipper zeros 0 zeros
   where zeros = repeat 0
@@ -42,9 +48,9 @@ run inp ast = execWriter (execStateT (execStateT (go ast) newMemory) inp)
 
     function = \case
       Shift s    -> modify (move s)
-      Assign d e -> eval' e >>= modify . (`set` d)
-      PutChar e  -> eval' e >>= output
-      GetChar d  -> input >>= modify . (`set` d)
+      Assign d e -> expr e >>= modify . (set d)
+      PutChar e  -> expr e >>= output
+      GetChar d  -> input >>= modify . (set d)
 
     flow inner = \case
       Forever -> forever (go inner)
@@ -53,13 +59,6 @@ run inp ast = execWriter (execStateT (execStateT (go ast) newMemory) inp)
       While e -> while (continue e) (go inner)
       If e    -> when' (continue e) (go inner)
 
-    continue e = do
-      x <- eval' e
-      return $ x /= (0 :: Word8)
+    continue = ((/= (0 :: Word8)) <$>) . expr
 
-    eval' :: Expr -> Machine Word8
-    eval' e = do
-      mem <- get
-      return $ fromIntegral $ eval (fromIntegral . (`peek` mem)) e
-
-    set = applyAt . const
+    set = flip (applyAt . const)
