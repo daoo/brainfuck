@@ -16,19 +16,29 @@ type Input  = [Word8]
 type Output = S.Seq Word8
 type Memory = ListZipper Word8
 
-type Machine = StateT Memory (StateT Input (State Output))
+data Machine = Machine
+  { minput :: Input
+  , moutput :: Output
+  , mmemory :: Memory
+  }
 
-input :: Machine Word8
+input :: State Machine Word8
 input = do
-  (x:xs) <- lift get
-  lift (put xs)
-  return x
+  m <- get
+  put (m { minput = tail (minput m) })
+  return (head (minput m))
 
-output :: Word8 -> Machine ()
-output x = lift $ lift $ modify (S.|> x)
+output :: Word8 -> State Machine ()
+output x = modify $ \m -> m { moutput = moutput m S.|> x }
 
-expr :: Expr -> Machine Word8
-expr e = get >>= \mem -> return $ eval' (`peek` mem) e
+set :: Int -> Word8 -> State Machine ()
+set d x = modify $ \m -> m { mmemory = applyAt (const x) d (mmemory m) }
+
+shift :: Int -> State Machine ()
+shift d = modify $ \m -> m { mmemory = move d (mmemory m) }
+
+expr :: Expr -> State Machine Word8
+expr e = mmemory <$> get >>= \mem -> return $ eval' (`peek` mem) e
   where
     eval' f = fromIntegral . eval (fromIntegral . f)
 
@@ -40,18 +50,19 @@ run1 :: String -> AST -> String
 run1 inp = map (chr . fromIntegral) . toList . run (map (fromIntegral . ord) inp)
 
 run :: Input -> AST -> Output
-run inp ast = execState (execStateT (execStateT (go ast) newMemory) inp) S.empty
+run inp ast = moutput $ execState (go ast) (Machine inp S.empty newMemory)
   where
+    go :: AST -> State Machine ()
     go = \case
       Nop                  -> return ()
       Instruction fun next -> function fun >> go next
       Flow ctrl inner next -> flow inner ctrl >> go next
 
     function = \case
-      Shift s    -> modify (move s)
-      Assign d e -> expr e >>= modify . (set d)
+      Shift s    -> shift s
+      Assign d e -> expr e >>= set d
       PutChar e  -> expr e >>= output
-      GetChar d  -> input >>= modify . (set d)
+      GetChar d  -> input >>= set d
 
     flow inner = \case
       Forever -> forever (go inner)
@@ -61,5 +72,3 @@ run inp ast = execState (execStateT (execStateT (go ast) newMemory) inp) S.empty
       If e    -> when' (continue e) (go inner)
 
     continue = ((/= (0 :: Word8)) <$>) . expr
-
-    set = flip (applyAt . const)
