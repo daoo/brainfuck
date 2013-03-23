@@ -11,14 +11,9 @@ import Text.CodeWriter
 showExpr :: Expr -> ShowS
 showExpr = \case
   Return v             -> value v
-  OperateUnary op a    -> unary op a
   OperateBinary op a b -> binary op a b
 
   where
-    unary op a = case op of
-      Id     -> showExpr a
-      Negate -> showString "-" . showParen True (showExpr a)
-
     binary op a b = case op of
       Add -> showExpr a . showString " + " . showExpr b
       Mul -> showParen (parenMul a) (showExpr a) . showString " * " . showParen (parenMul b) (showExpr b)
@@ -30,8 +25,6 @@ showExpr = \case
     parenMul = \case
       OperateBinary Add _ _ -> True
       OperateBinary Mul _ _ -> False
-      OperateUnary Id a     -> parenMul a
-      OperateUnary Negate _ -> True
       Return _              -> False
 
 showAST :: AST -> String

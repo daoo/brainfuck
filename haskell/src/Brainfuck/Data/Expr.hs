@@ -7,14 +7,10 @@ import Test.QuickCheck
 data Value = Get !Int | Const !Int
   deriving (Ord, Eq, Show)
 
-data UnaryOperator = Id | Negate
-  deriving (Ord, Eq, Show)
-
 data BinaryOperator = Add | Mul
   deriving (Ord, Eq, Show)
 
 data Expr = Return Value
-          | OperateUnary UnaryOperator Expr
           | OperateBinary BinaryOperator Expr Expr
   deriving (Ord, Eq, Show)
 
@@ -39,13 +35,6 @@ instance Arbitrary Value where
     Const i -> map Const (shrink i)
     Get i   -> map Get (shrink i) ++ [Const 0]
 
-instance Arbitrary UnaryOperator where
-  arbitrary = oneof [return Id, return Negate]
-
-  shrink = \case
-    Id     -> []
-    Negate -> [Id]
-
 instance Arbitrary BinaryOperator where
   arbitrary = oneof [return Add, return Mul]
 
@@ -59,16 +48,12 @@ instance Arbitrary Expr where
       expr 0 _ = leaf
       expr n s = oneof [leaf, branch n s]
 
-      branch n s = frequency
-        [ (1, OperateUnary <$> arbitrary <*> (expr (n - 1) s))
-        , (4, OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
-        ]
+      branch n s = OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s)
 
       leaf = Return <$> arbitrary
 
   shrink = \case
     Return v             -> map Return $ shrink v
-    OperateUnary op a    -> a : zipWith OperateUnary (cycle' (shrink op)) (shrink a)
     OperateBinary op a b -> a : b : zipWith3 OperateBinary (cycle' (shrink op)) (shrink a) (shrink b)
 
     where
@@ -79,38 +64,33 @@ instance Num Expr where
   (+) = OperateBinary Add
   (*) = OperateBinary Mul
 
-  negate = OperateUnary Negate
+  negate = undefined
 
   abs    = undefined
   signum = undefined
 
   fromInteger = mkInt . fromInteger
 
-unfold :: (UnaryOperator -> a -> a) -> (BinaryOperator -> a -> a -> a) -> (Value -> a) -> Expr -> a
-unfold unary binary value = \case
+unfold :: (BinaryOperator -> a -> a -> a) -> (Value -> a) -> Expr -> a
+unfold binary value = \case
   Return v             -> value v
-  OperateUnary op a    -> unary op (unfold' a)
   OperateBinary op a b -> binary op (unfold' a) (unfold' b)
   where
-    unfold' = unfold unary binary value
+    unfold' = unfold binary value
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
-inlineExpr d1 e = unfold OperateUnary OperateBinary f
+inlineExpr d1 e = unfold OperateBinary f
   where
     f = \case
       Get d2 | d1 == d2 -> e
       v                 -> Return v
 
 modifyValues :: (Value -> Expr) -> Expr -> Expr
-modifyValues = unfold OperateUnary OperateBinary
+modifyValues = unfold OperateBinary
 
 eval :: (Int -> Int) -> Expr -> Int
-eval f = unfold unary binary value
+eval f = unfold binary value
   where
-    unary op a = case op of
-      Id     -> a
-      Negate -> -a
-
     binary op a b = case op of
       Add -> a + b
       Mul -> a * b

@@ -13,12 +13,8 @@ constOnly = sized $ \n -> expr n n
     expr 0 _ = leaf
     expr n s = oneof [leaf, branch n s]
 
-    branch n s = frequency
-      [ (1, OperateUnary <$> arbitrary <*> (expr (n - 1) s))
-      , (4, OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s))
-      ]
-
-    leaf = mkInt <$> arbitrary
+    branch n s = OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s)
+    leaf       = mkInt <$> arbitrary
 
 propExprOptimizeConst :: Property
 propExprOptimizeConst = forAll constOnly (isConst . simplify)

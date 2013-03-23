@@ -9,7 +9,7 @@ import Data.Maybe
 
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
-exprDepends d = unfold (flip const) (const (||)) f
+exprDepends d = unfold (const (||)) f
   where
     f (Get d') = d == d'
     f _        = False
@@ -69,7 +69,7 @@ memorySize = \case
       While e -> expr e
       _       -> (0, 0)
 
-    expr = unfold (flip const) (const (<+>)) (\case
+    expr = unfold (const (<+>)) (\case
       Get d -> g d
       _     -> g 0)
 
@@ -90,7 +90,7 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar e  -> unfold (flip const) (const (||)) g e
+      PutChar e  -> unfold (const (||)) g e
       Assign _ _ -> True
       GetChar _  -> True
       Shift _    -> True

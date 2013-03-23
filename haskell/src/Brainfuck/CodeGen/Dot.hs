@@ -41,11 +41,6 @@ showExpr :: Expr -> DotState ()
 showExpr = \case
   Return v -> get >>= makeNode Ellipse (value v)
 
-  OperateUnary op a -> do
-    n <- get
-    makeNode Ellipse (unop op) n
-    next n a
-
   OperateBinary op a b -> do
     n <- get
     makeNode Ellipse (binop op) n
@@ -61,10 +56,6 @@ showExpr = \case
     value = \case
       Get d   -> showString "#" $ show d
       Const c -> show c
-
-    unop = \case
-      Id     -> "Id"
-      Negate -> "-"
 
     binop = \case
       Add -> "+"

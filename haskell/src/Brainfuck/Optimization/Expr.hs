@@ -45,9 +45,6 @@ analyse e = execState (go 1 e) (Analysis 0 M.empty)
       Return (Const c) -> plus (factor * c)
       Return (Get d)   -> variable d factor
 
-      OperateUnary Id a     -> go factor a
-      OperateUnary Negate a -> go (negate factor) a
-
       OperateBinary Add a b -> go factor a >> go factor b
 
       OperateBinary Mul (Return (Const a)) b -> go (factor * a) b

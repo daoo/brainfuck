@@ -76,6 +76,6 @@ topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
-    get = unfold (flip const) (const (++)) (\case
+    get = unfold (const (++)) (\case
       Get d -> [d]
       _     -> [])

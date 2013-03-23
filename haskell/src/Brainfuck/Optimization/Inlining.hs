@@ -30,7 +30,7 @@ occurs d = \case
     If e    -> expr e ++ InIf (occurs d inner) : occurs d next
 
   where
-    expr = unfold (flip const) (const (++)) (\case
+    expr = unfold (const (++)) (\case
       Get d' | d == d' -> [GetOnce]
       _                -> [])
 
@@ -66,7 +66,7 @@ optimisticInlining d e xs | c1 <= c2 = Nothing
     c2  = ilComplexity xs'
 
 exprComplexity :: Expr -> Int
-exprComplexity = unfold (flip const) (const (+)) f
+exprComplexity = unfold (const (+)) f
   where
     f = \case
       Const _ -> 0
