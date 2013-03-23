@@ -6,6 +6,7 @@ import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
+import Brainfuck.Utility
 import qualified Data.Set as S
 
 astRules :: [AST -> Rule AST]
@@ -24,16 +25,16 @@ astRules = [ reflectiveAssign
 
 expressions :: AST -> Rule AST
 expressions (Instruction (Assign d e) next) = do
-  e' <- rewrite exprRules e
+  e' <- byEq simplify e
   return $ Instruction (Assign d e') next
 expressions (Instruction (PutChar e) next) = do
-  e' <- rewrite exprRules e
+  e' <- byEq simplify e
   return $ Instruction (PutChar e') next
 expressions (Flow (If e) inner next) = do
-  e' <- rewrite exprRules e
+  e' <- byEq simplify e
   return $ Flow (If e') inner next
 expressions (Flow (While e) inner next) = do
-  e' <- rewrite exprRules e
+  e' <- byEq simplify e
   return $ Flow (While e') inner next
 expressions ast = fail (show ast)
 
