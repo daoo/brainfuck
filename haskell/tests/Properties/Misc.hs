@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module Properties.Misc where
 
+import Brainfuck.Utility
 import Data.ListZipper
-import Ext
 import Test.QuickCheck
 
 propZipperMoveSize :: ListZipper () -> Property

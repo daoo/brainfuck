@@ -34,6 +34,9 @@ plus c = modify (\a -> a { number = number a + c })
 variable :: Int -> Int -> State Analysis ()
 variable k v = modify (\a -> a { variables = M.insertWith (+) k v (variables a) })
 
+-- |Break an Expr into a constant and multiples of variables
+-- Works under the assumption that we can't multiply variables with each other,
+-- only with constants.
 analyse :: Expr -> Analysis
 analyse e = execState (go 1 e) (Analysis 0 M.empty)
   where
