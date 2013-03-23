@@ -4,43 +4,15 @@ module Brainfuck.Data.Expr where
 import Control.Applicative ((<$>),(<*>))
 import Test.QuickCheck
 
-data Value = Var !Int | Const !Int
+data Expr = Const !Int
+          | Var !Int
+          | Add Expr Expr
+          | Mul !Int Expr
   deriving (Ord, Eq, Show)
-
-data BinaryOperator = Add | Mul
-  deriving (Ord, Eq, Show)
-
-data Expr = Return Value
-          | OperateBinary BinaryOperator Expr Expr
-  deriving (Ord, Eq, Show)
-
-mkInt, mkVar :: Int -> Expr
-mkInt = Return . Const
-mkVar = Return . Var
 
 isConst :: Expr -> Bool
-isConst (Return (Const _)) = True
-isConst _                  = False
-
-add, mul :: Expr -> Expr -> Expr
-add = OperateBinary Add
-mul = OperateBinary Mul
-
-instance Arbitrary Value where
-  arbitrary = frequency
-    [ (4, Const <$> arbitrary)
-    , (1, Var <$> choose (-100, 100)) ]
-
-  shrink = \case
-    Const i -> map Const (shrink i)
-    Var i   -> map Var (shrink i) ++ [Const 0]
-
-instance Arbitrary BinaryOperator where
-  arbitrary = oneof [return Add, return Mul]
-
-  shrink = \case
-    Add -> []
-    Mul -> [Add]
+isConst (Const _) = True
+isConst _         = False
 
 instance Arbitrary Expr where
   arbitrary = sized $ \n -> expr n n
@@ -48,45 +20,51 @@ instance Arbitrary Expr where
       expr 0 _ = leaf
       expr n s = oneof [leaf, branch n s]
 
-      branch n s = OperateBinary <$> arbitrary <*> (expr (n - 1) s) <*> (expr (n - 1) s)
+      branch n s = frequency
+        [ (4, Add <$> (expr (n - 1) s) <*> (expr (n - 1) s))
+        , (1, Mul <$> arbitrary <*> (expr (n - 1) s))
+        ]
 
-      leaf = Return <$> arbitrary
+      leaf = frequency
+        [ (4, Const <$> arbitrary)
+        , (1, Var <$> choose (-100, 100)) ]
 
   shrink = \case
-    Return v             -> map Return $ shrink v
-    OperateBinary op a b -> a : b : zipWith3 OperateBinary (cycle' (shrink op)) (shrink a) (shrink b)
+    Const i -> map Const (shrink i)
+    Var i   -> map Var (shrink i) ++ [Const 0]
+
+    Add a b -> a : b : zipWith Add (shrink a) (shrink b)
+    Mul a b -> shrink b
 
     where
       cycle' [] = []
       cycle' xs = cycle xs
 
 instance Num Expr where
-  (+) = OperateBinary Add
-  (*) = OperateBinary Mul
+  (+) = Add
+  (*) = undefined
 
   negate = undefined
 
   abs    = undefined
   signum = undefined
 
-  fromInteger = mkInt . fromInteger
+  fromInteger = Const . fromInteger
 
-unfold :: (BinaryOperator -> a -> a -> a) -> (Value -> a) -> Expr -> a
-unfold binary value = \case
-  Return v             -> value v
-  OperateBinary op a b -> binary op (unfold' a) (unfold' b)
+unfold :: (a -> a -> a) -> (Int -> a -> a) -> (Int -> a) -> (Int -> a) -> Expr -> a
+unfold add mul const var = \case
+  Const a -> const a
+  Var a   -> var a
+  Add a b -> add (unfold' a) (unfold' b)
+  Mul a b -> mul a (unfold' b)
   where
-    unfold' = unfold binary value
+    unfold' = unfold add mul const var
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
-inlineExpr d1 e = unfold OperateBinary f
-  where
-    f = \case
-      Var d2 | d1 == d2 -> e
-      v                 -> Return v
+inlineExpr d1 e = unfold Add Mul id (\(Var d2) -> if d1 == d2 then e else Var d2)
 
-modifyValues :: (Value -> Expr) -> Expr -> Expr
-modifyValues = unfold OperateBinary
+modifyValues :: (Int -> Expr) -> Expr -> Expr
+modifyValues = flip (unfold Add Mul) id
 
 eval :: (Int -> Int) -> Expr -> Int
 eval f = unfold binary value
