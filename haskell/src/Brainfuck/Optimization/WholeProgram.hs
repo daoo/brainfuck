@@ -21,10 +21,7 @@ inlineZeros = go S.empty
       ast -> ast
 
     inl :: S.Set Int -> Expr -> Expr
-    inl s = modifyValues (\case
-      Var i | S.member i s -> Return $ Var i
-            | otherwise    -> Return $ Const 0
-      e                    -> Return e)
+    inl s = modifyVars (\i -> if S.member i s then Var i else Const 0)
 
 -- |Remove instructions from the end that does not performe any side effects
 removeFromEnd :: AST -> AST

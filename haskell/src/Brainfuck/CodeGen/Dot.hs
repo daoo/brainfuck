@@ -39,12 +39,18 @@ makeEdge from to = lift $ lineM $ do
 
 showExpr :: Expr -> DotState ()
 showExpr = \case
-  Return v -> get >>= makeNode Ellipse (value v)
+  Const i -> get >>= makeNode Ellipse (show i)
+  Var d   -> get >>= makeNode Ellipse (showString "#" $ show d)
 
-  OperateBinary op a b -> do
+  Add a b -> do
     n <- get
-    makeNode Ellipse (binop op) n
+    makeNode Ellipse ("+") n
     next n a
+    next n b
+
+  Mul a b -> do
+    n <- get
+    makeNode Ellipse (shows a "*") n
     next n b
 
   where
@@ -52,14 +58,6 @@ showExpr = \case
       ne <- newId
       makeEdge n ne
       showExpr e
-
-    value = \case
-      Var d   -> showString "#" $ show d
-      Const c -> show c
-
-    binop = \case
-      Add -> "+"
-      Mul -> "*"
 
 showAST :: AST -> String
 showAST ast = writeCode $ do

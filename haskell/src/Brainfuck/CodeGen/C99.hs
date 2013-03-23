@@ -10,22 +10,15 @@ import Text.CodeWriter
 
 showExpr :: Expr -> ShowS
 showExpr = \case
-  Return v             -> value v
-  OperateBinary op a b -> binary op a b
+  Const i -> shows i
+  Var d   -> showString "ptr[" . shows d . showString "]"
+  Add a b -> showExpr a . showString " + " . showExpr b
+  Mul a b -> shows a . showString " * " . showParen (paren b) (showExpr b)
 
   where
-    binary op a b = case op of
-      Add -> showExpr a . showString " + " . showExpr b
-      Mul -> showParen (parenMul a) (showExpr a) . showString " * " . showParen (parenMul b) (showExpr b)
-
-    value = \case
-      Const c -> shows c
-      Var d   -> showString "ptr[" . shows d . showString "]"
-
-    parenMul = \case
-      OperateBinary Add _ _ -> True
-      OperateBinary Mul _ _ -> False
-      Return _              -> False
+    paren = \case
+      Add _ _ -> True
+      _       -> False
 
 showAST :: AST -> String
 showAST ast = writeCode $ do
@@ -49,10 +42,10 @@ showAST ast = writeCode $ do
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
-      Forever -> block "while" (mkInt 1)
+      Forever -> block "while" (Const 1)
       While e -> block "while" e
-      Once    -> block "if" (mkInt 1)
-      Never   -> block "if" (mkInt 0)
+      Once    -> block "if" (Const 1)
+      Never   -> block "if" (Const 0)
       If e    -> block "if" e
 
     block :: String -> Expr -> AST -> CodeWriter ()
@@ -64,7 +57,7 @@ showAST ast = writeCode $ do
     function = \case
       Assign d e -> ptr d "=" (showExpr e "")
 
-      PutChar (Return (Const c)) -> string $ showString "putchar(" $ shows (chr c) ")"
+      PutChar (Const c) -> string $ showString "putchar(" $ shows (chr c) ")"
 
       Shift s   -> string $ showString "ptr += " $ show s
       PutChar e -> string $ showString "putchar(" $ showExpr e ")"

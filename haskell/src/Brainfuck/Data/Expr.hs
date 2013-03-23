@@ -34,11 +34,7 @@ instance Arbitrary Expr where
     Var i   -> map Var (shrink i) ++ [Const 0]
 
     Add a b -> a : b : zipWith Add (shrink a) (shrink b)
-    Mul a b -> shrink b
-
-    where
-      cycle' [] = []
-      cycle' xs = cycle xs
+    Mul _ b -> shrink b
 
 instance Num Expr where
   (+) = Add
@@ -52,27 +48,19 @@ instance Num Expr where
   fromInteger = Const . fromInteger
 
 unfold :: (a -> a -> a) -> (Int -> a -> a) -> (Int -> a) -> (Int -> a) -> Expr -> a
-unfold add mul const var = \case
-  Const a -> const a
+unfold add mul cst var = \case
+  Const a -> cst a
   Var a   -> var a
   Add a b -> add (unfold' a) (unfold' b)
   Mul a b -> mul a (unfold' b)
   where
-    unfold' = unfold add mul const var
+    unfold' = unfold add mul cst var
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
-inlineExpr d1 e = unfold Add Mul id (\(Var d2) -> if d1 == d2 then e else Var d2)
+inlineExpr d1 e = unfold Add Mul Const (\d2 -> if d1 == d2 then e else Var d2)
 
-modifyValues :: (Int -> Expr) -> Expr -> Expr
-modifyValues = flip (unfold Add Mul) id
+modifyVars :: (Int -> Expr) -> Expr -> Expr
+modifyVars = unfold Add Mul Const
 
 eval :: (Int -> Int) -> Expr -> Int
-eval f = unfold binary value
-  where
-    binary op a b = case op of
-      Add -> a + b
-      Mul -> a * b
-
-    value = \case
-      Const i -> i
-      Var i   -> f i
+eval f = unfold (+) (*) id f

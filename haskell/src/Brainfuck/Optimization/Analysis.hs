@@ -7,20 +7,9 @@ import Control.Applicative ((<$>), (<|>))
 import Data.List
 import Data.Maybe
 
--- |Heuristic for expression complexity
-exprComplexity :: Expr -> Int
-exprComplexity = unfold (const (+)) f
-  where
-    f = \case
-      Const _ -> 0
-      Var _   -> 1
-
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
-exprDepends d = unfold (const (||)) f
-  where
-    f (Var d') = d == d'
-    f _        = False
+exprDepends d = unfold (||) (flip const) (const False) (== d)
 
 -- |Analyze a IL Loop for copies
 -- A copy loop is a loop that follow these criteria:
@@ -48,9 +37,9 @@ copyLoop d xs = do
       _           -> Nothing
 
     constantAddOnly = \case
-      (d1, OperateBinary Add (Return (Var d2)) (Return (Const c))) -> Just (d1, d2, c)
-      (d1, OperateBinary Add (Return (Const c)) (Return (Var d2))) -> Just (d1, d2, c)
-      _                                                            -> Nothing
+      (d1, Add (Var d2) (Const c)) -> Just (d1, d2, c)
+      (d1, Add (Const c) (Var d2)) -> Just (d1, d2, c)
+      _                            -> Nothing
 
     -- Filter the decrement operation
     g d1 (d2, d3, i) = d1 == d2 && d1 == d3 && i == -1
@@ -77,9 +66,7 @@ memorySize = \case
       While e -> expr e
       _       -> (0, 0)
 
-    expr = unfold (const (<+>)) (\case
-      Var d -> g d
-      _     -> g 0)
+    expr = unfold (<+>) (flip const) (const (0, 0)) g
 
     g :: Int -> (Int, Int)
     g d = case compare d 0 of
@@ -98,13 +85,10 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar e  -> unfold (const (||)) g e
+      PutChar e  -> unfold (||) (flip const) (const False) (const True) e
       Assign _ _ -> True
       GetChar _  -> True
       Shift _    -> True
-
-    g (Var _) = True
-    g _       = False
 
 -- |Check if a memory position is set to zero a program
 setToZero :: Int -> AST -> Bool
@@ -116,5 +100,5 @@ setToZero d1 ast = maybe False (== 0) (go Nothing ast)
       Flow _ _ _           -> Nothing
 
     f = \case
-      Assign d2 (Return (Const i)) | d1 == d2 -> Just i
-      _                                       -> Nothing
+      Assign d2 (Const i) | d1 == d2 -> Just i
+      _                              -> Nothing

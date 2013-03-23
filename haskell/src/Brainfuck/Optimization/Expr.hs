@@ -15,18 +15,18 @@ data Analysis = Analysis
 
 toExpr :: Analysis -> Expr
 toExpr = \case
-  Analysis 0 vars   -> clean $ M.foldrWithKey' f (mkInt 0) vars
-  Analysis num vars -> M.foldrWithKey' f (mkInt num) vars
+  Analysis 0 vars   -> clean $ M.foldrWithKey' f (Const 0) vars
+  Analysis num vars -> M.foldrWithKey' f (Const num) vars
   where
     f _ 0 = id
-    f d 1 = add (mkVar d)
-    f d n = add (mkInt n `mul` mkVar d)
+    f d 1 = Add (Var d)
+    f d n = Add (n `Mul` Var d)
 
     -- HACK: hack to remove the last (+ e 0) that happens when num is 0
     clean = \case
-      OperateBinary Add a (Return (Const 0)) -> a
-      OperateBinary Add a b                  -> OperateBinary Add a $ clean b
-      e                                      -> e
+      Add a (Const 0) -> a
+      Add a b         -> Add a $ clean b
+      e               -> e
 
 plus :: Int -> State Analysis ()
 plus c = modify (\a -> a { number = number a + c })
@@ -42,12 +42,8 @@ analyse e = execState (go 1 e) (Analysis 0 M.empty)
   where
     go :: Int -> Expr -> State Analysis ()
     go factor = \case
-      Return (Const c) -> plus (factor * c)
-      Return (Var d)   -> variable d factor
+      Const c -> plus (factor * c)
+      Var d   -> variable d factor
 
-      OperateBinary Add a b -> go factor a >> go factor b
-
-      OperateBinary Mul (Return (Const a)) b -> go (factor * a) b
-      OperateBinary Mul a (Return (Const b)) -> go (factor * b) a
-
-      _ -> fail "Expr2.analyse: not implemented"
+      Add a b -> go factor a >> go factor b
+      Mul a b -> go (factor * a) b

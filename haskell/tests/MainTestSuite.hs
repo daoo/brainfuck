@@ -27,7 +27,6 @@ tests =
     , testGroup "Expressions"
       [ testProperty "Optimize Const Expression" propExprOptimizeConst
       , testProperty "Optimize Twice Invariant" propExprOptimizeTwice
-      , testProperty "Optimize Decerase Size" propExprOptimizeSmaller
       , testProperty "Evaluation" propExprEval
       ]
     , testGroup "Optimization"

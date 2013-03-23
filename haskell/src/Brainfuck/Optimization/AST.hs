@@ -28,8 +28,8 @@ expressions (Flow (While e) inner next)     = Flow (While (simplify e)) inner ne
 expressions ast                             = ast
 
 reflectiveAssign :: AST -> Rule AST
-reflectiveAssign (Instruction (Assign d1 (Return (Var d2))) next) | d1 == d2 = return next
-reflectiveAssign ast                                                         = fail (show ast)
+reflectiveAssign (Instruction (Assign d1 (Var d2)) next) | d1 == d2 = return next
+reflectiveAssign ast                                                = fail (show ast)
 
 shiftZero :: AST -> Rule AST
 shiftZero (Instruction (Shift 0) next) = return next
@@ -48,11 +48,11 @@ flowOnce (Flow Once inner next) = return $ inner `join` next
 flowOnce ast                    = fail (show ast)
 
 flowConst :: AST -> Rule AST
-flowConst (Flow (While (Return (Const i))) inner next) | i == 0   = return next
-                                                      | otherwise = return $ Flow Forever inner next
-flowConst (Flow (If (Return (Const i))) inner next)    | i == 0   = return next
-                                                      | otherwise = return $ inner `join` next
-flowConst ast                                                     = fail (show ast)
+flowConst (Flow (While (Const i)) inner next) | i == 0    = return next
+                                              | otherwise = return $ Flow Forever inner next
+flowConst (Flow (If (Const i)) inner next)    | i == 0    = return next
+                                              | otherwise = return $ inner `join` next
+flowConst ast                                             = fail (show ast)
 
 movePut :: AST -> Rule AST
 movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
@@ -73,9 +73,7 @@ moveShifts (Instruction (Shift s) next) = case next of
   Nop -> fail (show Nop)
 
   where
-    expr s' = modifyValues (\case
-      Var d -> mkVar (s' + d)
-      v     -> Return v)
+    expr s' = modifyVars (Var . (+s'))
 
     function s' = \case
       GetChar d  -> GetChar (s' + d)
@@ -94,12 +92,12 @@ moveShifts ast = fail (show ast)
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: AST -> Rule AST
-reduceCopyLoops (Flow (While (Return (Var d))) inner next) = do
+reduceCopyLoops (Flow (While (Var d)) inner next) = do
   x <- copyLoop d inner
 
-  let instr = Instruction (Assign d $ mkInt 0) Nop
+  let instr = Instruction (Assign d $ Const 0) Nop
 
-      f d' (ds, v) = Assign ds $ (mkVar ds) `add` ((mkInt v) `mul` (mkVar d'))
+      f d' (ds, v) = Assign ds $ (Var ds) `Add` (v `Mul` (Var d'))
 
       x' = foldr Instruction instr $ map (f d) x
 
@@ -109,7 +107,7 @@ reduceCopyLoops ast = fail (show ast)
 
 -- |Convert while loops that are only run once to if statements
 whileToIf :: AST -> Rule AST
-whileToIf ast@(Flow (While e@(Return (Var d))) inner next) =
+whileToIf ast@(Flow (While e@(Var d)) inner next) =
   if setToZero d inner
     then return $ Flow (If e) inner next
     else fail (show ast)

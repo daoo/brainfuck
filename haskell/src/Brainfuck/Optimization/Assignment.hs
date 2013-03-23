@@ -67,15 +67,11 @@ findOptimal = topSort . go M.empty
     go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
 
     f :: M.Map Int Expr -> Expr -> Expr
-    f m = modifyValues (\case
-      e@(Var i) -> fromMaybe (Return e) $ M.lookup i m
-      e         -> Return e)
+    f m = modifyVars (\ i -> fromMaybe (Var i) $ M.lookup i m)
 
 topSort :: [AssignOp] -> [AssignOp]
 topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
-    get = unfold (const (++)) (\case
-      Var d -> [d]
-      _     -> [])
+    get = unfold (++) (flip const) (const []) (:[])
