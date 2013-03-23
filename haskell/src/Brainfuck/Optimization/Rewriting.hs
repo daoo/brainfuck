@@ -5,7 +5,6 @@ module Brainfuck.Optimization.Rewriting
   ) where
 
 import Brainfuck.Data.AST
-import Brainfuck.Data.Expr
 import Control.Applicative
 import Control.Monad.State.Strict
 
@@ -13,16 +12,7 @@ type Rule a = Maybe a
 
 class Rewritable a where
   rewrite :: [a -> Rule a] -> a -> Rule a
-
-instance Rewritable Expr where
-  rewrite fs expr = toRule $ runState (go expr) False
-    where
-      go = loop $ \case
-        e@(Return _) -> return e
-
-        OperateUnary op a -> OperateUnary op <$> go a >>= applyRules fs
-
-        OperateBinary op a b -> OperateBinary op <$> go a <*> go b >>= applyRules fs
+  once :: (a -> a) -> a -> a
 
 instance Rewritable AST where
   rewrite fs ast = toRule $ runState (go ast) False
@@ -33,6 +23,11 @@ instance Rewritable AST where
         Instruction fun next -> Instruction fun <$> go next >>= applyRules fs
 
         Flow ctrl inner next -> Flow ctrl <$> go inner <*> go next >>= applyRules fs
+
+  once f = \case
+    Nop                  -> Nop
+    Instruction fun next -> f $ Instruction fun (once f next)
+    Flow ctrl inner next -> f $ Flow ctrl (once f inner) (once f next)
 
 toRule :: (a, Bool) -> Rule a
 toRule (a, True) = Just a

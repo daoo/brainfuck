@@ -55,7 +55,3 @@ when' f g = f >>= (`when` g)
 
 while :: Monad m => m Bool -> m a -> m ()
 while f g = when' f (g >> while f g)
-
-byEq :: Eq a => (a -> a) -> a -> Maybe a
-byEq f a = let a' = f a in
-  if a == a' then Nothing else Just a'
