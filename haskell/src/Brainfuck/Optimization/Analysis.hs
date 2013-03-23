@@ -11,7 +11,7 @@ import Data.Maybe
 exprDepends :: Int -> Expr -> Bool
 exprDepends d = unfold (const (||)) f
   where
-    f (Get d') = d == d'
+    f (Var d') = d == d'
     f _        = False
 
 -- |Analyze a IL Loop for copies
@@ -40,8 +40,8 @@ copyLoop d xs = do
       _           -> Nothing
 
     constantAddOnly = \case
-      (d1, OperateBinary Add (Return (Get d2)) (Return (Const c))) -> Just (d1, d2, c)
-      (d1, OperateBinary Add (Return (Const c)) (Return (Get d2))) -> Just (d1, d2, c)
+      (d1, OperateBinary Add (Return (Var d2)) (Return (Const c))) -> Just (d1, d2, c)
+      (d1, OperateBinary Add (Return (Const c)) (Return (Var d2))) -> Just (d1, d2, c)
       _                                                            -> Nothing
 
     -- Filter the decrement operation
@@ -70,7 +70,7 @@ memorySize = \case
       _       -> (0, 0)
 
     expr = unfold (const (<+>)) (\case
-      Get d -> g d
+      Var d -> g d
       _     -> g 0)
 
     g :: Int -> (Int, Int)
@@ -95,7 +95,7 @@ usesMemory = \case
       GetChar _  -> True
       Shift _    -> True
 
-    g (Get _) = True
+    g (Var _) = True
     g _       = False
 
 -- |Check if a memory position is set to zero a program

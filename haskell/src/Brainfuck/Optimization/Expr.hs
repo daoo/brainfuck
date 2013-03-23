@@ -19,8 +19,8 @@ toExpr = \case
   Analysis num vars -> M.foldrWithKey' f (mkInt num) vars
   where
     f _ 0 = id
-    f d 1 = add (mkGet d)
-    f d n = add (mkInt n `mul` mkGet d)
+    f d 1 = add (mkVar d)
+    f d n = add (mkInt n `mul` mkVar d)
 
     -- HACK: hack to remove the last (+ e 0) that happens when num is 0
     clean = \case
@@ -43,7 +43,7 @@ analyse e = execState (go 1 e) (Analysis 0 M.empty)
     go :: Int -> Expr -> State Analysis ()
     go factor = \case
       Return (Const c) -> plus (factor * c)
-      Return (Get d)   -> variable d factor
+      Return (Var d)   -> variable d factor
 
       OperateBinary Add a b -> go factor a >> go factor b
 

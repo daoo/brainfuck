@@ -31,7 +31,7 @@ occurs d = \case
 
   where
     expr = unfold (const (++)) (\case
-      Get d' | d == d' -> [GetOnce]
+      Var d' | d == d' -> [GetOnce]
       _                -> [])
 
 allowedComplexity :: [Occurs] -> Int
@@ -70,7 +70,7 @@ exprComplexity = unfold (const (+)) f
   where
     f = \case
       Const _ -> 0
-      Get _   -> 1
+      Var _   -> 1
 
 ilComplexity :: AST -> Int
 ilComplexity = \case

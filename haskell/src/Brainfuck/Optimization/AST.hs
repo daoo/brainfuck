@@ -28,7 +28,7 @@ expressions (Flow (While e) inner next)     = Flow (While (simplify e)) inner ne
 expressions ast                             = ast
 
 reflectiveAssign :: AST -> Rule AST
-reflectiveAssign (Instruction (Assign d1 (Return (Get d2))) next) | d1 == d2 = return next
+reflectiveAssign (Instruction (Assign d1 (Return (Var d2))) next) | d1 == d2 = return next
 reflectiveAssign ast                                                         = fail (show ast)
 
 shiftZero :: AST -> Rule AST
@@ -74,7 +74,7 @@ moveShifts (Instruction (Shift s) next) = case next of
 
   where
     expr s' = modifyValues (\case
-      Get d -> mkGet (s' + d)
+      Var d -> mkVar (s' + d)
       v     -> Return v)
 
     function s' = \case
@@ -94,12 +94,12 @@ moveShifts ast = fail (show ast)
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: AST -> Rule AST
-reduceCopyLoops (Flow (While (Return (Get d))) inner next) = do
+reduceCopyLoops (Flow (While (Return (Var d))) inner next) = do
   x <- copyLoop d inner
 
   let instr = Instruction (Assign d $ mkInt 0) Nop
 
-      f d' (ds, v) = Assign ds $ (mkGet ds) `add` ((mkInt v) `mul` (mkGet d'))
+      f d' (ds, v) = Assign ds $ (mkVar ds) `add` ((mkInt v) `mul` (mkVar d'))
 
       x' = foldr Instruction instr $ map (f d) x
 
@@ -109,7 +109,7 @@ reduceCopyLoops ast = fail (show ast)
 
 -- |Convert while loops that are only run once to if statements
 whileToIf :: AST -> Rule AST
-whileToIf ast@(Flow (While e@(Return (Get d))) inner next) =
+whileToIf ast@(Flow (While e@(Return (Var d))) inner next) =
   if setToZero d inner
     then return $ Flow (If e) inner next
     else fail (show ast)

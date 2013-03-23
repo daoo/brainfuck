@@ -22,7 +22,7 @@ inlineZeros = go S.empty
 
     inl :: S.Set Int -> Expr -> Expr
     inl s = modifyValues (\case
-      Get i | S.member i s -> Return $ Get i
+      Var i | S.member i s -> Return $ Var i
             | otherwise    -> Return $ Const 0
       e                    -> Return e)
 

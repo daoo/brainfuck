@@ -54,7 +54,7 @@ showExpr = \case
       showExpr e
 
     value = \case
-      Get d   -> showString "#" $ show d
+      Var d   -> showString "#" $ show d
       Const c -> show c
 
     binop = \case

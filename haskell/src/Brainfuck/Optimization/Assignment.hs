@@ -29,31 +29,31 @@ optimizeAssign = \case
     makeAST = foldr (Instruction . uncurry Assign) Nop
 
 -- Initial Code:
--- Assign 2 (Get 1)
--- Assign 1 (Get 0)
--- Assign 0 (Get 2)
+-- Assign 2 (Var 1)
+-- Assign 1 (Var 0)
+-- Assign 0 (Var 2)
 --
--- 0: Get 1
--- 1: Get 0
--- 2: Get 1
+-- 0: Var 1
+-- 1: Var 0
+-- 2: Var 1
 --
 -- After Optimal Assign:
--- Assign 2 (Get 1)
--- Assign 1 (Get 0)
--- Assign 0 (Get 1)
+-- Assign 2 (Var 1)
+-- Assign 1 (Var 0)
+-- Assign 0 (Var 1)
 --
--- 0: Get 0
--- 1: Get 0
--- 2: Get 1
+-- 0: Var 0
+-- 1: Var 0
+-- 2: Var 1
 --
 -- After Topologic Sort:
--- Assign 2 (Get 1)
--- Assign 0 (Get 1)
--- Assign 1 (Get 2)
+-- Assign 2 (Var 1)
+-- Assign 0 (Var 1)
+-- Assign 1 (Var 2)
 --
--- 0; Get 1
--- 1: Get 1
--- 2: Get 1
+-- 0; Var 1
+-- 1: Var 1
+-- 2: Var 1
 
 type AssignOp = (Int, Expr)
 
@@ -68,7 +68,7 @@ findOptimal = topSort . go M.empty
 
     f :: M.Map Int Expr -> Expr -> Expr
     f m = modifyValues (\case
-      e@(Get i) -> fromMaybe (Return e) $ M.lookup i m
+      e@(Var i) -> fromMaybe (Return e) $ M.lookup i m
       e         -> Return e)
 
 topSort :: [AssignOp] -> [AssignOp]
@@ -77,5 +77,5 @@ topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
     get = unfold (const (++)) (\case
-      Get d -> [d]
+      Var d -> [d]
       _     -> [])

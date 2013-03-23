@@ -20,7 +20,7 @@ showExpr = \case
 
     value = \case
       Const c -> shows c
-      Get d   -> showString "ptr[" . shows d . showString "]"
+      Var d   -> showString "ptr[" . shows d . showString "]"
 
     parenMul = \case
       OperateBinary Add _ _ -> True

@@ -4,7 +4,7 @@ module Brainfuck.Data.Expr where
 import Control.Applicative ((<$>),(<*>))
 import Test.QuickCheck
 
-data Value = Get !Int | Const !Int
+data Value = Var !Int | Const !Int
   deriving (Ord, Eq, Show)
 
 data BinaryOperator = Add | Mul
@@ -14,9 +14,9 @@ data Expr = Return Value
           | OperateBinary BinaryOperator Expr Expr
   deriving (Ord, Eq, Show)
 
-mkInt, mkGet :: Int -> Expr
+mkInt, mkVar :: Int -> Expr
 mkInt = Return . Const
-mkGet = Return . Get
+mkVar = Return . Var
 
 isConst :: Expr -> Bool
 isConst (Return (Const _)) = True
@@ -29,11 +29,11 @@ mul = OperateBinary Mul
 instance Arbitrary Value where
   arbitrary = frequency
     [ (4, Const <$> arbitrary)
-    , (1, Get <$> choose (-100, 100)) ]
+    , (1, Var <$> choose (-100, 100)) ]
 
   shrink = \case
     Const i -> map Const (shrink i)
-    Get i   -> map Get (shrink i) ++ [Const 0]
+    Var i   -> map Var (shrink i) ++ [Const 0]
 
 instance Arbitrary BinaryOperator where
   arbitrary = oneof [return Add, return Mul]
@@ -82,7 +82,7 @@ inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d1 e = unfold OperateBinary f
   where
     f = \case
-      Get d2 | d1 == d2 -> e
+      Var d2 | d1 == d2 -> e
       v                 -> Return v
 
 modifyValues :: (Value -> Expr) -> Expr -> Expr
@@ -97,4 +97,4 @@ eval f = unfold binary value
 
     value = \case
       Const i -> i
-      Get i   -> f i
+      Var i   -> f i
