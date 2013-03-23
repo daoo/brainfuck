@@ -6,7 +6,6 @@ import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
-import qualified Data.Set as S
 
 astRules :: [AST -> Rule AST]
 astRules = [ reflectiveAssign
@@ -116,24 +115,3 @@ whileToIf ast@(Flow (While e@(Return (Get d))) inner next) =
     else fail (show ast)
 
 whileToIf ast = fail (show ast)
-
--- |Inline initial zeroes
-inlineZeros :: AST -> AST
-inlineZeros = go S.empty
-  where
-    go :: S.Set Int -> AST -> AST
-    go s = \case
-      Instruction fun next -> case fun of
-
-        Assign i e -> Instruction (Assign i (inl s e)) (go (S.insert i s) next)
-        PutChar e  -> Instruction (PutChar (inl s e)) (go s next)
-        GetChar d  -> Instruction fun (go (S.delete d s) next)
-        Shift _    -> Instruction fun next
-
-      ast -> ast
-
-    inl :: S.Set Int -> Expr -> Expr
-    inl s = modifyValues (\case
-      Get i | S.member i s -> Return $ Get i
-            | otherwise    -> Return $ Const 0
-      e                    -> Return e)
