@@ -65,13 +65,6 @@ optimisticInlining d e xs | c1 <= c2 = Nothing
     c1  = 1 + exprComplexity e + ilComplexity xs
     c2  = ilComplexity xs'
 
-exprComplexity :: Expr -> Int
-exprComplexity = unfold (const (+)) f
-  where
-    f = \case
-      Const _ -> 0
-      Var _   -> 1
-
 ilComplexity :: AST -> Int
 ilComplexity = \case
   Nop                  -> 0

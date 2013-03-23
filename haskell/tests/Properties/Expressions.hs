@@ -2,8 +2,8 @@
 module Properties.Expressions where
 
 import Brainfuck.Data.Expr
+import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expr
-import Brainfuck.Optimization.Inlining
 import Control.Applicative ((<$>),(<*>))
 import Test.QuickCheck
 

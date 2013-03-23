@@ -7,6 +7,14 @@ import Control.Applicative ((<$>), (<|>))
 import Data.List
 import Data.Maybe
 
+-- |Heuristic for expression complexity
+exprComplexity :: Expr -> Int
+exprComplexity = unfold (const (+)) f
+  where
+    f = \case
+      Const _ -> 0
+      Var _   -> 1
+
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
 exprDepends d = unfold (const (||)) f
