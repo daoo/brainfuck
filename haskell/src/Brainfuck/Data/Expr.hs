@@ -79,6 +79,8 @@ instance Num Expr where
   (+) = OperateBinary Add
   (*) = OperateBinary Mul
 
+  negate = OperateUnary Negate
+
   abs    = undefined
   signum = undefined
 
