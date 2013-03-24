@@ -1,4 +1,4 @@
-Require Import Expr AST.
+Require Import Expr OptExpr AST.
 Require Import ssreflect ssrnat ssrint ssralg ssrfun.
 Import intZmod intRing.
 
@@ -55,4 +55,11 @@ Section Theorems.
   Theorem mul1e: forall (f: int -> int) (e: Expr),
     eval f (Mul 1 e) = eval f e.
   Proof. move=> ? ?. by rewrite /eval mul1z. Qed.
+
+  Theorem evalSimplify: forall (f: int -> int) (e: Expr),
+    eval f e = eval f (simplify e).
+  Proof.
+    move=> f.
+    elim=> //= [ a | a | a IHa b IHb | a b IH ].
+  Qed.
 End Theorems.

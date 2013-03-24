@@ -16,7 +16,10 @@ Aux.vo: Aux.v
 Expr.vo: Aux.vo Expr.v
 	$(coqc) Expr.v
 
-Theorems.vo: Expr.vo AST.vo Theorems.v
+OptExpr.vo: Aux.vo Expr.vo
+	$(coqc) OptExpr.v
+
+Theorems.vo: Expr.vo OptExpr.vo AST.vo Theorems.v
 	$(coqc) Theorems.v
 
 clean:
