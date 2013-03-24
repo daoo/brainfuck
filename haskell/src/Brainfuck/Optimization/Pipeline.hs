@@ -12,5 +12,31 @@ fullOptimization = removeFromEnd
                  . once expressions
                  . inlineZeros
                  . optimizeAssign
-                 . tryMaybe (rewrite astRules)
+                 . tryMaybe (rewrite
+                   [ reflectiveAssign
+                   , shiftZero
+                   , flowInnerNop
+                   , flowNever
+                   , flowOnce
+                   , flowConst
+                   , movePut
+                   , moveShifts
+                   , reduceCopyLoops
+                   -- , whileToIf
+                   ])
                  . inlineZeros
+
+simpleOptimizations :: AST -> AST
+simpleOptimizations = once expressions
+                    . inlineZeros
+                    . tryMaybe (rewrite
+                      [ reflectiveAssign
+                      , shiftZero
+                      , flowInnerNop
+                      , flowNever
+                      , flowOnce
+                      , flowConst
+                      , movePut
+                      , moveShifts
+                      ])
+                    . inlineZeros

@@ -7,19 +7,6 @@ import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
 
-astRules :: [AST -> Rule AST]
-astRules = [ reflectiveAssign
-           , shiftZero
-           , flowInnerNop
-           , flowNever
-           , flowOnce
-           , flowConst
-           , movePut
-           , moveShifts
-           , reduceCopyLoops
-           -- , whileToIf
-           ]
-
 expressions :: AST -> AST
 expressions (Instruction (Assign d e) next) = Instruction (Assign d (simplify e)) next
 expressions (Instruction (PutChar e) next)  = Instruction (PutChar (simplify e)) next

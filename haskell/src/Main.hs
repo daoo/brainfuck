@@ -57,6 +57,7 @@ main = do
       optimize =
         case optOptimize opts of
           0 -> id
+          1 -> simpleOptimizations
           _ -> fullOptimization
 
       codegen =
