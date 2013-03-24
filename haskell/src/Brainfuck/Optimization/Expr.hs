@@ -3,14 +3,14 @@ module Brainfuck.Optimization.Expr where
 
 import Brainfuck.Data.Expr
 import Control.Monad.State.Strict
-import qualified Data.Map.Strict as M
+import qualified Data.IntMap.Strict as M
 
 simplify :: Expr -> Expr
 simplify = toExpr . analyse
 
 data Analysis = Analysis
   { number :: Int
-  , variables :: M.Map Int Int
+  , variables :: M.IntMap Int
   } deriving Show
 
 toExpr :: Analysis -> Expr
