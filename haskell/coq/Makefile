@@ -1,5 +1,4 @@
-opts = -opt
-coqc = coqc $(opts)
+coqc = /usr/bin/coqc
 
 all: Aux.vo Expr.vo Theorems.vo
 

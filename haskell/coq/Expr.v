@@ -7,71 +7,39 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Section Expr_defs.
-  Inductive Value: Type :=
-    | Get: int -> Value
-    | Const: int -> Value.
-
-  Inductive UnaryOperator: Type :=
-    | Id: UnaryOperator
-    | Negate: UnaryOperator.
-
-  Inductive BinaryOperator: Type :=
-    | Add: BinaryOperator
-    | Mul: BinaryOperator.
-
   Inductive Expr: Type :=
-    | Return: Value -> Expr
-    | OperateUnary: UnaryOperator -> Expr -> Expr
-    | OperateBinary: BinaryOperator -> Expr -> Expr -> Expr.
-
-  Definition mkInt := compose Return Const.
-  Definition mkGet := compose Return Get.
-  Definition add   := OperateBinary Add.
-  Definition mul   := OperateBinary Mul.
+    | Const: int -> Expr
+    | Var: int -> Expr
+    | Add: Expr -> Expr -> Expr
+    | Mul: int -> Expr -> Expr.
 
   Fixpoint unfold (A: Type)
-    (unary: UnaryOperator -> A -> A)
-    (binary: BinaryOperator -> A -> A -> A)
-    (value: Value -> A)
+    (add: A -> A -> A)
+    (mul: int -> A -> A)
+    (cst: int -> A)
+    (var: int -> A)
     (expr: Expr) : A :=
     match expr with
-    | Return v             => value v
-    | OperateUnary op a    => unary op (unfold unary binary value a)
-    | OperateBinary op a b => binary op (unfold unary binary value a) (unfold unary binary value b)
+    | Const a => cst a
+    | Var a   => var a
+    | Add a b => add (unfold add mul cst var a) (unfold add mul cst var b)
+    | Mul a b => mul a (unfold add mul cst var b)
     end.
 
   Definition inlineExpr (d1: int) (this into: Expr) : Expr :=
-    unfold OperateUnary OperateBinary (fun v => match v with
-      | Get d2 => if eqz d1 d2 then this else Return (Get d2)
-      | v      => Return v
-      end) into.
+    unfold Add Mul Const (fun d2 => if eqz d1 d2 then this else Var d2) into.
 
-  Definition modifyValues (f: Value -> Expr) (e: Expr) : Expr :=
-    unfold OperateUnary OperateBinary f e.
+  Definition modifyVars (f: int -> Expr) (expr: Expr) : Expr :=
+    unfold Add Mul Const f expr.
 
   Fixpoint eval (f: int -> int) (expr: Expr) : int :=
     match expr with
-    | Return (Const i)      => i
-    | Return (Get i)        => f i
-    | OperateUnary Id a     => eval f a
-    | OperateUnary Negate a => oppz (eval f a)
-    | OperateBinary Add a b => addz (eval f a) (eval f b)
-    | OperateBinary Mul a b => mulz (eval f a) (eval f b)
+    | Const a => a
+    | Var a   => f a
+    | Add a b => addz (eval f a) (eval f b)
+    | Mul a b => mulz a (eval f b)
     end.
 
   Definition eval' (f: int -> int) (expr: Expr) : int :=
-    unfold
-      (fun op a => match op with
-        | Id     => a
-        | Negate => oppz a
-      end)
-      (fun op a b => match op with
-        | Add => addz a b
-        | Mul => mulz a b
-      end)
-      (fun v => match v with
-        | Const i => i
-        | Get i   => f i
-      end)
-      expr.
+    unfold addz mulz id f expr.
 End Expr_defs.
