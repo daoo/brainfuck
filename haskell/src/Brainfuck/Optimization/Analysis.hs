@@ -4,8 +4,6 @@ module Brainfuck.Optimization.Analysis where
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
 import Control.Applicative hiding (Const)
-import Data.List
-import Data.Maybe
 
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
@@ -19,33 +17,20 @@ exprDepends d = unfold (||) (flip const) (const False) (== d)
 --   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
 copyLoop :: Int -> AST -> Maybe [(Int, Int)]
-copyLoop d xs = do
-  funs <- funsOnly xs
-  sets <- mapM setsOnly funs
-  adds <- mapM constantAddOnly sets
-  let (dec, copies) = partition (g d) adds
-  _ <- listToMaybe dec
-  mapM h copies
+copyLoop d1 = go
   where
-    funsOnly = \case
-      Nop                  -> Just []
-      Instruction fun next -> (fun :) <$> funsOnly next
-      Flow _ _ _           -> Nothing
+    go = \case
+      Nop -> Just []
 
-    setsOnly = \case
-      Assign d' e -> Just (d', e)
-      _           -> Nothing
+      Instruction (Assign d2 (Var d3 `Add` Const c)) next -> f d2 d3 c next
+      Instruction (Assign d2 (Const c `Add` Var d3)) next -> f d2 d3 c next
 
-    constantAddOnly = \case
-      (d1, Add (Var d2) (Const c)) -> Just (d1, d2, c)
-      (d1, Add (Const c) (Var d2)) -> Just (d1, d2, c)
-      _                            -> Nothing
+      _ -> Nothing
 
-    -- Filter the decrement operation
-    g d1 (d2, d3, i) = d1 == d2 && d1 == d3 && i == -1
-
-    h (d1, d2, c) | d1 == d2  = Just (d1, c)
-                  | otherwise = Nothing
+    f d2 d3 c next
+      | d2 == d3 && d1 == d2 && c == -1 = go next
+      | d2 == d3 && d1 /= d2            = ((d2, c):) <$> go next
+      | otherwise                       = Nothing
 
 -- |Heuristically decide how much memory a program uses.
 memorySize :: AST -> (Int, Int)
