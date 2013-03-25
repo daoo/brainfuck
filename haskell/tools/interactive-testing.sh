@@ -26,7 +26,7 @@ else
   while inotifywait -qe close_write,moved_to,create "$dir"; do
     $cc -O3 -o "$ofile" "$cfile"
     echo -ne "$bf_input\000" > "$input_file"
-    time "$ofile" < "$input_file"
+    time "$ofile" < "$input_file" | head -n20
     sleep 1
   done
 fi
