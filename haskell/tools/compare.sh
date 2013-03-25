@@ -19,7 +19,7 @@ else
 
   if [[ -f "$new" ]]; then
     mv "$new" "$old"
-    $bf -c "$infile" > "$new"
+    $bf -O2 -c "$infile" > "$new"
     vimdiff "$new" "$old"
   else
     exec $bf -c "$infile" > "$new"

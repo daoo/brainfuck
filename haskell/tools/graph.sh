@@ -17,6 +17,6 @@ else
   dotfile="$dir/$name.dot"
   svgfile="$dir/$name.svg"
 
-  $bf -c -t Dot "$infile" > "$dotfile"
+  $bf -O2 -c -t Dot "$infile" > "$dotfile"
   dot "$dotfile" -Tsvg -o"$svgfile"
 fi

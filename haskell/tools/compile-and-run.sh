@@ -19,7 +19,7 @@ else
   cfile="$dir/$name.c"
   ofile="$dir/$name"
 
-  $bf -c "$infile" > "$cfile"
+  $bf -O2 -c "$infile" > "$cfile"
   $cc -O3 -o "$ofile" "$cfile"
   time exec "$ofile"
 fi

@@ -4,12 +4,12 @@
 cc=${CXX:-gcc}
 dir="/tmp/brainfuck/"
 input_file="$dir/input"
-bfc="dist/build/brainfuck/brainfuck"
+bf="dist/build/brainfuck/brainfuck"
 
 bf_file="$1"
 bf_input="$2"
 
-if [[ ! -x "$bfc" ]]; then
+if [[ ! -x "$bf" ]]; then
   echo "brainfuck compiler not found"
 elif [[ ! -f "$bf_file" ]]; then
   echo "usage: interactive-testing FILE INPUT"
@@ -20,7 +20,7 @@ else
   cfile="$dir/$name.c"
   ofile="$dir/$name"
 
-  $bfc -c "$bf_file" > "$cfile"
+  $bf -O2 -c "$bf_file" > "$cfile"
   gvim --class brainfuck "$cfile" &
 
   while inotifywait -qe close_write,moved_to,create "$dir"; do
