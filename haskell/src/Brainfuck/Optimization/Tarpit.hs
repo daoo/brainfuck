@@ -1,14 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Optimization.AST where
+module Brainfuck.Optimization.Tarpit where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
 import Control.Applicative hiding (Const)
 
-expressions :: AST -> AST
+expressions :: Tarpit -> Tarpit
 expressions = \case
   Instruction (Assign d e) next -> Instruction (Assign d (simplify e)) next
   Instruction (PutChar e) next  -> Instruction (PutChar (simplify e)) next
@@ -16,27 +16,27 @@ expressions = \case
   Flow (While e) inner next     -> Flow (While (simplify e)) inner next
   ast                           -> ast
 
-reflectiveAssign :: AST -> Rule AST
+reflectiveAssign :: Tarpit -> Rule Tarpit
 reflectiveAssign (Instruction (Assign d1 (Var d2)) next) | d1 == d2 = return next
 reflectiveAssign ast                                                = fail (show ast)
 
-shiftZero :: AST -> Rule AST
+shiftZero :: Tarpit -> Rule Tarpit
 shiftZero (Instruction (Shift 0) next) = return next
 shiftZero ast                          = fail (show ast)
 
-flowInnerNop :: AST -> Rule AST
+flowInnerNop :: Tarpit -> Rule Tarpit
 flowInnerNop (Flow _ Nop next) = return next
 flowInnerNop ast               = fail (show ast)
 
-flowNever :: AST -> Rule AST
+flowNever :: Tarpit -> Rule Tarpit
 flowNever (Flow Never _ next) = return next
 flowNever ast                 = fail (show ast)
 
-flowOnce :: AST -> Rule AST
+flowOnce :: Tarpit -> Rule Tarpit
 flowOnce (Flow Once inner next) = return $ inner `join` next
 flowOnce ast                    = fail (show ast)
 
-flowConst :: AST -> Rule AST
+flowConst :: Tarpit -> Rule Tarpit
 flowConst (Flow (While (Const i)) inner next)
   | i == 0    = return next
   | otherwise = return $ Flow Forever inner next
@@ -45,12 +45,12 @@ flowConst (Flow (If (Const i)) inner next)
   | otherwise = return $ inner `join` next
 flowConst ast = fail (show ast)
 
-movePut :: AST -> Rule AST
+movePut :: Tarpit -> Rule Tarpit
 movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
   return $ Instruction (PutChar (inlineExpr d e1 e2)) (Instruction s next)
 movePut ast = fail (show ast)
 
-moveShifts :: AST -> Rule AST
+moveShifts :: Tarpit -> Rule Tarpit
 moveShifts (Instruction (Shift s) next) = case next of
   Instruction fun next' -> return $ case fun of
 
@@ -60,7 +60,7 @@ moveShifts (Instruction (Shift s) next) = case next of
     Shift s'   -> Instruction (Shift (s + s')) next'
 
   Flow ctrl inner next' -> return $
-    Flow (control s ctrl) (mapAST (function s) (control s) inner) $
+    Flow (control s ctrl) (mapTarpit (function s) (control s) inner) $
       Instruction (Shift s) next'
 
   Nop -> fail (show Nop)
@@ -86,7 +86,7 @@ moveShifts (Instruction (Shift s) next) = case next of
 moveShifts ast = fail (show ast)
 
 -- |Reduce multiplications and clear loops
-reduceCopyLoops :: AST -> Rule AST
+reduceCopyLoops :: Tarpit -> Rule Tarpit
 reduceCopyLoops (Flow (While (Var d)) inner next) =
   (`join` next) <$> foldr f zero <$> copyLoop d inner
     where
@@ -97,7 +97,7 @@ reduceCopyLoops ast = fail (show ast)
 
 -- |Convert while loops that are only run once to if statements
 -- TODO: the (Assign d (Const 0)) operation could be moved out of the if for futher optimization
-whileToIf :: AST -> Rule AST
+whileToIf :: Tarpit -> Rule Tarpit
 whileToIf (Flow (While e) inner next)
   | whileOnce e inner = return $ Flow (If e) inner next
 whileToIf ast = fail (show ast)

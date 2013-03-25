@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Data.AST where
+module Brainfuck.Data.Tarpit where
 
 import Brainfuck.Data.Expr
 import Control.Applicative
@@ -13,10 +13,9 @@ data Control = Forever | Once | Never | If Expr | While Expr
 
 -- data Definition = Variable Identifier Expr
 
-data AST = Nop
-         | Instruction Function AST
-         | Flow Control AST AST
-         -- | Scope Definition AST
+data Tarpit = Nop
+            | Instruction Function Tarpit
+            | Flow Control Tarpit Tarpit
   deriving (Eq, Show)
 
 instance Arbitrary Function where
@@ -44,7 +43,7 @@ instance Arbitrary Control where
     If e    -> map If (shrink e) ++ [Once, Never]
     While e -> map While (shrink e) ++ [Once, Never]
 
-instance Arbitrary AST where
+instance Arbitrary Tarpit where
   arbitrary = sized tree
     where
       tree 0 = return Nop
@@ -53,39 +52,31 @@ instance Arbitrary AST where
         where
           subtree = tree (n `div` 2)
 
-  shrink = initsAST
+  shrink = initsTarpit
 
-initAST :: AST -> AST
-initAST = \case
+initTarpit :: Tarpit -> Tarpit
+initTarpit = \case
   Nop               -> Nop
   Instruction _ Nop -> Nop
   Flow _ Nop _      -> Nop
   Flow _ _ Nop      -> Nop
 
-  Instruction fun next -> Instruction fun (initAST next)
-  Flow ctrl inner next -> Flow ctrl (initAST inner) (initAST next)
+  Instruction fun next -> Instruction fun (initTarpit next)
+  Flow ctrl inner next -> Flow ctrl (initTarpit inner) (initTarpit next)
 
-initsAST :: AST -> [AST]
-initsAST = \case
+initsTarpit :: Tarpit -> [Tarpit]
+initsTarpit = \case
   Nop -> []
-  x   -> let x' = initAST x in x' : initsAST x'
+  x   -> let x' = initTarpit x in x' : initsTarpit x'
 
-join :: AST -> AST -> AST
+join :: Tarpit -> Tarpit -> Tarpit
 join a b = case a of
   Nop                  -> b
   Instruction fun next -> Instruction fun (join next b)
   Flow ctrl inner next -> Flow ctrl inner (join next b)
 
-filterAST :: (Function -> Bool) -> (Control -> Bool) -> AST -> AST
-filterAST f g = \case
-  Nop                              -> Nop
-  Flow ctrl inner next | g ctrl    -> Flow ctrl (filterAST f g inner) (filterAST f g next)
-                       | otherwise -> filterAST f g next
-  Instruction fun next | f fun     -> Instruction fun (filterAST f g next)
-                       | otherwise -> filterAST f g next
-
-mapAST :: (Function -> Function) -> (Control -> Control) -> AST -> AST
-mapAST f g = \case
+mapTarpit :: (Function -> Function) -> (Control -> Control) -> Tarpit -> Tarpit
+mapTarpit f g = \case
   Nop                  -> Nop
-  Flow ctrl inner next -> Flow (g ctrl) (mapAST f g inner) (mapAST f g next)
-  Instruction fun next -> Instruction (f fun) (mapAST f g next)
+  Flow ctrl inner next -> Flow (g ctrl) (mapTarpit f g inner) (mapTarpit f g next)
+  Instruction fun next -> Instruction (f fun) (mapTarpit f g next)

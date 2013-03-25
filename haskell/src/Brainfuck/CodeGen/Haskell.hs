@@ -1,12 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.CodeGen.Haskell where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import Text.CodeWriter
 
-showAST :: AST -> String
-showAST ast = writeCode $ do
+showTarpit :: Tarpit -> String
+showTarpit ast = writeCode $ do
   line "import Brainfuck.Data.Expr"
   line "import Brainfuck.Data.IOMemory"
   line ""

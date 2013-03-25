@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.CodeGen.C99 where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Control.Monad
 import Data.Char
@@ -20,8 +20,8 @@ showExpr = \case
       Add _ _ -> True
       _       -> False
 
-showAST :: AST -> String
-showAST ast = writeCode $ do
+showTarpit :: Tarpit -> String
+showTarpit ast = writeCode $ do
   line "#include <stdio.h>"
   line ""
   line "int main() {"
@@ -35,7 +35,7 @@ showAST ast = writeCode $ do
     line "return 0;"
   line "}"
   where
-    go :: AST -> CodeWriter ()
+    go :: Tarpit -> CodeWriter ()
     go = \case
       Nop                  -> return ()
       Instruction fun next -> lineM (function fun >> string ";") >> go next
@@ -48,7 +48,7 @@ showAST ast = writeCode $ do
       Never   -> block "if" (Const 0)
       If e    -> block "if" e
 
-    block :: String -> Expr -> AST -> CodeWriter ()
+    block :: String -> Expr -> Tarpit -> CodeWriter ()
     block word e ys = do
       line $ showString word $ showString " (" $ showExpr e ") {"
       indentedM $ go ys

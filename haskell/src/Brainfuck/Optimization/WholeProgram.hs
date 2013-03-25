@@ -1,15 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Optimization.WholeProgram where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import qualified Data.Set as S
 
 -- |Inline initial zeroes
-inlineZeros :: AST -> AST
+inlineZeros :: Tarpit -> Tarpit
 inlineZeros = go S.empty
   where
-    go :: S.Set Int -> AST -> AST
+    go :: S.Set Int -> Tarpit -> Tarpit
     go s = \case
       Instruction fun next -> case fun of
 
@@ -24,7 +24,7 @@ inlineZeros = go S.empty
     inl s = modifyVars (\i -> if S.member i s then Var i else Const 0)
 
 -- |Remove instructions from the end that does not performe any side effects
-removeFromEnd :: AST -> AST
+removeFromEnd :: Tarpit -> Tarpit
 removeFromEnd = \case
   Nop                          -> Nop
   Instruction (Assign _ _) Nop -> Nop

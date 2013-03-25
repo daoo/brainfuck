@@ -1,11 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Compile (compile, decompile) where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Brainfuck
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 
-compile :: [Brainfuck] -> AST
+compile :: [Brainfuck] -> Tarpit
 compile = \case
   []             -> Nop
   Repeat ys : xs -> Flow (While (Var 0)) (compile ys) (compile xs)
@@ -19,7 +19,7 @@ compile = \case
       Output     -> PutChar $ Var 0
       Input      -> GetChar 0
 
-decompile :: AST -> [Brainfuck]
+decompile :: Tarpit -> [Brainfuck]
 decompile = \case
   Nop                             -> []
   Instruction fun next            -> tokenize fun : decompile next

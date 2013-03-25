@@ -1,51 +1,51 @@
 module Tests.Programs where
 
 import Brainfuck.Compile
-import Brainfuck.Data.AST
+import Brainfuck.Data.Tarpit
 import Brainfuck.Parse
 
-parseCompile :: String -> AST
+parseCompile :: String -> Tarpit
 parseCompile = (\(Right bf) -> compile bf) . parseBrainfuck
 
 -- Prints "Hello World!\n"
-bfHello :: AST
+bfHello :: Tarpit
 bfHello = parseCompile
   "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
 
 -- Prints "brainfuck\n"
-bfPrintBrainFuck :: AST
+bfPrintBrainFuck :: Tarpit
 bfPrintBrainFuck = parseCompile
   ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
 
-bfRot13 :: AST
+bfRot13 :: Tarpit
 bfRot13 = parseCompile
   "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
 
-bfReverse :: AST
+bfReverse :: Tarpit
 bfReverse = parseCompile
   ">,[>,]<[.<]"
 
 -- Outputs in unary (with bangs (!))
-bfASCIIValues :: AST
+bfASCIIValues :: Tarpit
 bfASCIIValues = parseCompile
   "++++[>++++++++<-],[[>+.-<-]>.<,]"
 
 -- Prints the squars (as ASCII numbers)
-bfSquares :: AST
+bfSquares :: Tarpit
 bfSquares = parseCompile
   "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
 
 -- Goes to the 30000th cell
-bf30000 :: AST
+bf30000 :: Tarpit
 bf30000 = parseCompile
   "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
 
 -- Prints the fibonacci sequence
-bfFib :: AST
+bfFib :: Tarpit
 bfFib = parseCompile
   ">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]"
 
 -- Prints "\n\EOT"
-bfIO :: AST
+bfIO :: Tarpit
 bfIO = parseCompile
   ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."

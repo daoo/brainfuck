@@ -1,15 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Optimization.Assignment where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import Brainfuck.Utility
 import Data.Maybe
 import qualified Data.Graph as G
 import qualified Data.Map as M
 
 -- |Merge sequences of Assign ILs using full program analysis
-optimizeAssign :: AST -> AST
+optimizeAssign :: Tarpit -> Tarpit
 optimizeAssign = \case
   Nop -> Nop
 

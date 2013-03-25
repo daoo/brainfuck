@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Interpret (run, run1) where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import Brainfuck.Utility
 import Control.Applicative
 import Control.Monad.State.Strict
@@ -46,13 +46,13 @@ newMemory :: Memory
 newMemory = ListZipper zeros 0 zeros
   where zeros = repeat 0
 
-run1 :: String -> AST -> String
+run1 :: String -> Tarpit -> String
 run1 inp = map (chr . fromIntegral) . toList . run (map (fromIntegral . ord) inp)
 
-run :: Input -> AST -> Output
+run :: Input -> Tarpit -> Output
 run inp ast = moutput $ execState (go ast) (Machine inp S.empty newMemory)
   where
-    go :: AST -> State Machine ()
+    go :: Tarpit -> State Machine ()
     go = \case
       Nop                  -> return ()
       Instruction fun next -> function fun >> go next

@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Optimization.Analysis where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import Control.Applicative hiding (Const)
 
 -- |Check if an expression reads a certain memory position
@@ -16,7 +16,7 @@ exprDepends d = unfold (||) (flip const) (const False) (== d)
 --     other value we can not determine if it reaches zero or overflows.
 --   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: Int -> AST -> Maybe [(Int, Int)]
+copyLoop :: Int -> Tarpit -> Maybe [(Int, Int)]
 copyLoop d1 = go
   where
     go = \case
@@ -33,7 +33,7 @@ copyLoop d1 = go
       | otherwise                       = Nothing
 
 -- |Heuristically decide how much memory a program uses.
-memorySize :: AST -> (Int, Int)
+memorySize :: Tarpit -> (Int, Int)
 memorySize = \case
   Nop                  -> (0, 0)
   Instruction fun next -> function fun <+> memorySize next
@@ -62,7 +62,7 @@ memorySize = \case
     (a, b) <+> (c, d) = (a + c, b + d)
 
 -- |Check if some program uses the memory or the global pointer
-usesMemory :: AST -> Bool
+usesMemory :: Tarpit -> Bool
 usesMemory = \case
   Nop                  -> False
   Instruction fun next -> f fun || usesMemory next
@@ -76,7 +76,7 @@ usesMemory = \case
       Shift _    -> True
 
 -- |Check if a while loop executes more than once
-whileOnce :: Expr -> AST -> Bool
+whileOnce :: Expr -> Tarpit -> Bool
 whileOnce e ast = case e of
   Var d -> go d False ast
   _     -> False

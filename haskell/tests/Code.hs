@@ -1,7 +1,7 @@
 module Code where
 
 import Brainfuck.CodeGen.Indented as Indented
-import Brainfuck.Data.AST
+import Brainfuck.Data.Tarpit
 import Brainfuck.Interpret
 import Test.QuickCheck hiding (output)
 
@@ -17,16 +17,16 @@ printableString :: Gen String
 printableString = sized $ \n ->
   choose (0,n) >>= (sequence . (`replicate` printableChar))
 
-newtype PrettyAST = PrettyAST { getAst :: AST }
+newtype PrettyTarpit = PrettyTarpit { getAst :: Tarpit }
 
-instance Arbitrary PrettyAST where
-  arbitrary = fmap PrettyAST arbitrary
+instance Arbitrary PrettyTarpit where
+  arbitrary = fmap PrettyTarpit arbitrary
 
-instance Show PrettyAST where
-  show (PrettyAST ast) = Indented.showAST ast
+instance Show PrettyTarpit where
+  show (PrettyTarpit ast) = Indented.showTarpit ast
 
-testCode :: AST -> AST -> Bool
+testCode :: Tarpit -> Tarpit -> Bool
 testCode ast ast' = run [] ast == run [] ast'
 
-checkTransform :: (AST -> AST) -> AST -> Bool
+checkTransform :: (Tarpit -> Tarpit) -> Tarpit -> Bool
 checkTransform f ast = testCode ast (f ast)

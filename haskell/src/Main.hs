@@ -62,10 +62,10 @@ main = do
 
       codegen =
         case optTarget opts of
-          Indented -> Indented.showAST
-          C99      -> C99.showAST
-          Haskell  -> Haskell.showAST
-          Dot      -> Dot.showAST
+          Indented -> Indented.showTarpit
+          C99      -> C99.showTarpit
+          Haskell  -> Haskell.showTarpit
+          Dot      -> Dot.showTarpit
 
   case optAction opts of
     Help      -> printHelp

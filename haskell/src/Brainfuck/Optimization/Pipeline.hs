@@ -1,13 +1,13 @@
 module Brainfuck.Optimization.Pipeline where
 
-import Brainfuck.Data.AST
-import Brainfuck.Optimization.AST
+import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Assignment
 import Brainfuck.Optimization.Rewriting
+import Brainfuck.Optimization.Tarpit
 import Brainfuck.Optimization.WholeProgram
 import Brainfuck.Utility
 
-fullOptimization :: AST -> AST
+fullOptimization :: Tarpit -> Tarpit
 fullOptimization = removeFromEnd
                  . once expressions
                  . inlineZeros
@@ -26,7 +26,7 @@ fullOptimization = removeFromEnd
                    ])
                  . inlineZeros
 
-simpleOptimizations :: AST -> AST
+simpleOptimizations :: Tarpit -> Tarpit
 simpleOptimizations = once expressions
                     . inlineZeros
                     . tryMaybe (rewrite

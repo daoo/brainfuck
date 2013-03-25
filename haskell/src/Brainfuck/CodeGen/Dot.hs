@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.Dot (showExpr, showAST) where
+module Brainfuck.CodeGen.Dot (showExpr, showTarpit) where
 
-import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
+import Brainfuck.Data.Tarpit
 import Control.Monad.State.Strict
 import Text.CodeWriter
 
@@ -59,14 +59,14 @@ showExpr = \case
       makeEdge n ne
       showExpr e
 
-showAST :: AST -> String
-showAST ast = writeCode $ do
+showTarpit :: Tarpit -> String
+showTarpit ast = writeCode $ do
   line "digraph ast {"
   indentedM $ evalStateT (go ast) 0
   line "}"
 
   where
-    go :: AST -> DotState ()
+    go :: Tarpit -> DotState ()
     go = \case
       Nop -> get >>= makeNode Box "Nop"
 

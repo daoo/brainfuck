@@ -4,7 +4,7 @@ module Brainfuck.Optimization.Rewriting
   , Rule
   ) where
 
-import Brainfuck.Data.AST
+import Brainfuck.Data.Tarpit
 import Control.Applicative
 import Control.Monad.State.Strict
 
@@ -14,7 +14,7 @@ class Rewritable a where
   rewrite :: [a -> Rule a] -> a -> Rule a
   once :: (a -> a) -> a -> a
 
-instance Rewritable AST where
+instance Rewritable Tarpit where
   rewrite fs ast = toRule $ runState (go ast) False
     where
       go = loop $ \case

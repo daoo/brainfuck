@@ -1,11 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.CodeGen.Indented where
 
-import Brainfuck.Data.AST
+import Brainfuck.Data.Tarpit
 import Text.CodeWriter
 
-showAST :: AST -> String
-showAST = writeCode . go
+showTarpit :: Tarpit -> String
+showTarpit = writeCode . go
   where
     go = \case
       Nop                  -> return ()
