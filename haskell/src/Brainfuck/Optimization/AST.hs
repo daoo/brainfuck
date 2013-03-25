@@ -94,9 +94,5 @@ reduceCopyLoops ast = fail (show ast)
 
 -- |Convert while loops that are only run once to if statements
 whileToIf :: AST -> Rule AST
-whileToIf ast@(Flow (While e@(Var d)) inner next) =
-  if setToZero d inner
-    then return $ Flow (If e) inner next
-    else fail (show ast)
-
-whileToIf ast = fail (show ast)
+whileToIf (Flow (While e) inner next) | whileOnce e inner = return $ Flow (If e) inner next
+whileToIf ast                                             = fail (show ast)

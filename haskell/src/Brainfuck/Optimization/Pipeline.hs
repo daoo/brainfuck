@@ -22,7 +22,7 @@ fullOptimization = removeFromEnd
                    , movePut
                    , moveShifts
                    , reduceCopyLoops
-                   -- , whileToIf
+                   , whileToIf
                    ])
                  . inlineZeros
 

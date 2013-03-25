@@ -3,7 +3,7 @@ module Brainfuck.Optimization.Analysis where
 
 import Brainfuck.Data.AST
 import Brainfuck.Data.Expr
-import Control.Applicative ((<$>), (<|>))
+import Control.Applicative hiding (Const)
 import Data.List
 import Data.Maybe
 
@@ -90,15 +90,25 @@ usesMemory = \case
       GetChar _  -> True
       Shift _    -> True
 
--- |Check if a memory position is set to zero a program
-setToZero :: Int -> AST -> Bool
-setToZero d1 ast = maybe False (== 0) (go Nothing ast)
-  where
-    go t = \case
-      Nop                  -> t
-      Instruction fun next -> go (f fun <|> t) next
-      Flow _ _ _           -> Nothing
+-- |Check if a while loop executes more than once
+whileOnce :: Expr -> AST -> Bool
+whileOnce e ast = case e of
+  Var d -> go d False ast
+  _     -> False
 
-    f = \case
-      Assign d2 (Const i) | d1 == d2 -> Just i
-      _                              -> Nothing
+  where
+    go d1 b = \case
+      Nop -> b
+
+      Instruction (Assign d2 (Const i)) next ->
+        let a = d1 == d2 in go d1 (a && (i == 0) || b && (not a)) next
+
+      Instruction (Assign _ _) next -> go d1 b next
+
+      Flow (If e') inner next | e == e' ->
+        let b' = go d1 b inner in go d1 b' next
+
+      Instruction (GetChar _) _ -> False
+      Instruction (PutChar _) _ -> False
+      Instruction (Shift _) _   -> False
+      Flow _ _ _                -> False
