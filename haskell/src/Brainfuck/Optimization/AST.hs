@@ -6,6 +6,7 @@ import Brainfuck.Data.Expr
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
+import Control.Applicative hiding (Const)
 
 expressions :: AST -> AST
 expressions = \case
@@ -86,16 +87,11 @@ moveShifts ast = fail (show ast)
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: AST -> Rule AST
-reduceCopyLoops (Flow (While (Var d)) inner next) = do
-  x <- copyLoop d inner
-
-  let instr = Instruction (Assign d $ Const 0) Nop
-
-      f d' (ds, v) = Assign ds $ (Var ds) `Add` (v `Mul` (Var d'))
-
-      x' = foldr Instruction instr $ map (f d) x
-
-  return $ x' `join` next
+reduceCopyLoops (Flow (While (Var d)) inner next) =
+  (`join` next) <$> foldr f zero <$> copyLoop d inner
+    where
+      zero      = Instruction (Assign d $ Const 0) Nop
+      f (ds, v) = Instruction . Assign ds $ (Var ds) `Add` (v `Mul` (Var d))
 
 reduceCopyLoops ast = fail (show ast)
 
