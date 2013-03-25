@@ -9,11 +9,11 @@ import Control.Applicative hiding (Const)
 exprDepends :: Int -> Expr -> Bool
 exprDepends d = unfold (||) (flip const) (const False) (== d)
 
--- |Analyze a IL Loop for copies
+-- |Analyze a loop for a copy/multiply structure
 -- A copy loop is a loop that follow these criteria:
 --   * Contains no shifts, puts or gets.
---   * The loop memory position is decremented by 1. The loop memory position
---     must be decremented by 1, otherwise we do not know if it will reach zero.
+--   * The loop memory position is decremented by 1. If it's decremented by some
+--     other value we can not determine if it reaches zero or overflows.
 --   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
 copyLoop :: Int -> AST -> Maybe [(Int, Int)]
