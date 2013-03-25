@@ -36,17 +36,6 @@ instance Arbitrary Expr where
     Add a b -> a : b : zipWith Add (shrink a) (shrink b)
     Mul _ b -> shrink b
 
-instance Num Expr where
-  (+) = Add
-  (*) = undefined
-
-  negate = undefined
-
-  abs    = undefined
-  signum = undefined
-
-  fromInteger = Const . fromInteger
-
 unfold :: (a -> a -> a) -> (Int -> a -> a) -> (Int -> a) -> (Int -> a) -> Expr -> a
 unfold add mul cst var = \case
   Const a -> cst a
