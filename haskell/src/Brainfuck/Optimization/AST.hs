@@ -8,11 +8,12 @@ import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
 
 expressions :: AST -> AST
-expressions (Instruction (Assign d e) next) = Instruction (Assign d (simplify e)) next
-expressions (Instruction (PutChar e) next)  = Instruction (PutChar (simplify e)) next
-expressions (Flow (If e) inner next)        = Flow (If (simplify e)) inner next
-expressions (Flow (While e) inner next)     = Flow (While (simplify e)) inner next
-expressions ast                             = ast
+expressions = \case
+  Instruction (Assign d e) next -> Instruction (Assign d (simplify e)) next
+  Instruction (PutChar e) next  -> Instruction (PutChar (simplify e)) next
+  Flow (If e) inner next        -> Flow (If (simplify e)) inner next
+  Flow (While e) inner next     -> Flow (While (simplify e)) inner next
+  ast                           -> ast
 
 reflectiveAssign :: AST -> Rule AST
 reflectiveAssign (Instruction (Assign d1 (Var d2)) next) | d1 == d2 = return next
@@ -35,11 +36,13 @@ flowOnce (Flow Once inner next) = return $ inner `join` next
 flowOnce ast                    = fail (show ast)
 
 flowConst :: AST -> Rule AST
-flowConst (Flow (While (Const i)) inner next) | i == 0    = return next
-                                              | otherwise = return $ Flow Forever inner next
-flowConst (Flow (If (Const i)) inner next)    | i == 0    = return next
-                                              | otherwise = return $ inner `join` next
-flowConst ast                                             = fail (show ast)
+flowConst (Flow (While (Const i)) inner next)
+  | i == 0    = return next
+  | otherwise = return $ Flow Forever inner next
+flowConst (Flow (If (Const i)) inner next)
+  | i == 0    = return next
+  | otherwise = return $ inner `join` next
+flowConst ast = fail (show ast)
 
 movePut :: AST -> Rule AST
 movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
@@ -50,16 +53,20 @@ moveShifts :: AST -> Rule AST
 moveShifts (Instruction (Shift s) next) = case next of
   Instruction fun next' -> return $ case fun of
 
-    GetChar d  -> Instruction (GetChar (s + d))           $ Instruction (Shift s) next'
-    PutChar e  -> Instruction (PutChar (expr s e))        $ Instruction (Shift s) next'
-    Assign d e -> Instruction (Assign (s + d) (expr s e)) $ Instruction (Shift s) next'
+    GetChar d  -> Instruction (GetChar (s + d))           $ shift next'
+    PutChar e  -> Instruction (PutChar (expr s e))        $ shift next'
+    Assign d e -> Instruction (Assign (s + d) (expr s e)) $ shift next'
     Shift s'   -> Instruction (Shift (s + s')) next'
 
-  Flow ctrl inner next' -> return $ Flow (control s ctrl) (mapAST (function s) (control s) inner) $ Instruction (Shift s) next'
+  Flow ctrl inner next' -> return $
+    Flow (control s ctrl) (mapAST (function s) (control s) inner) $
+      Instruction (Shift s) next'
 
   Nop -> fail (show Nop)
 
   where
+    shift = Instruction (Shift s)
+
     expr s' = modifyVars (Var . (+s'))
 
     function s' = \case
@@ -93,6 +100,8 @@ reduceCopyLoops (Flow (While (Var d)) inner next) = do
 reduceCopyLoops ast = fail (show ast)
 
 -- |Convert while loops that are only run once to if statements
+-- TODO: the (Assign d (Const 0)) operation could be moved out of the if for futher optimization
 whileToIf :: AST -> Rule AST
-whileToIf (Flow (While e) inner next) | whileOnce e inner = return $ Flow (If e) inner next
-whileToIf ast                                             = fail (show ast)
+whileToIf (Flow (While e) inner next)
+  | whileOnce e inner = return $ Flow (If e) inner next
+whileToIf ast = fail (show ast)
