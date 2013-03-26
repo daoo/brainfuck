@@ -13,6 +13,7 @@ import System.Console.GetOpt
 import System.Environment
 import System.Exit
 import System.IO
+import qualified Data.ByteString.Char8 as BS
 
 data Action = Compile | Interpret | Help deriving (Show, Read)
 data Target = Indented | C99 | Haskell | Dot deriving (Show, Read)
@@ -77,7 +78,7 @@ main = do
 
   where
     astFrom file = do
-      code <- readFile file
+      code <- BS.readFile file
       case parseBrainfuck code of
         Left err -> error $ show err
         Right bf -> return $ compile bf
