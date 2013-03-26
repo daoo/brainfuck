@@ -9,9 +9,15 @@ build-type: Simple
 cabal-version: >=1.8
 tested-with: GHC>=7.6
 
-executable brainfuck
+executable bf
   hs-source-dirs: src
-  main-is: Main.hs
+  main-is: Interpreter.hs
+  build-depends: base == 4.*, containers, mtl, bytestring, QuickCheck
+  ghc-options: -Wall
+
+executable bfc
+  hs-source-dirs: src
+  main-is: Compiler.hs
   build-depends: base == 4.*, containers, mtl, bytestring, QuickCheck
   ghc-options: -Wall
 

@@ -2,12 +2,12 @@
 # Compare the output of brainfuck after two consecutive runs of this script
 # using vimdiff.
 
-bf="dist/build/brainfuck/brainfuck"
+bfc="dist/build/bfc/bfc"
 dir="/tmp/brainfuck"
 
 infile="$1"
 
-if [[ ! -x "$bf" ]]; then
+if [[ ! -x "$bfc" ]]; then
   echo "brainfuck compiler not found"
 elif [[ ! -f "$infile" ]]; then
   echo "usage: compare FILE"
@@ -19,10 +19,10 @@ else
 
   if [[ -f "$new" ]]; then
     mv "$new" "$old"
-    $bf -O2 -c "$infile" > "$new"
+    $bfc -O2 -t C99 "$infile" > "$new"
     vimdiff "$new" "$old"
   else
-    exec $bf -c "$infile" > "$new"
+    exec $bfc -O2 -t C99 "$infile" > "$new"
     echo "Nothing to compare with. Maybe next time..."
   fi
 fi

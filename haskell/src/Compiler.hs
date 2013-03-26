@@ -5,7 +5,6 @@ import Brainfuck.CodeGen.Dot as Dot
 import Brainfuck.CodeGen.Haskell as Haskell
 import Brainfuck.CodeGen.Indented as Indented
 import Brainfuck.Compile
-import Brainfuck.Interpret
 import Brainfuck.Optimization.Pipeline
 import Brainfuck.Parse
 import Brainfuck.Utility
@@ -15,7 +14,7 @@ import System.Exit
 import System.IO
 import qualified Data.ByteString.Char8 as BS
 
-data Action = Compile | Interpret | Help deriving (Show, Read)
+data Action = Compile | Help deriving (Show, Read)
 data Target = Indented | C99 | Haskell | Dot deriving (Show, Read)
 
 data Options = Options
@@ -26,12 +25,10 @@ data Options = Options
 
 defaultOptions :: Options
 defaultOptions = Options
-  { optAction   = Interpret
+  { optAction   = Compile
   , optTarget   = C99
   , optOptimize = 1
   }
-
-data Flag = Do Action | Target Target
 
 printHelp :: IO ()
 printHelp = putStrLn (usageInfo header options)
@@ -42,7 +39,7 @@ options :: [OptDescr (Options -> Options)]
 options =
   [ Option "c" ["compile"] (NoArg (\opt -> opt { optAction = Compile })) "compile input"
   , Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "{Indented|C99|Haskell|Dot}") "target language"
-  , Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1}") "optimizations"
+  , Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1|2}") "optimizations"
   , Option "h" ["help"] (NoArg (\opt -> opt { optAction = Help})) "show help"
   ]
 
@@ -69,12 +66,8 @@ main = do
           Dot      -> Dot.showTarpit
 
   case optAction opts of
-    Help      -> printHelp
-    Compile   -> astFrom file >>= putStrLn . codegen . optimize
-    Interpret -> do
-      ast <- astFrom file
-      inp <- getContents
-      putStr $ run1 inp $ optimize ast
+    Help    -> printHelp
+    Compile -> astFrom file >>= putStrLn . codegen . optimize
 
   where
     astFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)
