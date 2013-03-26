@@ -5,22 +5,22 @@ import Brainfuck.Data.Brainfuck
 import Control.Applicative
 import qualified Data.ByteString.Char8 as BS
 
-program :: BS.ByteString -> (BS.ByteString, Brainfuck)
-program bs = maybe (BS.empty, Nop) f (BS.uncons bs)
+parse :: BS.ByteString -> (BS.ByteString, Brainfuck)
+parse bs = maybe (BS.empty, Nop) f (BS.uncons bs)
   where
     f (x, xs) = case x of
-      '+' -> Token Plus       <$> program xs
-      '-' -> Token Minus      <$> program xs
-      '>' -> Token ShiftRight <$> program xs
-      '<' -> Token ShiftLeft  <$> program xs
-      '.' -> Token Output     <$> program xs
-      ',' -> Token Input      <$> program xs
+      '+' -> Token Plus       <$> parse xs
+      '-' -> Token Minus      <$> parse xs
+      '>' -> Token ShiftRight <$> parse xs
+      '<' -> Token ShiftLeft  <$> parse xs
+      '.' -> Token Output     <$> parse xs
+      ',' -> Token Input      <$> parse xs
 
-      '[' -> let (xs', inner) = program xs
-              in Repeat inner <$> program xs'
+      '[' -> let (xs', inner) = parse xs
+              in Repeat inner <$> parse xs'
       ']' -> (xs, Nop)
 
-      _ -> program xs
+      _ -> parse xs
 
 parseBrainfuck :: BS.ByteString -> Brainfuck
-parseBrainfuck = snd . program
+parseBrainfuck = snd . parse
