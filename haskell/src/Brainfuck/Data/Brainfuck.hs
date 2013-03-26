@@ -9,7 +9,7 @@ data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
 
 data Brainfuck = Nop
                | Repeat Brainfuck Brainfuck
-               | Token Token Brainfuck
+               | Token !Token Brainfuck
   deriving Eq
 
 toChar :: Token -> Char
