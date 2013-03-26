@@ -24,10 +24,11 @@ instance Show Token where
   show t = [toChar t]
 
 instance Show Brainfuck where
-  show (Repeat bf) = concat ["[", concatMap show bf, "]"]
-  show (Token t)   = show t
+  show = \case
+    Repeat bf -> showString "[" $ showList bf "]"
+    Token t   -> show t
 
-  showList bf = (++) (concatMap show bf)
+  showList = flip (foldr shows)
 
 instance Arbitrary Token where
   arbitrary = oneof $ map return [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
