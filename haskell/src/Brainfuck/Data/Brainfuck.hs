@@ -1,14 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.Brainfuck where
 
-import Data.List
+import Control.Applicative
 import Test.QuickCheck
 
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq
 
-data Brainfuck = Repeat [Brainfuck]
-               | Token Token
+data Brainfuck = Nop
+               | Repeat Brainfuck Brainfuck
+               | Token Token Brainfuck
   deriving Eq
 
 toChar :: Token -> Char
@@ -25,8 +26,9 @@ instance Show Token where
 
 instance Show Brainfuck where
   show = \case
-    Repeat bf -> showString "[" $ showList bf "]"
-    Token t   -> show t
+    Nop               -> ""
+    Repeat inner next -> showString "[" $ shows inner $ showString "]" $ show next
+    Token t next      -> shows t $ show next
 
   showList = flip (foldr shows)
 
@@ -34,7 +36,7 @@ instance Arbitrary Token where
   arbitrary = oneof $ map return [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
 
 instance Arbitrary Brainfuck where
-  arbitrary = Token `fmap` arbitrary
+  arbitrary = Token <$> arbitrary <*> arbitrary
 
-  shrink (Repeat bf) = map Repeat $ tails bf
-  shrink _           = []
+  shrink (Repeat inner next) = map (`Repeat` next) (shrink inner)
+  shrink _                   = []

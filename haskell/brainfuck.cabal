@@ -12,13 +12,13 @@ tested-with: GHC>=7.6
 executable brainfuck
   hs-source-dirs: src
   main-is: Main.hs
-  build-depends: base == 4.*, containers, parsec, mtl, bytestring, QuickCheck
+  build-depends: base == 4.*, containers, mtl, bytestring, QuickCheck
   ghc-options: -Wall
 
 test-suite brainfuck-tests
   type: exitcode-stdio-1.0
   hs-source-dirs: tests, src
   main-is: MainTestSuite.hs
-  build-depends: base == 4.*, containers, parsec, mtl, QuickCheck,
+  build-depends: base == 4.*, containers, mtl, QuickCheck,
                  test-framework, test-framework-quickcheck2
   ghc-options: -Wall

@@ -77,8 +77,4 @@ main = do
       putStr $ run1 inp $ optimize ast
 
   where
-    astFrom file = do
-      code <- BS.readFile file
-      case parseBrainfuck code of
-        Left err -> error $ show err
-        Right bf -> return $ compile bf
+    astFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)

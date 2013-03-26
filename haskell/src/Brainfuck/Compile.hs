@@ -1,15 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Compile (compile, decompile) where
 
-import Brainfuck.Data.Brainfuck
+import Brainfuck.Data.Brainfuck as BF
 import Brainfuck.Data.Expr
-import Brainfuck.Data.Tarpit
+import Brainfuck.Data.Tarpit as Tarpit
 
-compile :: [Brainfuck] -> Tarpit
+compile :: Brainfuck -> Tarpit
 compile = \case
-  []             -> Nop
-  Repeat ys : xs -> Flow (While (Var 0)) (compile ys) (compile xs)
-  Token t : xs   -> Instruction (token t) (compile xs)
+  BF.Nop            -> Tarpit.Nop
+  Repeat inner next -> Flow (While (Var 0)) (compile inner) (compile next)
+  Token t next      -> Instruction (token t) (compile next)
   where
     token = \case
       Plus       -> Assign 0 $ Const 1 `Add` Var 0
@@ -19,11 +19,11 @@ compile = \case
       Output     -> PutChar $ Var 0
       Input      -> GetChar 0
 
-decompile :: Tarpit -> [Brainfuck]
+decompile :: Tarpit -> Brainfuck
 decompile = \case
-  Nop                             -> []
-  Instruction fun next            -> tokenize fun : decompile next
-  Flow (While (Var 0)) inner next -> Repeat (decompile inner) : decompile next
+  Tarpit.Nop                      -> BF.Nop
+  Instruction fun next            -> tokenize fun (decompile next)
+  Flow (While (Var 0)) inner next -> Repeat (decompile inner) (decompile next)
 
   _ -> error "unsupported by decompile"
   where
