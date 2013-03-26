@@ -12,13 +12,13 @@ tested-with: GHC>=7.6
 executable bf
   hs-source-dirs: src
   main-is: Interpreter.hs
-  build-depends: base == 4.*, containers, mtl, bytestring, QuickCheck
+  build-depends: base == 4.*, containers, mtl, bytestring == 0.10.2.0, QuickCheck
   ghc-options: -Wall
 
 executable bfc
   hs-source-dirs: src
   main-is: Compiler.hs
-  build-depends: base == 4.*, containers, mtl, bytestring, QuickCheck
+  build-depends: base == 4.*, containers, mtl, bytestring == 0.10.2.0, QuickCheck
   ghc-options: -Wall
 
 test-suite brainfuck-tests

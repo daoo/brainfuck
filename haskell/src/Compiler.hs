@@ -1,17 +1,19 @@
 module Main where
 
-import Brainfuck.CodeGen.C99 as C99
-import Brainfuck.CodeGen.Dot as Dot
-import Brainfuck.CodeGen.Haskell as Haskell
-import Brainfuck.CodeGen.Indented as Indented
+import Brainfuck.CodeGen.C99
+import Brainfuck.CodeGen.Dot
+import Brainfuck.CodeGen.Haskell
+import Brainfuck.CodeGen.Indented
 import Brainfuck.Compile
 import Brainfuck.Optimization.Pipeline
 import Brainfuck.Parse
 import Brainfuck.Utility
+import Data.ByteString.Builder
 import System.Console.GetOpt
 import System.Environment
 import System.Exit
 import System.IO
+import Text.CodeWriter
 import qualified Data.ByteString.Char8 as BS
 
 data Action = Compile | Help deriving (Show, Read)
@@ -60,14 +62,14 @@ main = do
 
       codegen =
         case optTarget opts of
-          Indented -> Indented.showTarpit
-          C99      -> C99.showTarpit
-          Haskell  -> Haskell.showTarpit
-          Dot      -> Dot.showTarpit
+          Indented -> writeIndented
+          C99      -> writeC99
+          Haskell  -> writeHaskell
+          Dot      -> writeDot
 
   case optAction opts of
     Help    -> printHelp
-    Compile -> astFrom file >>= putStrLn . codegen . optimize
+    Compile -> astFrom file >>= hPutBuilder stdout . runCodeWriter . codegen . optimize
 
   where
     astFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)

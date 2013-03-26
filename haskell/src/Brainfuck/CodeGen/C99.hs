@@ -8,20 +8,20 @@ import Control.Monad
 import Data.Char
 import Text.CodeWriter
 
-showExpr :: Expr -> ShowS
-showExpr = \case
-  Const i -> shows i
-  Var d   -> showString "ptr[" . shows d . showString "]"
-  Add a b -> showExpr a . showString " + " . showExpr b
-  Mul a b -> shows a . showString " * " . showParen (paren b) (showExpr b)
+writeExpr :: Expr -> CodeWriter ()
+writeExpr = \case
+  Const i -> int i
+  Var d   -> string "ptr[" >> int d >> string "]"
+  Add a b -> writeExpr a >> string " + " >> writeExpr b
+  Mul a b -> int a >> string " * " >> surround '(' ')' (paren b) (writeExpr b)
 
   where
     paren = \case
       Add _ _ -> True
       _       -> False
 
-showTarpit :: Tarpit -> String
-showTarpit ast = writeCode $ do
+writeC99 :: Tarpit -> CodeWriter ()
+writeC99 ast = do
   line "#include <stdio.h>"
   line ""
   line "int main() {"
@@ -50,24 +50,26 @@ showTarpit ast = writeCode $ do
 
     block :: String -> Expr -> Tarpit -> CodeWriter ()
     block word e ys = do
-      line $ showString word $ showString " (" $ showExpr e ") {"
+      lineM $ do
+        string word
+        string " ("
+        writeExpr e
+        string ") {"
       indentedM $ go ys
       line "}"
 
     function = \case
-      Assign d e -> ptr d "=" (showExpr e "")
+      Assign d e -> ptr d (writeExpr e)
 
-      PutChar (Const c) -> string $ showString "putchar(" $ shows (chr c) ")"
+      PutChar (Const c) -> string "putchar(" >> char (chr c) >> char ')'
 
-      Shift s   -> string $ showString "ptr += " $ show s
-      PutChar e -> string $ showString "putchar(" $ showExpr e ")"
-      GetChar p -> ptr p "=" "getchar()"
+      Shift s   -> string "ptr += " >> int s
+      PutChar e -> string "putchar(" >> writeExpr e >> string ")"
+      GetChar d -> ptr d (string "getchar()")
 
-    ptr :: Int -> String -> String -> CodeWriter ()
-    ptr d op b = do
+    ptr :: Int -> CodeWriter () -> CodeWriter ()
+    ptr diff value = do
       string "ptr["
-      string $ show d
-      string "] "
-      string op
-      string " "
-      string b
+      int diff
+      string "] = "
+      value

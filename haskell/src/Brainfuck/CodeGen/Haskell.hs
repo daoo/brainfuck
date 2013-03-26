@@ -1,12 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.Haskell where
+module Brainfuck.CodeGen.Haskell (writeHaskell) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Text.CodeWriter
 
-showTarpit :: Tarpit -> String
-showTarpit ast = writeCode $ do
+writeHaskell :: Tarpit -> CodeWriter ()
+writeHaskell ast = do
   line "import Brainfuck.Data.Expr"
   line "import Brainfuck.Data.IOMemory"
   line ""
@@ -22,7 +22,7 @@ showTarpit ast = writeCode $ do
   where
     go = \case
       Nop                  -> return ()
-      Instruction fun next -> function fun >> go next
+      Instruction fun next -> lineM (function fun) >> go next
       Flow ctrl inner next -> control ctrl >> indentedM (go inner) >> go next
 
     control = \case
@@ -33,14 +33,13 @@ showTarpit ast = writeCode $ do
       If e    -> block "when" e
 
     function = \case
-      Assign d e -> line $ showString "set " $ shows d $ showString " $ " $ show e
-      PutChar e  -> line $ showString "put $ " $ show e
-      GetChar d  -> line $ showString "get " $ show d
-      Shift d    -> line $ showString "shift (" $ shows d ")"
+      Assign d e -> string "set " >> int d >> string " $ " >> string (show e)
+      PutChar e  -> string "put $ " >> string (show e)
+      GetChar d  -> string "get " >> int d
+      Shift d    -> string "shift (" >> int d >> string ")"
 
-    block str e = do
-      lineM $ do
-        string str
-        string " ("
-        string $ show e
-        string ") $ do"
+    block str e = lineM $ do
+      string str
+      string " ("
+      string $ show e
+      string ") $ do"

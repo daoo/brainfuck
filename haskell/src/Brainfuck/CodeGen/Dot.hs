@@ -1,56 +1,52 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.Dot (showExpr, showTarpit) where
+module Brainfuck.CodeGen.Dot (showExpr, writeDot) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Control.Monad.State.Strict
 import Text.CodeWriter
 
-type Id = Int
-
+type Id         = Int
 type DotState a = StateT Id CodeWriter a
 
-data Outline = Box | Ellipse | Diamond
-
-instance Show Outline where
-  show = \case
-    Box     -> "shape=\"box\""
-    Ellipse -> "shape=\"ellipse\""
-    Diamond -> "shape=\"diamond\""
+box, ellipse, diamond :: CodeWriter ()
+box     = string "shape=\"box\""
+ellipse = string "shape=\"ellipse\""
+diamond = string "shape=\"diamond\""
 
 newId :: DotState Id
 newId = modify (+1) >> get
 
-makeNode :: Outline -> String -> Id -> DotState ()
+makeNode :: CodeWriter () -> CodeWriter () -> Id -> DotState ()
 makeNode outline label n = lift $ lineM $ do
-  string (show n)
+  int n
   string " [label=\""
-  string label
+  label
   string "\" "
-  string (show outline)
+  outline
   string "];"
 
 makeEdge :: Id -> Id -> DotState ()
 makeEdge from to = lift $ lineM $ do
-  string (show from)
+  int from
   string " -> "
-  string (show to)
+  int to
   string ";"
 
 showExpr :: Expr -> DotState ()
 showExpr = \case
-  Const i -> get >>= makeNode Ellipse (show i)
-  Var d   -> get >>= makeNode Ellipse (showString "#" $ show d)
+  Const i -> get >>= makeNode ellipse (int i)
+  Var d   -> get >>= makeNode ellipse (char '#' >> int d)
 
   Add a b -> do
     n <- get
-    makeNode Ellipse ("+") n
+    makeNode ellipse (char '+') n
     next n a
     next n b
 
   Mul a b -> do
     n <- get
-    makeNode Ellipse (shows a "*") n
+    makeNode ellipse (int a >> char '*') n
     next n b
 
   where
@@ -59,8 +55,8 @@ showExpr = \case
       makeEdge n ne
       showExpr e
 
-showTarpit :: Tarpit -> String
-showTarpit ast = writeCode $ do
+writeDot :: Tarpit -> CodeWriter ()
+writeDot ast = do
   line "digraph ast {"
   indentedM $ evalStateT (go ast) 0
   line "}"
@@ -68,26 +64,26 @@ showTarpit ast = writeCode $ do
   where
     go :: Tarpit -> DotState ()
     go = \case
-      Nop -> get >>= makeNode Box "Nop"
+      Nop -> get >>= makeNode box (string "Nop")
 
       Instruction fun next -> do
         n <- get
         case fun of
-          Assign d e -> exprNode Box (showString "Assign " $ show d) e n
-          Shift i    -> makeNode Box (showString "Shift " $ show i) n
-          PutChar e  -> exprNode Box "PutChar" e n
-          GetChar d  -> makeNode Box (showString "GetChar " $ show d) n
+          Assign d e -> exprNode box (string "Assign " >> int d) e n
+          Shift i    -> makeNode box (string "Shift " >> int i) n
+          PutChar e  -> exprNode box (string "PutChar") e n
+          GetChar d  -> makeNode box (string "GetChar " >> int d) n
 
         nextNode n next
 
       Flow ctrl inner next -> do
         n <- get
         case ctrl of
-          Forever -> makeNode Diamond "Forever" n
-          Once    -> makeNode Diamond "Once" n
-          Never   -> makeNode Diamond "Never" n
-          If e    -> exprNode Diamond "If" e n
-          While e -> exprNode Diamond "While" e n
+          Forever -> makeNode diamond (string "Forever") n
+          Once    -> makeNode diamond (string "Once") n
+          Never   -> makeNode diamond (string "Never") n
+          If e    -> exprNode diamond (string "If") e n
+          While e -> exprNode diamond (string "While") e n
 
         nextNode n inner
         nextNode n next
