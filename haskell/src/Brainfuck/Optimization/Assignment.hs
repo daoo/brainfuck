@@ -6,6 +6,7 @@ import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Expr
 import Brainfuck.Utility
 import Data.Maybe
+import Data.Monoid
 import qualified Data.Graph as G
 import qualified Data.Map as M
 
@@ -14,7 +15,7 @@ optimizeAssign :: Tarpit -> Tarpit
 optimizeAssign = \case
   Nop -> Nop
 
-  x@(Instruction (Assign _ _) _) -> uncurry join $ modify $ splitAssign x
+  x@(Instruction (Assign _ _) _) -> uncurry mappend $ modify $ splitAssign x
 
   Instruction fun next -> Instruction fun (optimizeAssign next)
 

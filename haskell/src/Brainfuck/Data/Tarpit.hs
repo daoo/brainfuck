@@ -3,6 +3,7 @@ module Brainfuck.Data.Tarpit where
 
 import Brainfuck.Data.Expr
 import Control.Applicative
+import Data.Monoid
 import Test.QuickCheck
 
 data Function = Assign Int Expr | Shift Int | PutChar Expr | GetChar Int
@@ -54,6 +55,14 @@ instance Arbitrary Tarpit where
 
   shrink = initsTarpit
 
+instance Monoid Tarpit where
+  mempty = Nop
+
+  mappend a b = case a of
+    Nop                  -> b
+    Instruction fun next -> Instruction fun (mappend next b)
+    Flow ctrl inner next -> Flow ctrl inner (mappend next b)
+
 initTarpit :: Tarpit -> Tarpit
 initTarpit = \case
   Nop               -> Nop
@@ -68,12 +77,6 @@ initsTarpit :: Tarpit -> [Tarpit]
 initsTarpit = \case
   Nop -> []
   x   -> let x' = initTarpit x in x' : initsTarpit x'
-
-join :: Tarpit -> Tarpit -> Tarpit
-join a b = case a of
-  Nop                  -> b
-  Instruction fun next -> Instruction fun (join next b)
-  Flow ctrl inner next -> Flow ctrl inner (join next b)
 
 mapTarpit :: (Function -> Function) -> (Control -> Control) -> Tarpit -> Tarpit
 mapTarpit f g = \case

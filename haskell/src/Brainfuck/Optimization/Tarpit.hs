@@ -7,6 +7,7 @@ import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
 import Control.Applicative hiding (Const)
+import Data.Monoid
 
 reflectiveAssign :: Tarpit -> Rule Tarpit
 reflectiveAssign (Instruction (Assign d1 (Var d2)) next) | d1 == d2 = return next
@@ -25,7 +26,7 @@ flowNever (Flow Never _ next) = return next
 flowNever ast                 = fail (show ast)
 
 flowOnce :: Tarpit -> Rule Tarpit
-flowOnce (Flow Once inner next) = return $ inner `join` next
+flowOnce (Flow Once inner next) = return $ inner `mappend` next
 flowOnce ast                    = fail (show ast)
 
 flowConst :: Tarpit -> Rule Tarpit
@@ -34,7 +35,7 @@ flowConst (Flow (While (Const i)) inner next)
   | otherwise = return $ Flow Forever inner next
 flowConst (Flow (If (Const i)) inner next)
   | i == 0    = return next
-  | otherwise = return $ inner `join` next
+  | otherwise = return $ inner `mappend` next
 flowConst ast = fail (show ast)
 
 movePut :: Tarpit -> Rule Tarpit
@@ -80,7 +81,7 @@ moveShifts ast = fail (show ast)
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: Tarpit -> Rule Tarpit
 reduceCopyLoops (Flow (While (Var d)) inner next) =
-  (`join` next) <$> foldr f zero <$> copyLoop d inner
+  (`mappend` next) <$> foldr f zero <$> copyLoop d inner
     where
       zero      = Instruction (Assign d $ Const 0) Nop
       f (ds, v) = Instruction . Assign ds $ (Var ds) `Add` (v `Mul` (Var d))
