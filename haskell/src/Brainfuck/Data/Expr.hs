@@ -37,13 +37,13 @@ instance Arbitrary Expr where
     Mul _ b -> shrink b
 
 unfold :: (a -> a -> a) -> (Int -> a -> a) -> (Int -> a) -> (Int -> a) -> Expr -> a
-unfold add mul cst var = \case
-  Const a -> cst a
-  Var a   -> var a
-  Add a b -> add (unfold' a) (unfold' b)
-  Mul a b -> mul a (unfold' b)
+unfold add mul cst var = go
   where
-    unfold' = unfold add mul cst var
+    go = \case
+      Const a -> cst a
+      Var a   -> var a
+      Add a b -> add (go a) (go b)
+      Mul a b -> mul a (go b)
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d1 e = unfold Add Mul Const (\d2 -> if d1 == d2 then e else Var d2)
