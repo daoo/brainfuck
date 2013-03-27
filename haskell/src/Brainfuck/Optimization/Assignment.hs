@@ -3,6 +3,7 @@ module Brainfuck.Optimization.Assignment where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
+import Brainfuck.Optimization.Expr
 import Brainfuck.Utility
 import Data.Maybe
 import qualified Data.Graph as G
@@ -26,7 +27,7 @@ optimizeAssign = \case
       Instruction (Assign d e) next -> mapFst ((d, e) :) $ splitAssign next
       y                             -> ([], y)
 
-    makeAST = foldr (Instruction . uncurry Assign) Nop
+    makeAST = foldr (Instruction . uncurry Assign . (fmap simplify)) Nop
 
 -- Initial Code:
 -- Assign 2 (Var 1)

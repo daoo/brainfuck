@@ -3,7 +3,21 @@ module Brainfuck.Optimization.WholeProgram where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
+import Brainfuck.Optimization.Expr
 import qualified Data.Set as S
+
+expressions :: Tarpit -> Tarpit
+expressions = mapTarpit f g
+  where
+    f = \case
+      Assign d e -> Assign d $ simplify e
+      PutChar e  -> PutChar $ simplify e
+      x          -> x
+
+    g = \case
+      If e    -> If $ simplify e
+      While e -> While $ simplify e
+      x       -> x
 
 -- |Inline initial zeroes
 inlineZeros :: Tarpit -> Tarpit
@@ -21,7 +35,7 @@ inlineZeros = go S.empty
       ast -> ast
 
     inl :: S.Set Int -> Expr -> Expr
-    inl s = modifyVars (\i -> if S.member i s then Var i else Const 0)
+    inl s = simplify . modifyVars (\i -> if S.member i s then Var i else Const 0)
 
 -- |Remove instructions from the end that does not performe any side effects
 removeFromEnd :: Tarpit -> Tarpit

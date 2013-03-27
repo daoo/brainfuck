@@ -12,7 +12,6 @@ type Rule a = Maybe a
 
 class Rewritable a where
   rewrite :: [a -> Rule a] -> a -> Rule a
-  once :: (a -> a) -> a -> a
 
 instance Rewritable Tarpit where
   rewrite fs ast = toRule $ runState (go ast) False
@@ -23,11 +22,6 @@ instance Rewritable Tarpit where
         Instruction fun next -> Instruction fun <$> go next >>= applyRules fs
 
         Flow ctrl inner next -> Flow ctrl <$> go inner <*> go next >>= applyRules fs
-
-  once f = \case
-    Nop                  -> Nop
-    Instruction fun next -> f $ Instruction fun (once f next)
-    Flow ctrl inner next -> f $ Flow ctrl (once f inner) (once f next)
 
 toRule :: (a, Bool) -> Rule a
 toRule (a, True) = Just a

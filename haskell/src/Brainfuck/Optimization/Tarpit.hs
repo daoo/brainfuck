@@ -8,14 +8,6 @@ import Brainfuck.Optimization.Expr
 import Brainfuck.Optimization.Rewriting
 import Control.Applicative hiding (Const)
 
-expressions :: Tarpit -> Tarpit
-expressions = \case
-  Instruction (Assign d e) next -> Instruction (Assign d (simplify e)) next
-  Instruction (PutChar e) next  -> Instruction (PutChar (simplify e)) next
-  Flow (If e) inner next        -> Flow (If (simplify e)) inner next
-  Flow (While e) inner next     -> Flow (While (simplify e)) inner next
-  ast                           -> ast
-
 reflectiveAssign :: Tarpit -> Rule Tarpit
 reflectiveAssign (Instruction (Assign d1 (Var d2)) next) | d1 == d2 = return next
 reflectiveAssign ast                                                = fail (show ast)
@@ -47,7 +39,7 @@ flowConst ast = fail (show ast)
 
 movePut :: Tarpit -> Rule Tarpit
 movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
-  return $ Instruction (PutChar (inlineExpr d e1 e2)) (Instruction s next)
+  return $ Instruction (PutChar (simplify $ inlineExpr d e1 e2)) (Instruction s next)
 movePut ast = fail (show ast)
 
 moveShifts :: Tarpit -> Rule Tarpit

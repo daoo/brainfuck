@@ -8,10 +8,9 @@ import Brainfuck.Optimization.WholeProgram
 import Brainfuck.Utility
 
 fullOptimization :: Tarpit -> Tarpit
-fullOptimization = removeFromEnd
-                 . once expressions
-                 . inlineZeros
+fullOptimization = inlineZeros
                  . optimizeAssign
+                 . removeFromEnd
                  . tryMaybe (rewrite
                    [ reflectiveAssign
                    , shiftZero
@@ -27,8 +26,7 @@ fullOptimization = removeFromEnd
                  . inlineZeros
 
 simpleOptimizations :: Tarpit -> Tarpit
-simpleOptimizations = once expressions
-                    . inlineZeros
+simpleOptimizations = inlineZeros
                     . tryMaybe (rewrite
                       [ reflectiveAssign
                       , shiftZero
