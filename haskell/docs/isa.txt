@@ -1,0 +1,45 @@
+File format:
+
+  Header:
+
+  | (uint32) magic = 0x5f540000 |
+  | (uint32) version            |
+  | (uint32) instruction count  |
+
+  code...
+
+Instruction format:
+
+  | type |-31-         format (bits)          -0-|
+  |------|---------------------------------------|
+  | R    | opcode (6) | rt (4) | ra (4) | rb (4) |
+  | I    | opcode (6) | rt (4) | value (24)      |
+  | J    | opcode (6) | address (28)             |
+  |------|---------------------------------------|
+
+Registers:
+
+  The architecture have 4 registers:
+
+    * a, 32 bits
+    * b, 32 bits
+    * r, 32 bits
+    * ptr, 32 bits, the global memory pointer
+    * pc, 32 bits, program counter
+
+Instructions:
+
+  | opcode | name    | syntax         | meaning                   | format |
+  |--------|---------|----------------|---------------------------|--------|
+  | 000000 | Add     | add $r, $a, $b | $r = $a + $b              | R      |
+  | 000001 | Mul     | mul $r, $a, $b | $r = $a * $b              | R      |
+  | 000010 | Move    | move $t, $s    | $t = $s                   | R      |
+  | 000011 | Load    | load $t, $i    | $t = $i                   | I      |
+  | 000100 | Read    | read $t, $o    | $t = memory[$o]           | I      |
+  | 000101 | Write   | write $t, $o   | memory[$o] = $t           | I      |
+  | 000110 | PutChar | putchar $s     | out = memory[$s]          | R      |
+  | 000111 | GetChar | getchar $o     | memory[$o] = inp          | R      |
+  | 001000 | Branch  | beq $s, $o     | if ($s == 0) goto pc + $o | I      |
+  | 001001 | Branch  | bne $s, $o     | if ($s != 0) goto pc + $o | I      |
+  | 001010 | Jump    | jmp $o         | goto $o                   | J      |
+  |--------|---------|----------------|---------------------------|--------|
