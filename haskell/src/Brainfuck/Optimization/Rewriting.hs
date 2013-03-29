@@ -2,6 +2,7 @@
 module Brainfuck.Optimization.Rewriting
   ( Rewritable (..)
   , Rule
+  , nope
   ) where
 
 import Brainfuck.Data.Tarpit
@@ -22,6 +23,9 @@ instance Rewritable Tarpit where
         Instruction fun next -> Instruction fun <$> go next >>= applyRules fs
 
         Flow ctrl inner next -> Flow ctrl <$> go inner <*> go next >>= applyRules fs
+
+nope :: Rule a
+nope = Nothing
 
 toRule :: (a, Bool) -> Rule a
 toRule (a, True) = Just a

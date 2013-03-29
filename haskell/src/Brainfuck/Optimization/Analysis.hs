@@ -4,10 +4,11 @@ module Brainfuck.Optimization.Analysis where
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Control.Applicative hiding (Const)
+import qualified Data.IntMap as M
 
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
-exprDepends d = unfold (||) (\_ -> (== d)) (const False) (== d)
+exprDepends d = M.member d . snd
 
 -- |Analyze a loop for a copy/multiply structure
 -- A copy loop is a loop that follow these criteria:
@@ -22,15 +23,17 @@ copyLoop d1 = go
     go = \case
       Nop -> Just []
 
-      Instruction (Assign d2 (Var d3 `Add` Const c)) next -> f d2 d3 c next
-      Instruction (Assign d2 (Const c `Add` Var d3)) next -> f d2 d3 c next
+      Instruction (Assign d2 (c, v)) next -> case M.assocs v of
+
+        [(d3, 1)]
+          | d2 == d3 && d1 == d2 && c == -1 -> go next
+          | d2 == d3 && d1 /= d2            -> ((d2, c):) <$> go next
+          | otherwise                       -> Nothing
+
+        _ -> Nothing
 
       _ -> Nothing
 
-    f d2 d3 c next
-      | d2 == d3 && d1 == d2 && c == -1 = go next
-      | d2 == d3 && d1 /= d2            = ((d2, c):) <$> go next
-      | otherwise                       = Nothing
 
 -- |Heuristically decide how much memory a program uses.
 memorySize :: Tarpit -> (Int, Int)
@@ -51,7 +54,7 @@ memorySize = \case
       While e -> expr e
       _       -> (0, 0)
 
-    expr = unfold (<+>) (\_ -> g) (const (0, 0)) g
+    expr = M.foldrWithKey' (\d _ s -> g d <+> s) (0, 0) . snd
 
     g :: Int -> (Int, Int)
     g d = case compare d 0 of
@@ -70,22 +73,22 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar e  -> unfold (||) ((const . const) True) (const False) (const True) e
+      PutChar e  -> not $ M.null $ snd e
       Assign _ _ -> True
       GetChar _  -> True
       Shift _    -> True
 
 -- |Check if a while loop executes more than once
 whileOnce :: Expr -> Tarpit -> Bool
-whileOnce e ast = case e of
-  Var d -> go d False ast
-  _     -> False
+whileOnce e ast = case M.assocs <$> e of
+  (0, [(d, 1)]) -> go d False ast
+  _             -> False
 
   where
     go d1 b = \case
       Nop -> b
 
-      Instruction (Assign d2 (Const i)) next ->
+      Instruction (Assign d2 (i, v)) next | M.null v ->
         let a = d1 == d2 in go d1 (a && (i == 0) || b && (not a)) next
 
       Instruction (Assign _ _) next -> go d1 b next

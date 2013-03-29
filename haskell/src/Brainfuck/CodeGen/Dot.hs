@@ -33,27 +33,8 @@ makeEdge from to = lift $ lineM $ do
   int to
   string ";"
 
-showExpr :: Expr -> DotState ()
-showExpr = \case
-  Const i -> get >>= makeNode ellipse (int i)
-  Var d   -> get >>= makeNode ellipse (char '#' >> int d)
-
-  Add a b -> do
-    n <- get
-    makeNode ellipse (char '+') n
-    next n a
-    next n b
-
-  Mul a b -> do
-    n <- get
-    makeNode ellipse (int a >> char '*') n
-    next n b
-
-  where
-    next n e = do
-      ne <- newId
-      makeEdge n ne
-      showExpr e
+makeExpr :: Expr -> DotState ()
+makeExpr e = get >>= makeNode ellipse (string (showExpr e))
 
 writeDot :: Tarpit -> CodeWriter ()
 writeDot ast = do
@@ -96,4 +77,4 @@ writeDot ast = do
     exprNode outline l expr n = do
       makeNode outline l n
       newId >>= makeEdge n
-      showExpr expr
+      makeExpr expr

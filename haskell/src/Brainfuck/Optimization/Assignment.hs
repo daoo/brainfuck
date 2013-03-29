@@ -3,12 +3,13 @@ module Brainfuck.Optimization.Assignment where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import Brainfuck.Optimization.Expr
 import Brainfuck.Utility
-import Data.Maybe
 import Data.Monoid
 import qualified Data.Graph as G
+import qualified Data.IntMap as IM
 import qualified Data.Map as M
+
+-- TODO: IntMap
 
 -- |Merge sequences of Assign ILs using full program analysis
 optimizeAssign :: Tarpit -> Tarpit
@@ -22,13 +23,13 @@ optimizeAssign = \case
   Flow ctrl inner next -> Flow ctrl (optimizeAssign inner) (optimizeAssign next)
 
   where
-    modify (x, y) = (makeAST $ findOptimal x, optimizeAssign y)
+    modify (x, y) = (makeTarpit $ findOptimal x, optimizeAssign y)
 
     splitAssign = \case
       Instruction (Assign d e) next -> mapFst ((d, e) :) $ splitAssign next
       y                             -> ([], y)
 
-    makeAST = foldr (Instruction . uncurry Assign . (fmap simplify)) Nop
+    makeTarpit = foldr (Instruction . uncurry Assign) Nop
 
 -- Initial Code:
 -- Assign 2 (Var 1)
@@ -69,11 +70,11 @@ findOptimal = topSort . go M.empty
     go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
 
     f :: M.Map Int Expr -> Expr -> Expr
-    f m = modifyVars (\ i -> fromMaybe (Var i) $ M.lookup i m)
+    f = flip (M.foldrWithKey' inlineExpr)
 
 topSort :: [AssignOp] -> [AssignOp]
 topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
-    get = unfold (++) (\n d -> [(n, d)]) (const []) (:[])
+    get = IM.keys . snd

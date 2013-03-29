@@ -9,7 +9,7 @@ import Data.Char
 import Text.CodeWriter
 
 writeExpr :: Expr -> CodeWriter ()
-writeExpr = \case
+writeExpr (c, v) = \case
   Const i -> int i
   Var d   -> string "ptr[" >> int d >> string "]"
   Mul n d -> int a >> string " * " >> string "ptr[" >> int d >> string "]"
