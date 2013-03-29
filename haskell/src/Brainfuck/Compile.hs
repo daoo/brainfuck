@@ -25,15 +25,15 @@ decompile = \case
   Instruction fun next            -> tokenize fun (decompile next)
   Flow (While (Var 0)) inner next -> Repeat (decompile inner) (decompile next)
 
-  _ -> error "unsupported by decompile"
+  tarpit -> error $ "Brainfuck.Compile.decompile unsupported: " ++ show tarpit
   where
     tokenize = \case
-      Assign 0 (Add (Const 1) (Var 0))    -> Token $ Plus
-      Assign 0 (Add (Const (-1)) (Var 0)) -> Token $ Minus
+      Assign 0 (Add (Const 1) (Var 0))    -> Token Plus
+      Assign 0 (Add (Const (-1)) (Var 0)) -> Token Minus
 
-      Shift 1         -> Token $ ShiftRight
-      Shift (-1)      -> Token $ ShiftLeft
-      PutChar (Var 0) -> Token $ Output
-      GetChar 0       -> Token $ Input
+      Shift 1         -> Token ShiftRight
+      Shift (-1)      -> Token ShiftLeft
+      PutChar (Var 0) -> Token Output
+      GetChar 0       -> Token Input
 
-      _ -> error "unsupported by decompile"
+      fun -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show fun
