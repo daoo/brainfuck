@@ -12,8 +12,6 @@ data Function = Assign Int Expr | Shift Int | PutChar Expr | GetChar Int
 data Control = Forever | Once | Never | If Expr | While Expr
   deriving (Eq, Show)
 
--- data Definition = Variable Identifier Expr
-
 data Tarpit = Nop
             | Instruction Function Tarpit
             | Flow Control Tarpit Tarpit
