@@ -5,7 +5,7 @@ import qualified Data.IntMap as M
 
 type Constant  = Int
 type Variable  = Int
-type Multiple  = (Int, Variable)
+type Multiple  = (Variable, Int)
 type Variables = M.IntMap Int
 
 type Expr = (Constant, Variables)
@@ -29,9 +29,11 @@ constAnalysis (c, v) | M.null v  = Just c
 
 -- |Check if the expression is a single variable
 varAnalysis :: Expr -> Maybe Multiple
-varAnalysis e = case M.assocs $ snd e of
+varAnalysis (0, v) = case M.assocs v of
   [(d, n)] -> Just (d, n)
   _        -> Nothing
+
+varAnalysis _ = Nothing
 
 showExpr :: Expr -> String
 showExpr = uncurry (M.foldrWithKey'

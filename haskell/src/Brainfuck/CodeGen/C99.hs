@@ -9,15 +9,15 @@ import Text.CodeWriter
 import qualified Data.IntMap as M
 
 writeExpr :: Expr -> CodeWriter ()
-writeExpr (c, v) = go (M.assocs v) >> i c
+writeExpr e = case M.assocs `fmap` e of
+  (n, []) -> int n
+  (0, as) -> go as
+  (n, as) -> int n >> string " + " >> go as
   where
     go = \case
-      []       -> return ()
-      [x]      -> mult x
-      x1:x2:xs -> mult x1 >> string " + " >> mult x2 >> go xs
-
-    i 0 = return ()
-    i n = string " + " >> int n
+      []   -> return ()
+      [x]  -> mult x
+      x:xs -> mult x >> string " + " >> go xs
 
     mult (d, 1) = string "ptr[" >> int d >> string "]"
     mult (d, n) = int n >> string " * ptr[" >> int d >> string "]"

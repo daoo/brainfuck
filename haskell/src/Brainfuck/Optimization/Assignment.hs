@@ -8,8 +8,6 @@ import Data.Monoid
 import qualified Data.Graph as G
 import qualified Data.IntMap as M
 
--- TODO: IntMap
-
 -- |Merge sequences of Assign ILs using full program analysis
 optimizeAssign :: Tarpit -> Tarpit
 optimizeAssign = \case

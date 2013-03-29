@@ -9,8 +9,12 @@ import Data.Monoid
 import qualified Data.IntMap as M
 
 reflectiveAssign :: Tarpit -> Rule Tarpit
--- TODO: reflectiveAssign (Instruction (Assign d1 (Var d2)) next) | d1 == d2 = return next
-reflectiveAssign _                                                = nope
+reflectiveAssign (Instruction (Assign d1 e) next) = case varAnalysis e of
+
+  Just (1, d2) | d1 == d2 -> return next
+  _                       -> nope
+
+reflectiveAssign _ = nope
 
 shiftZero :: Tarpit -> Rule Tarpit
 shiftZero (Instruction (Shift 0) next) = return next
@@ -87,7 +91,7 @@ reduceCopyLoops (Flow (While e) inner next) = do
   return $ mappend (foldr (f loop) (zero loop) inner') next
   where
     zero loop      = Instruction (Assign loop $ constant 0) Nop
-    f loop (ds, n) = Instruction . Assign ds $ variables [(1, ds), (n, loop)]
+    f loop (ds, n) = Instruction . Assign ds $ variables [(ds, 1), (loop, n)]
 
 reduceCopyLoops _ = nope
 

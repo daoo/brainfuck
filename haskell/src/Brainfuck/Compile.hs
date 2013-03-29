@@ -9,7 +9,7 @@ import qualified Data.IntMap as M
 compile :: Brainfuck -> Tarpit
 compile = \case
   BF.Nop            -> Tarpit.Nop
-  Repeat inner next -> Flow (While (variable 1 0)) (compile inner) (compile next)
+  Repeat inner next -> Flow (While (variable 0 1)) (compile inner) (compile next)
   Token t next      -> Instruction (token t) (compile next)
   where
     token = \case
@@ -17,7 +17,7 @@ compile = \case
       Minus      -> Assign 0 $ constant (-1) `add` variable 0 1
       ShiftRight -> Shift 1
       ShiftLeft  -> Shift (-1)
-      Output     -> PutChar $ variable 1 0
+      Output     -> PutChar $ variable 0 1
       Input      -> GetChar 0
 
 decompile :: Tarpit -> Brainfuck
@@ -26,7 +26,7 @@ decompile = \case
   Instruction fun next      -> tokenize fun (decompile next)
   Flow (While e) inner next -> case varAnalysis e of
 
-    Just (1, 0) -> Repeat (decompile inner) (decompile next)
+    Just (0, 1) -> Repeat (decompile inner) (decompile next)
     _           -> error "unsupported by decompile"
 
   tarpit -> error $ "Brainfuck.Compile.decompile unsupported: " ++ show tarpit
@@ -34,12 +34,12 @@ decompile = \case
     tokenize = \case
       Assign 0 (1, v) -> case M.assocs v of
 
-        [(1, 0)] -> Token Plus
+        [(0, 1)] -> Token Plus
         _           -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show (Assign 0 (1, v))
 
       Assign 0 (-1, v) -> case M.assocs v of
 
-        [(1, 0)] -> Token Minus
+        [(0, 1)] -> Token Minus
         _        -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show (Assign 0 (-1, v))
 
       Shift 1    -> Token ShiftRight
@@ -47,7 +47,7 @@ decompile = \case
 
       PutChar e  -> case varAnalysis e of
 
-        Just (1, 0) -> Token Output
+        Just (0, 1) -> Token Output
         _           -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show (PutChar e)
 
       GetChar 0  -> Token Input
