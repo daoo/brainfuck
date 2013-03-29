@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Optimization.Expr where
+module Brainfuck.Optimization.Expr (simplify) where
 
 import Brainfuck.Data.Expr
 import Control.Monad.State.Strict
@@ -15,18 +15,18 @@ data Analysis = Analysis
 
 toExpr :: Analysis -> Expr
 toExpr = \case
-  Analysis 0 vars   -> clean $ M.foldrWithKey' f (Const 0) vars
+  -- This case exists to remove the last Const 0 from the expression
+  Analysis 0 vars -> case M.toList vars of
+
+    []         -> Const 0
+    ((d,n):xs) -> foldr (uncurry f) (n `Mul` Var d) xs
+
   Analysis num vars -> M.foldrWithKey' f (Const num) vars
+
   where
     f _ 0 = id
     f d 1 = Add (Var d)
     f d n = Add (n `Mul` Var d)
-
-    -- HACK: hack to remove the last (+ e 0) that happens when num is 0
-    clean = \case
-      Add a (Const 0) -> a
-      Add a b         -> Add a $ clean b
-      e               -> e
 
 plus :: Int -> State Analysis ()
 plus c = modify (\a -> a { number = number a + c })
