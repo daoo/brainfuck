@@ -8,7 +8,7 @@ data Expr = Const !Int
           | Var !Int
           | Add Expr Expr
           | Mul !Int Expr
-  deriving (Ord, Eq, Show)
+  deriving (Eq, Show)
 
 isConst :: Expr -> Bool
 isConst (Const _) = True
