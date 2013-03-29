@@ -29,18 +29,18 @@ decompile = \case
     Just (1, 0) -> Repeat (decompile inner) (decompile next)
     _           -> error "unsupported by decompile"
 
-  _ -> error "unsupported by decompile"
+  tarpit -> error $ "Brainfuck.Compile.decompile unsupported: " ++ show tarpit
   where
     tokenize = \case
       Assign 0 (1, v) -> case M.assocs v of
 
         [(1, 0)] -> Token Plus
-        _        -> error "unsupported by decompile"
+        _           -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show (Assign 0 (1, v))
 
       Assign 0 (-1, v) -> case M.assocs v of
 
         [(1, 0)] -> Token Minus
-        _        -> error "unsupported by decompile"
+        _        -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show (Assign 0 (-1, v))
 
       Shift 1    -> Token ShiftRight
       Shift (-1) -> Token ShiftLeft
@@ -48,8 +48,9 @@ decompile = \case
       PutChar e  -> case varAnalysis e of
 
         Just (1, 0) -> Token Output
-        _           -> error "unsupported by decompile"
+        _           -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show (PutChar e)
 
       GetChar 0  -> Token Input
 
-      _ -> error "unsupported by decompile"
+
+      fun -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show fun

@@ -5,20 +5,22 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Control.Monad
-import Data.Char
 import Text.CodeWriter
+import qualified Data.IntMap as M
 
 writeExpr :: Expr -> CodeWriter ()
-writeExpr (c, v) = \case
-  Const i -> int i
-  Var d   -> string "ptr[" >> int d >> string "]"
-  Mul n d -> int a >> string " * " >> string "ptr[" >> int d >> string "]"
-  Add a b -> writeExpr a >> string " + " >> writeExpr b
-
+writeExpr (c, v) = go (M.assocs v) >> i c
   where
-    paren = \case
-      Add _ _ -> True
-      _       -> False
+    go = \case
+      []       -> return ()
+      [x]      -> mult x
+      x1:x2:xs -> mult x1 >> string " + " >> mult x2 >> go xs
+
+    i 0 = return ()
+    i n = string " + " >> int n
+
+    mult (d, 1) = string "ptr[" >> int d >> string "]"
+    mult (d, n) = int n >> string " * ptr[" >> int d >> string "]"
 
 writeC99 :: Tarpit -> CodeWriter ()
 writeC99 ast = do
@@ -42,10 +44,10 @@ writeC99 ast = do
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
-      Forever -> block "while" (Const 1)
+      Forever -> block "while" (constant 1)
       While e -> block "while" e
-      Once    -> block "if" (Const 1)
-      Never   -> block "if" (Const 0)
+      Once    -> block "if" (constant 1)
+      Never   -> block "if" (constant 0)
       If e    -> block "if" e
 
     block :: String -> Expr -> Tarpit -> CodeWriter ()
@@ -60,8 +62,6 @@ writeC99 ast = do
 
     function = \case
       Assign d e -> ptr d (writeExpr e)
-
-      PutChar (Const c) -> string "putchar(" >> char (chr c) >> char ')'
 
       Shift s   -> string "ptr += " >> int s
       PutChar e -> string "putchar(" >> writeExpr e >> string ")"
