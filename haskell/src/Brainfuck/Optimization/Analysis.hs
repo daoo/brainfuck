@@ -7,7 +7,7 @@ import Control.Applicative hiding (Const)
 
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
-exprDepends d = unfold (||) (flip const) (const False) (== d)
+exprDepends d = unfold (||) (\_ -> (== d)) (const False) (== d)
 
 -- |Analyze a loop for a copy/multiply structure
 -- A copy loop is a loop that follow these criteria:
@@ -51,7 +51,7 @@ memorySize = \case
       While e -> expr e
       _       -> (0, 0)
 
-    expr = unfold (<+>) (flip const) (const (0, 0)) g
+    expr = unfold (<+>) (\_ -> g) (const (0, 0)) g
 
     g :: Int -> (Int, Int)
     g d = case compare d 0 of
@@ -70,7 +70,7 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar e  -> unfold (||) (flip const) (const False) (const True) e
+      PutChar e  -> unfold (||) ((const . const) True) (const False) (const True) e
       Assign _ _ -> True
       GetChar _  -> True
       Shift _    -> True

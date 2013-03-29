@@ -12,8 +12,8 @@ writeExpr :: Expr -> CodeWriter ()
 writeExpr = \case
   Const i -> int i
   Var d   -> string "ptr[" >> int d >> string "]"
+  Mul n d -> int a >> string " * " >> string "ptr[" >> int d >> string "]"
   Add a b -> writeExpr a >> string " + " >> writeExpr b
-  Mul a b -> int a >> string " * " >> surround '(' ')' (paren b) (writeExpr b)
 
   where
     paren = \case

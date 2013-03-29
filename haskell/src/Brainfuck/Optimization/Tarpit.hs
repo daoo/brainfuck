@@ -84,7 +84,7 @@ reduceCopyLoops (Flow (While (Var d)) inner next) =
   (`mappend` next) <$> foldr f zero <$> copyLoop d inner
     where
       zero      = Instruction (Assign d $ Const 0) Nop
-      f (ds, v) = Instruction . Assign ds $ (Var ds) `Add` (v `Mul` (Var d))
+      f (ds, n) = Instruction . Assign ds $ Var ds `Add` Mul n d
 
 reduceCopyLoops ast = fail (show ast)
 
