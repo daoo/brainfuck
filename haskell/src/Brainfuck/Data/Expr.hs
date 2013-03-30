@@ -2,6 +2,7 @@
 module Brainfuck.Data.Expr where
 
 import Brainfuck.Utility
+import Control.Applicative
 import Test.QuickCheck
 import qualified Data.List as List
 
@@ -22,16 +23,16 @@ type Variable = (Mult, Var)
 
 -- |An expression is a constant and a sum of multiples of variables
 data Expr = Expr { econst :: {-# UNPACK #-} !Int, evars :: [(Mult, Var)] }
-
-instance Show Expr where
-  showsPrec _ (Expr c v) = shows c . showString " + " . go v
-    where
-      go = \case
-        []                   -> id
-        (Mult n, Var d) : xs -> shows n . showString "#" . shows d . go xs
+  deriving Show
 
 instance Arbitrary Expr where
-  arbitrary = undefined -- TODO: Must be sorted
+  arbitrary = Expr <$> arbitrary <*> sized go
+    where
+      go 0 = return []
+      go n = (:) <$> ((,) <$> mult <*> var) <*> go (n `div` 2)
+
+      mult = Mult <$> arbitrary
+      var  = Var <$> choose (-100, 100)
 
 constant :: Int -> Expr
 constant = (`Expr` [])

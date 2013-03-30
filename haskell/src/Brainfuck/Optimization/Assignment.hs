@@ -72,9 +72,15 @@ findOptimal = topSort . go M.empty
     f = flip (M.foldrWithKey' inlineExpr)
 
 topSort :: [AssignOp] -> [AssignOp]
-topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
+topSort xs = map (g . vertex) $ G.topSort graph
   where
-    (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
+    (graph, vertex, _) = G.graphFromEdges $ map f xs
+
+    f :: AssignOp -> (Expr, Int, [Int])
+    f (d, e) = (e, d, get e)
+
+    g :: (Expr, Int, [Int]) -> AssignOp
+    g (x, k, _) = (k, x)
 
     get :: Expr -> [Int]
     get = map (mkVar . snd) . evars

@@ -35,7 +35,7 @@ decompile = \case
       Assign 0 (Expr (-1) [(Mult 1, Var 0)]) -> Token Minus
       Shift 1                                -> Token ShiftRight
       Shift (-1)                             -> Token ShiftLeft
-      PutChar (Expr 1 [(Mult 1, Var 0)])     -> Token Output
+      PutChar (Expr 0 [(Mult 1, Var 0)])     -> Token Output
       GetChar 0                              -> Token Input
 
       fun -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show fun

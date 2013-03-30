@@ -18,14 +18,14 @@ exprDepends = ((.) isJust) . findExpr
 --   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
 copyLoop :: Int -> Tarpit -> Maybe [(Int, Int)]
-copyLoop d1 = go
+copyLoop d1 = go False
   where
-    go = \case
-      Nop -> Just []
+    go b = \case
+      Nop -> if b then Just [] else Nothing
 
       Instruction (Assign d2 (Expr c [(1, Var d3)])) next
-        | d2 == d3 && d1 == d2 && c == -1 -> go next
-        | d2 == d3 && d1 /= d2            -> ((d2, c):) <$> go next
+        | d2 == d3 && d1 == d2 && c == -1 -> go True next
+        | d2 == d3 && d1 /= d2            -> ((d2, c):) <$> go b next
         | otherwise                       -> Nothing
 
       _ -> Nothing

@@ -37,7 +37,7 @@ flowConst _                                     = nope
 movePut :: Tarpit -> Rule Tarpit
 movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
   return $ Instruction (PutChar (inlineExpr d e1 e2)) (Instruction s next)
-movePut _   = nope
+movePut _ = nope
 
 moveShifts :: Tarpit -> Rule Tarpit
 moveShifts (Instruction (Shift s) next) = case next of
