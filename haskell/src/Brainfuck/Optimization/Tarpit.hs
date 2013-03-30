@@ -6,15 +6,10 @@ import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Optimization.Rewriting
 import Data.Monoid
-import qualified Data.IntMap as M
 
 reflectiveAssign :: Tarpit -> Rule Tarpit
-reflectiveAssign (Instruction (Assign d1 e) next) = case varAnalysis e of
-
-  Just d2 | d1 == d2 -> return next
-  _                  -> nope
-
-reflectiveAssign _ = nope
+reflectiveAssign (Instruction (Assign d1 (Var (Mult 1) d2 (Const 0))) next) | d1 == d2 = return next
+reflectiveAssign _                                                                     = nope
 
 shiftZero :: Tarpit -> Rule Tarpit
 shiftZero (Instruction (Shift 0) next) = return next
@@ -33,15 +28,11 @@ flowOnce (Flow Once inner next) = return $ inner `mappend` next
 flowOnce _                      = nope
 
 flowConst :: Tarpit -> Rule Tarpit
-flowConst (Flow (While e) inner next) = case constAnalysis e of
-  Just 0  -> return next
-  Just _  -> return $ Flow Forever inner next
-  Nothing -> nope
-flowConst (Flow (If e) inner next) = case constAnalysis e of
-  Just 0  -> return next
-  Just _  -> return $ inner `mappend` next
-  Nothing -> nope
-flowConst _   = nope
+flowConst (Flow (While (Const 0)) _ next)     = return next
+flowConst (Flow (While (Const _)) inner next) = return $ Flow Forever inner next
+flowConst (Flow (If (Const 0)) _ next)        = return next
+flowConst (Flow (If (Const _)) inner next)    = return $ inner `mappend` next
+flowConst _                                   = nope
 
 movePut :: Tarpit -> Rule Tarpit
 movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
@@ -66,7 +57,7 @@ moveShifts (Instruction (Shift s) next) = case next of
   where
     shift = Instruction (Shift s)
 
-    expr s' = mapVars (M.mapKeysMonotonic (+s'))
+    expr s' = foldExpr1 Const (\m d x -> Var m (d + s') x)
 
     function s' = \case
       GetChar d  -> GetChar (s' + d)
@@ -85,13 +76,12 @@ moveShifts _ = nope
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: Tarpit -> Rule Tarpit
-reduceCopyLoops (Flow (While e) inner next) = do
-  loop   <- varAnalysis e
-  inner' <- copyLoop loop inner
-  return $ mappend (foldr (f loop) (zero loop) inner') next
+reduceCopyLoops (Flow (While (Var (Mult 1) d (Const 0))) inner next) = do
+  inner' <- copyLoop d inner
+  return $ mappend (foldr f zero inner') next
   where
-    zero loop      = Instruction (Assign loop $ constant 0) Nop
-    f loop (ds, n) = Instruction . Assign ds $ variables [(ds, 1), (loop, n)]
+    zero      = Instruction (Assign d $ Const 0) Nop
+    f (ds, n) = Instruction . Assign ds $ Var (Mult 1) ds $ Var (Mult n) d (Const 0)
 
 reduceCopyLoops _ = nope
 

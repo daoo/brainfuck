@@ -26,10 +26,10 @@ writeHaskell ast = do
       Flow ctrl inner next -> control ctrl >> indentedM (go inner) >> go next
 
     control = \case
-      Forever -> block "while" (constant 1)
+      Forever -> block "while" (Const 1)
       While e -> block "while" e
-      Once    -> block "when" (constant 1)
-      Never   -> block "when" (constant 0)
+      Once    -> block "when" (Const 1)
+      Never   -> block "when" (Const 0)
       If e    -> block "when" e
 
     function = \case

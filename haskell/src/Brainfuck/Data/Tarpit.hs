@@ -5,15 +5,15 @@ import Brainfuck.Data.Expr
 import Data.Monoid
 
 data Function = Assign Int Expr | Shift Int | PutChar Expr | GetChar Int
-  deriving (Eq, Show)
+  deriving Show
 
 data Control = Forever | Once | Never | If Expr | While Expr
-  deriving (Eq, Show)
+  deriving Show
 
 data Tarpit = Nop
             | Instruction Function Tarpit
             | Flow Control Tarpit Tarpit
-  deriving (Eq, Show)
+  deriving Show
 
 instance Monoid Tarpit where
   mempty = Nop

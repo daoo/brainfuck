@@ -27,8 +27,6 @@ tests =
     , testGroup "Expressions"
       [ testProperty "Eval constant" propExprEvalConst
       , testProperty "Eval variable" propExprEvalVar
-      , testProperty "Eval zero variables" propExprEmptyVariables
-      , testProperty "Variable analysis" propExprVarAnalysis
       , testProperty "Eval add" propExprEvalAdd
       , testProperty "Eval inlining" propExprEvalInl
       ]

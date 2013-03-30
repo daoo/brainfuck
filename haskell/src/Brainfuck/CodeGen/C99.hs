@@ -6,21 +6,16 @@ import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Control.Monad
 import Text.CodeWriter
-import qualified Data.IntMap as M
 
 writeExpr :: Expr -> CodeWriter ()
-writeExpr e = case M.assocs `fmap` e of
-  (n, []) -> int n
-  (0, as) -> go as
-  (n, as) -> int n >> string " + " >> go as
-  where
-    go = \case
-      []   -> return ()
-      [x]  -> mult x
-      x:xs -> mult x >> string " + " >> go xs
+writeExpr = \case
+  Const c           -> int c
+  Var m d (Const 0) -> mult m d
+  Var m d xs        -> mult m d >> string " + " >> writeExpr xs
 
-    mult (d, 1) = string "ptr[" >> int d >> string "]"
-    mult (d, n) = int n >> string " * ptr[" >> int d >> string "]"
+  where
+    mult (Mult 1) d = string "ptr[" >> int d >> string "]"
+    mult (Mult n) d = int n >> string " * ptr[" >> int d >> string "]"
 
 writeC99 :: Tarpit -> CodeWriter ()
 writeC99 ast = do
@@ -44,10 +39,10 @@ writeC99 ast = do
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
-      Forever -> block "while" (constant 1)
+      Forever -> block "while" (Const 1)
       While e -> block "while" e
-      Once    -> block "if" (constant 1)
-      Never   -> block "if" (constant 0)
+      Once    -> block "if" (Const 1)
+      Never   -> block "if" (Const 0)
       If e    -> block "if" e
 
     block :: String -> Expr -> Tarpit -> CodeWriter ()

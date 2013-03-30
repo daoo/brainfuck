@@ -3,7 +3,6 @@ module Brainfuck.Optimization.WholeProgram where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import qualified Data.IntMap as M
 import qualified Data.Set as S
 
 -- |Inline initial zeroes
@@ -22,7 +21,7 @@ inlineZeros = go S.empty
       ast -> ast
 
     inl :: S.Set Int -> Expr -> Expr
-    inl s (c, v) = (c, M.filterWithKey (\d _ -> S.member d s) v)
+    inl s = filterVars (`S.member` s)
 
 -- |Remove instructions from the end that does not performe any side effects
 removeFromEnd :: Tarpit -> Tarpit

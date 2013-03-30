@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.Dot (showExpr, writeDot) where
+module Brainfuck.CodeGen.Dot (writeDot) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
@@ -34,7 +34,7 @@ makeEdge from to = lift $ lineM $ do
   string ";"
 
 makeExpr :: Expr -> DotState ()
-makeExpr e = get >>= makeNode ellipse (string (showExpr e))
+makeExpr e = get >>= makeNode ellipse (string (show e))
 
 writeDot :: Tarpit -> CodeWriter ()
 writeDot ast = do

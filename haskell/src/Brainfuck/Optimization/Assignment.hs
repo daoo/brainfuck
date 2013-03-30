@@ -74,4 +74,4 @@ topSort xs = map ((\(x, k, _) -> (k, x)) . f) $ G.topSort $ graph
   where
     (graph, f, _) = G.graphFromEdges $ map (\(d, e) -> (e, d, get e)) xs
 
-    get = M.keys . snd
+    get = foldExpr1 (const []) (\ _ d x -> d : x)
