@@ -25,7 +25,8 @@ tests =
       , testProperty "Parse Show invariant" propParser
       ]
     , testGroup "Expressions"
-      [ testProperty "Eval constant" propExprEvalConst
+      [ testProperty "Is sorted" propExprIsSorted
+      , testProperty "Eval constant" propExprEvalConst
       , testProperty "Eval variable" propExprEvalVar
       , testProperty "Eval add" propExprEvalAdd
       , testProperty "Eval inlining" propExprEvalInl

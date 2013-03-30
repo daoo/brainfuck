@@ -26,13 +26,14 @@ data Expr = Expr { econst :: {-# UNPACK #-} !Int, evars :: [(Mult, Var)] }
   deriving Show
 
 instance Arbitrary Expr where
-  arbitrary = Expr <$> arbitrary <*> sized go
+  arbitrary = Expr <$> arbitrary <*> sized (go (-100))
     where
-      go 0 = return []
-      go n = (:) <$> ((,) <$> mult <*> var) <*> go (n `div` 2)
+      go _ 0 = return []
 
-      mult = Mult <$> arbitrary
-      var  = Var <$> choose (-100, 100)
+      go m s = do
+        n <- arbitrary
+        d <- choose (m, 100)
+        ((Mult n, Var d) :) <$> go d (s `div` 2)
 
   shrink (Expr c v) = concatMap (\c' -> map (Expr c') $ shrink v) $ shrink c
 

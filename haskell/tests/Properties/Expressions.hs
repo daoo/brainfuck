@@ -3,6 +3,14 @@ module Properties.Expressions where
 
 import Brainfuck.Data.Expr
 
+propExprIsSorted :: Expr -> Bool
+propExprIsSorted (Expr _ v) = go v
+  where
+    go = \case
+      []                     -> True
+      [_]                    -> True
+      (_, d1) : (_, d2) : xs -> d1 <= d2 && go xs
+
 propExprEvalConst :: Int -> Bool
 propExprEvalConst c = eval undefined (constant c) == c
 
