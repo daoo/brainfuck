@@ -81,7 +81,7 @@ reduceCopyLoops (Flow (While (Var (Mult 1) d (Const 0))) inner next) = do
   return $ mappend (foldr f zero inner') next
   where
     zero      = Instruction (Assign d $ Const 0) Nop
-    f (ds, n) = Instruction . Assign ds $ Var (Mult 1) ds $ Var (Mult n) d (Const 0)
+    f (ds, n) = Instruction . Assign ds $ Var (Mult 1) ds (Const 0) `add` Var (Mult n) d (Const 0)
 
 reduceCopyLoops _ = nope
 

@@ -15,10 +15,7 @@ data Expr = Const {-# UNPACK #-} !Int
   deriving Show
 
 instance Arbitrary Expr where
-  arbitrary = frequency
-    [ (1, Var <$> arbitrary <*> arbitrary <*> arbitrary)
-    , (5, Const <$> arbitrary)
-    ]
+  arbitrary = undefined -- TODO: Must be sorted
 
 variable :: Int -> Expr
 variable d = Var (Mult 1) d (Const 0)
