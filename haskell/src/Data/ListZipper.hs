@@ -1,6 +1,5 @@
 module Data.ListZipper where
 
-import Brainfuck.Utility
 import Control.Applicative
 import Test.QuickCheck.Arbitrary
 
@@ -10,7 +9,7 @@ data ListZipper a = ListZipper
   , right :: [a]
   } deriving (Show, Eq)
 
-instance (Arbitrary a) => Arbitrary (ListZipper a) where
+instance Arbitrary a => Arbitrary (ListZipper a) where
   arbitrary = liftA3 ListZipper arbitrary arbitrary arbitrary
 
   shrink (ListZipper xs y zs) = map (\(xs', zs') -> ListZipper xs' y zs') $ zip (shrink xs) (shrink zs)
@@ -45,5 +44,10 @@ cut i (ListZipper xs y zs) = take i xs ++ [y] ++ take i zs
 applyAt :: (a -> a) -> Int -> ListZipper a -> ListZipper a
 applyAt f n (ListZipper xs y zs) = case compare n 0 of
   EQ -> ListZipper xs (f y) zs
-  LT -> ListZipper (mapIndex f (abs n - 1) xs) y zs
-  GT -> ListZipper xs y (mapIndex f (n - 1) zs)
+  LT -> ListZipper (go (abs n - 1) xs) y zs
+  GT -> ListZipper xs y (go (n - 1) zs)
+
+  where
+    go 0 (a : as) = f a : as
+    go j (a : as) = a : go (j - 1) as
+    go _ _        = error "list to short"
