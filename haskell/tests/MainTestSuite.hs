@@ -29,9 +29,6 @@ tests =
       , testProperty "Eval constant" propExprEvalConst
       , testProperty "Eval variable" propExprEvalVar
       , testProperty "Eval add" propExprEvalAdd
-      , testProperty "Eval inlining" propExprEvalInl
-      , testProperty "Eval inline zero" propExprEvalInlZero
-      , testProperty "Eval inline add" propExprEvalInlAdd
       ]
     , testGroup "Programs"
       [ testProperty "Reverse" propReverse
