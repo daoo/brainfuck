@@ -41,6 +41,3 @@ instance Arbitrary Brainfuck where
     , (20, Token <$> arbitrary <*> arbitrary)
     , (1, Repeat <$> arbitrary <*> arbitrary)
     ]
-
-  shrink (Repeat inner next) = map (`Repeat` next) (shrink inner)
-  shrink _                   = []

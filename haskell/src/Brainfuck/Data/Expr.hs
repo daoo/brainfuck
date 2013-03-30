@@ -34,6 +34,8 @@ instance Arbitrary Expr where
       mult = Mult <$> arbitrary
       var  = Var <$> choose (-100, 100)
 
+  shrink (Expr c v) = concatMap (\c' -> map (Expr c') $ shrink v) $ shrink c
+
 constant :: Int -> Expr
 constant = (`Expr` [])
 
