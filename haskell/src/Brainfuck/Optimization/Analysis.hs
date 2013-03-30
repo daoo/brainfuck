@@ -8,7 +8,7 @@ import Data.Maybe
 
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
-exprDepends = ((.) isJust) . findMult
+exprDepends = ((.) isJust) . findExpr
 
 -- |Analyze a loop for a copy/multiply structure
 -- A copy loop is a loop that follow these criteria:
@@ -23,7 +23,7 @@ copyLoop d1 = go
     go = \case
       Nop -> Just []
 
-      Instruction (Assign d2 (Var (Mult 1) d3 (Const c))) next
+      Instruction (Assign d2 (Expr c [(1, Var d3)])) next
         | d2 == d3 && d1 == d2 && c == -1 -> go next
         | d2 == d3 && d1 /= d2            -> ((d2, c):) <$> go next
         | otherwise                       -> Nothing
@@ -50,7 +50,7 @@ memorySize = \case
       _       -> (0, 0)
 
     expr :: Expr -> (Int, Int)
-    expr = foldExpr (<+>) (const (0, 0)) ((. g) . (flip const)) (0, 0)
+    expr = foldl (\x y -> x <+> (g $ mkVar $ snd y)) (0, 0) . evars
 
     g :: Int -> (Int, Int)
     g d = case compare d 0 of
@@ -69,25 +69,25 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar (Var _ _ _) -> True
-      PutChar (Const _)   -> False
+      PutChar (Expr _ []) -> False
+      PutChar (Expr _ _)  -> True
       Assign _ _          -> True
       GetChar _           -> True
       Shift _             -> True
 
 -- |Check if a while loop executes more than once
 whileOnce :: Expr -> Tarpit -> Bool
-whileOnce (Var (Mult 1) d (Const 0)) ast = go d False ast
+whileOnce (Expr 0 [(1, Var d)]) ast = go d False ast
   where
     go d1 b = \case
       Nop -> b
 
-      Instruction (Assign d2 (Const c)) next ->
+      Instruction (Assign d2 (Expr c [])) next ->
         let a = d1 == d2 in go d1 (a && (c == 0) || b && (not a)) next
 
       Instruction (Assign _ _) next -> go d1 b next
 
-      Flow (If (Var (Mult 1) d' (Const 0))) inner next | d == d' ->
+      Flow (If (Expr 0 [(1, Var d')])) inner next | d == d' ->
         let b' = go d1 b inner in go d1 b' next
 
       Instruction (GetChar _) _ -> False

@@ -1,61 +1,73 @@
 {-# LANGUAGE LambdaCase, GeneralizedNewtypeDeriving #-}
 module Brainfuck.Data.Expr where
 
-import Control.Applicative hiding (Const)
-import Control.Monad
+import Brainfuck.Utility
 import Test.QuickCheck
+import qualified Data.List as List
 
 -- Use a newtype for keeping my sanity
 newtype Mult = Mult { mkMult :: Int }
-  deriving (Show, Eq, Ord, Num, Arbitrary)
+  deriving (Eq, Ord, Num, Arbitrary)
 
--- Sorted list of multiples of variables terminated by a constant
-data Expr = Const {-# UNPACK #-} !Int
-          | Var {-# UNPACK #-} !Mult {-# UNPACK #-} !Int Expr
-  deriving Show
+newtype Var = Var { mkVar :: Int }
+  deriving (Eq, Ord, Num, Arbitrary)
+
+instance Show Mult where
+  showsPrec _ (Mult n) = showString "Mult " . shows n
+
+instance Show Var where
+  showsPrec _ (Var d) = showString "Var " . shows d
+
+type Variable = (Mult, Var)
+
+-- |An expression is a constant and a sum of multiples of variables
+data Expr = Expr { econst :: {-# UNPACK #-} !Int, evars :: [(Mult, Var)] }
+
+instance Show Expr where
+  showsPrec _ (Expr c v) = shows c . showString "+" . go v
+    where
+      go = \case
+        []                   -> id
+        (Mult n, Var d) : xs -> shows n . showString "#" . shows d . go xs
 
 instance Arbitrary Expr where
   arbitrary = undefined -- TODO: Must be sorted
 
+constant :: Int -> Expr
+constant = (`Expr` [])
+
 variable :: Int -> Expr
-variable d = Var (Mult 1) d (Const 0)
+variable d = Expr 0 [(Mult 1, Var d)]
 
-foldExpr :: (b -> b -> b) -> (Int -> b) -> (Mult -> Int -> b) -> b -> Expr -> b
-foldExpr f g h = go
-  where
-    go acc = \case
-      Const c    -> f acc (g c)
-      Var n d xs -> go (f acc (h n d)) xs
+variable' :: Int -> Int -> Expr
+variable' n d = Expr 0 [(Mult n, Var d)]
 
-foldExpr1 :: (Int -> b) -> (Mult -> Int -> b -> b) -> Expr -> b
-foldExpr1 f g = go
-  where
-    go = \case
-      Const c    -> f c
-      Var n d xs -> g n d (go xs)
+foldExpr :: (Int -> Variable -> Int) -> Expr -> Int
+foldExpr f (Expr c v) = foldl f c v
 
-findMult :: Int -> Expr -> Maybe Mult
-findMult d = foldExpr1 (const Nothing) (\m d' x -> if d == d' then Just m `mplus` x else x)
+findExpr :: Int -> Expr -> Maybe Variable
+findExpr d = List.find ((==d) . mkVar . snd) . evars
 
-filterVars :: (Int -> Bool) -> Expr -> Expr
-filterVars f = foldExpr1 Const (\m d x -> if f d then Var m d x else x)
+filterExpr :: (Variable -> Bool) -> Expr -> Expr
+filterExpr f (Expr c v) = Expr c (List.filter f v)
 
 add :: Expr -> Expr -> Expr
-add (Const c1)         (Const c2)     = Const $ c1 + c2
-add x@(Const _)        (Var m2 d2 ys) = Var m2 d2 (add x ys)
-add (Var m1 d1 xs)   y@(Const _)      = Var m1 d1 (add xs y)
-add x@(Var m1 d1 xs) y@(Var m2 d2 ys) = case compare d1 d2 of
-  LT -> Var m1 d1 (add xs y)
-  EQ -> Var (m1 + m2) d1 (add xs ys)
-  GT -> Var m2 d2 (add x ys)
+add (Expr c1 v1) (Expr c2 v2) = Expr (c1 + c2) (merge v1 v2)
+  where
+    merge []              ys              = ys
+    merge xs              []              = xs
+    merge (x@(m1, d1):xs) (y@(m2, d2):ys) = case compare d1 d2 of
+      LT -> x             : merge xs (y:ys)
+      EQ -> (m1 + m2, d1) : merge xs ys
+      GT -> y             : merge (x:xs) ys
 
 eval :: (Int -> Int) -> Expr -> Int
-eval f = foldExpr (+) id (\(Mult n) d -> n * f d) 0
+eval f = foldExpr (\acc (Mult n, Var d) -> acc + n * f d)
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
-inlineExpr d a b = case findMult d b of
-  Nothing       -> b
-  Just (Mult n) -> foldExpr1 (Const . (*n)) (f n) a `add` filterVars (==d) b
-
-  where
-    f n (Mult n') d' x = Var (Mult $ n * n') d' x
+inlineExpr d (Expr c v) b = case findExpr d b of
+  Nothing                  -> b
+  Just (m@(Mult n), _) ->
+    add
+      (Expr (c * n) (map (mapFst (*m)) v))
+      (filterExpr ((/= d) . mkVar . snd) b)

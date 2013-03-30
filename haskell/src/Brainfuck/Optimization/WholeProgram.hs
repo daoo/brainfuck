@@ -13,15 +13,15 @@ inlineZeros = go S.empty
     go s = \case
       Instruction fun next -> case fun of
 
-        Assign i e -> Instruction (Assign i (inl s e)) (go (S.insert i s) next)
-        PutChar e  -> Instruction (PutChar (inl s e)) (go s next)
+        Assign i e -> Instruction (Assign i (remove s e)) (go (S.insert i s) next)
+        PutChar e  -> Instruction (PutChar (remove s e)) (go s next)
         GetChar d  -> Instruction fun (go (S.delete d s) next)
         Shift _    -> Instruction fun next
 
       ast -> ast
 
-    inl :: S.Set Int -> Expr -> Expr
-    inl s = filterVars (`S.member` s)
+    remove :: S.Set Int -> Expr -> Expr
+    remove s = filterExpr ((`S.member` s) . mkVar . snd)
 
 -- |Remove instructions from the end that does not performe any side effects
 removeFromEnd :: Tarpit -> Tarpit

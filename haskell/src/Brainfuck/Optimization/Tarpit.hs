@@ -8,8 +8,8 @@ import Brainfuck.Optimization.Rewriting
 import Data.Monoid
 
 reflectiveAssign :: Tarpit -> Rule Tarpit
-reflectiveAssign (Instruction (Assign d1 (Var (Mult 1) d2 (Const 0))) next) | d1 == d2 = return next
-reflectiveAssign _                                                                     = nope
+reflectiveAssign (Instruction (Assign d1 (Expr 0 [(1, Var d2)])) next) | d1 == d2 = return next
+reflectiveAssign _                                                                = nope
 
 shiftZero :: Tarpit -> Rule Tarpit
 shiftZero (Instruction (Shift 0) next) = return next
@@ -28,11 +28,11 @@ flowOnce (Flow Once inner next) = return $ inner `mappend` next
 flowOnce _                      = nope
 
 flowConst :: Tarpit -> Rule Tarpit
-flowConst (Flow (While (Const 0)) _ next)     = return next
-flowConst (Flow (While (Const _)) inner next) = return $ Flow Forever inner next
-flowConst (Flow (If (Const 0)) _ next)        = return next
-flowConst (Flow (If (Const _)) inner next)    = return $ inner `mappend` next
-flowConst _                                   = nope
+flowConst (Flow (While (Expr 0 [])) _ next)     = return next
+flowConst (Flow (While (Expr _ [])) inner next) = return $ Flow Forever inner next
+flowConst (Flow (If (Expr 0 [])) _ next)        = return next
+flowConst (Flow (If (Expr _ [])) inner next)    = return $ inner `mappend` next
+flowConst _                                     = nope
 
 movePut :: Tarpit -> Rule Tarpit
 movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
@@ -57,7 +57,7 @@ moveShifts (Instruction (Shift s) next) = case next of
   where
     shift = Instruction (Shift s)
 
-    expr s' = foldExpr1 Const (\m d x -> Var m (d + s') x)
+    expr s' (Expr c v) = Expr c $ map (fmap ((+) (Var s'))) v
 
     function s' = \case
       GetChar d  -> GetChar (s' + d)
@@ -76,12 +76,12 @@ moveShifts _ = nope
 
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: Tarpit -> Rule Tarpit
-reduceCopyLoops (Flow (While (Var (Mult 1) d (Const 0))) inner next) = do
+reduceCopyLoops (Flow (While (Expr 0 [(1, Var d)])) inner next) = do
   inner' <- copyLoop d inner
   return $ mappend (foldr f zero inner') next
   where
-    zero      = Instruction (Assign d $ Const 0) Nop
-    f (ds, n) = Instruction . Assign ds $ Var (Mult 1) ds (Const 0) `add` Var (Mult n) d (Const 0)
+    zero      = Instruction (Assign d $ constant 0) Nop
+    f (ds, n) = Instruction . Assign ds $ variable ds `add` variable' n d
 
 reduceCopyLoops _ = nope
 

@@ -12,8 +12,8 @@ compile = \case
   Token t next      -> Instruction (token t) (compile next)
   where
     token = \case
-      Plus       -> Assign 0 $ Var (Mult 1) 0 $ Const 1
-      Minus      -> Assign 0 $ Var (Mult 1) 0 $ Const (-1)
+      Plus       -> Assign 0 $ variable 0 `add` constant 1
+      Minus      -> Assign 0 $ variable 0 `add` constant (-1)
       ShiftRight -> Shift 1
       ShiftLeft  -> Shift (-1)
       Output     -> PutChar $ variable 0
@@ -25,17 +25,17 @@ decompile = \case
 
   Instruction fun next -> tokenize fun (decompile next)
 
-  Flow (While (Var (Mult 1) 0 (Const 0))) inner next -> Repeat (decompile inner) (decompile next)
+  Flow (While (Expr 0 [(Mult 1, Var 0)])) inner next -> Repeat (decompile inner) (decompile next)
 
   tarpit -> error $ "Brainfuck.Compile.decompile unsupported: " ++ show tarpit
 
   where
     tokenize = \case
-      Assign 0 (Var (Mult 1) 0 (Const 1))    -> Token Plus
-      Assign 0 (Var (Mult 1) 0 (Const (-1))) -> Token Minus
+      Assign 0 (Expr 1 [(Mult 1, Var 0)])    -> Token Plus
+      Assign 0 (Expr (-1) [(Mult 1, Var 0)]) -> Token Minus
       Shift 1                                -> Token ShiftRight
       Shift (-1)                             -> Token ShiftLeft
-      PutChar (Var (Mult 1) 0 (Const 0))     -> Token Output
+      PutChar (Expr 1 [(Mult 1, Var 0)])     -> Token Output
       GetChar 0                              -> Token Input
 
       fun -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show fun
