@@ -29,7 +29,7 @@ mapIndex f i xs | i < 0     = error "negative index"
                 | otherwise = go i xs
   where
     go 0 (y : ys) = f y : ys
-    go j (y : ys) = y : mapIndex f (j - 1) ys
+    go j (y : ys) = y : go (j - 1) ys
     go _ _        = error "list to short"
 
 -- |Pipe a value through a list of functions
