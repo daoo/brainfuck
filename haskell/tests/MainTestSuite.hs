@@ -25,7 +25,12 @@ tests =
       , testProperty "Parse Show invariant" propParser
       ]
     , testGroup "Expressions"
-      [ testProperty "Evaluation" propExprEvalConst
+      [ testProperty "Eval constant" propExprEvalConst
+      , testProperty "Eval variable" propExprEvalVar
+      , testProperty "Eval zero variables" propExprEmptyVariables
+      , testProperty "Variable analysis" propExprVarAnalysis
+      , testProperty "Eval add" propExprEvalAdd
+      , testProperty "Eval inlining" propExprEvalInl
       ]
     , testGroup "Programs"
       [ testProperty "Reverse" propReverse

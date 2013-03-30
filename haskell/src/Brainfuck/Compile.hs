@@ -9,15 +9,15 @@ import qualified Data.IntMap as M
 compile :: Brainfuck -> Tarpit
 compile = \case
   BF.Nop            -> Tarpit.Nop
-  Repeat inner next -> Flow (While (variable 0 1)) (compile inner) (compile next)
+  Repeat inner next -> Flow (While (variable 0)) (compile inner) (compile next)
   Token t next      -> Instruction (token t) (compile next)
   where
     token = \case
-      Plus       -> Assign 0 $ constant 1 `add` variable 0 1
-      Minus      -> Assign 0 $ constant (-1) `add` variable 0 1
+      Plus       -> Assign 0 $ constant 1 `add` variable 0
+      Minus      -> Assign 0 $ constant (-1) `add` variable 0
       ShiftRight -> Shift 1
       ShiftLeft  -> Shift (-1)
-      Output     -> PutChar $ variable 0 1
+      Output     -> PutChar $ variable 0
       Input      -> GetChar 0
 
 decompile :: Tarpit -> Brainfuck
@@ -26,7 +26,7 @@ decompile = \case
   Instruction fun next      -> tokenize fun (decompile next)
   Flow (While e) inner next -> case varAnalysis e of
 
-    Just (0, 1) -> Repeat (decompile inner) (decompile next)
+    Just 0 -> Repeat (decompile inner) (decompile next)
     _           -> error "unsupported by decompile"
 
   tarpit -> error $ "Brainfuck.Compile.decompile unsupported: " ++ show tarpit
@@ -47,7 +47,7 @@ decompile = \case
 
       PutChar e  -> case varAnalysis e of
 
-        Just (0, 1) -> Token Output
+        Just 0 -> Token Output
         _           -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show (PutChar e)
 
       GetChar 0  -> Token Input

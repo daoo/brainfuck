@@ -11,8 +11,8 @@ import qualified Data.IntMap as M
 reflectiveAssign :: Tarpit -> Rule Tarpit
 reflectiveAssign (Instruction (Assign d1 e) next) = case varAnalysis e of
 
-  Just (1, d2) | d1 == d2 -> return next
-  _                       -> nope
+  Just d2 | d1 == d2 -> return next
+  _                  -> nope
 
 reflectiveAssign _ = nope
 
@@ -86,8 +86,8 @@ moveShifts _ = nope
 -- |Reduce multiplications and clear loops
 reduceCopyLoops :: Tarpit -> Rule Tarpit
 reduceCopyLoops (Flow (While e) inner next) = do
-  (loop, _) <- varAnalysis e
-  inner'    <- copyLoop loop inner
+  loop   <- varAnalysis e
+  inner' <- copyLoop loop inner
   return $ mappend (foldr (f loop) (zero loop) inner') next
   where
     zero loop      = Instruction (Assign loop $ constant 0) Nop

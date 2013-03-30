@@ -43,4 +43,4 @@ test-suite brainfuck-tests
     QuickCheck                 < 2.6,
     test-framework             == 0.8,
     test-framework-quickcheck2 == 0.3.0.1
-  ghc-options: -Wall
+  ghc-options: -Wall -fno-warn-orphans
