@@ -18,7 +18,7 @@ propExprEvalInl d c = let a = constant c
                        in eval id (inlineExpr d a b) == eval (const (eval id a)) b
 
 propExprEvalInlZero :: Int -> Expr -> Bool
-propExprEvalInlZero d e = eval id (inlineExpr d (constant 0) e) == eval id e
+propExprEvalInlZero d e = eval (const 1) (inlineExpr d (constant 0) e) == eval (const 1) e
 
 propExprEvalInlAdd :: Int -> Int -> Expr -> Bool
 propExprEvalInlAdd d c e =
