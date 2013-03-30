@@ -12,19 +12,35 @@ tested-with: GHC>=7.6
 executable bf
   hs-source-dirs: src
   main-is: Interpreter.hs
-  build-depends: base == 4.*, containers, mtl, bytestring == 0.10.2.0, QuickCheck
+  build-depends:
+    base       == 4.*,
+    containers == 0.5.0.0,
+    mtl        == 2.1.2,
+    bytestring == 0.10.2.0,
+    QuickCheck == 2.6
   ghc-options: -Wall
 
 executable bfc
   hs-source-dirs: src
   main-is: Compiler.hs
-  build-depends: base == 4.*, containers, mtl, bytestring == 0.10.2.0, QuickCheck
+  build-depends:
+    base       == 4.*,
+    containers == 0.5.0.0,
+    mtl        == 2.1.2,
+    bytestring == 0.10.2.0,
+    QuickCheck == 2.6
   ghc-options: -Wall
 
 test-suite brainfuck-tests
   type: exitcode-stdio-1.0
   hs-source-dirs: tests, src
   main-is: MainTestSuite.hs
-  build-depends: base == 4.*, containers, mtl, QuickCheck,
-                 test-framework, test-framework-quickcheck2
+  build-depends:
+    base                       == 4.*,
+    containers                 == 0.5.0.0,
+    mtl                        == 2.1.2,
+    bytestring                 == 0.10.2.0,
+    QuickCheck                 == 2.6,
+    test-framework             == 0.8,
+    test-framework-quickcheck2 == 0.3.0.1
   ghc-options: -Wall
