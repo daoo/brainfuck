@@ -24,7 +24,7 @@ type Variable = (Mult, Var)
 data Expr = Expr { econst :: {-# UNPACK #-} !Int, evars :: [(Mult, Var)] }
 
 instance Show Expr where
-  showsPrec _ (Expr c v) = shows c . showString "+" . go v
+  showsPrec _ (Expr c v) = shows c . showString " + " . go v
     where
       go = \case
         []                   -> id
@@ -66,7 +66,7 @@ eval f = foldExpr (\acc (Mult n, Var d) -> acc + n * f d)
 
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d (Expr c v) b = case findExpr d b of
-  Nothing                  -> b
+  Nothing              -> b
   Just (m@(Mult n), _) ->
     add
       (Expr (c * n) (map (mapFst (*m)) v))

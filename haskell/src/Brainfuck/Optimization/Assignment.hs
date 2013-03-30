@@ -1,9 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Optimization.Assignment where
+module Brainfuck.Optimization.Assignment (optimizeAssign) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Utility
+import Control.Arrow
 import Data.Monoid
 import qualified Data.Graph as G
 import qualified Data.IntMap as M
@@ -16,17 +17,18 @@ optimizeAssign = \case
   x@(Instruction (Assign _ _) _) -> uncurry mappend $ modify $ splitAssign x
 
   Instruction fun next -> Instruction fun (optimizeAssign next)
-
   Flow ctrl inner next -> Flow ctrl (optimizeAssign inner) (optimizeAssign next)
 
   where
-    modify (x, y) = (makeTarpit $ findOptimal x, optimizeAssign y)
+    modify = (makeTarpit . findOptimal) *** optimizeAssign
 
-    splitAssign = \case
-      Instruction (Assign d e) next -> mapFst ((d, e) :) $ splitAssign next
-      y                             -> ([], y)
+splitAssign :: Tarpit -> ([AssignOp], Tarpit)
+splitAssign = \case
+  Instruction (Assign d e) next -> mapFst ((d, e) :) $ splitAssign next
+  y                             -> ([], y)
 
-    makeTarpit = foldr (Instruction . uncurry Assign) Nop
+makeTarpit :: [AssignOp] -> Tarpit
+makeTarpit = foldr (Instruction . uncurry Assign) Nop
 
 -- Initial Code:
 -- Assign 2 (Var 1)
