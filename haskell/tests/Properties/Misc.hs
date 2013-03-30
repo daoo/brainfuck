@@ -5,7 +5,7 @@ import Brainfuck.Utility
 import Data.ListZipper
 import Test.QuickCheck
 
-propZipperMoveSize :: ListZipper () -> Property
+propZipperMoveSize :: ListZipper Int -> Property
 propZipperMoveSize a@(ListZipper xs _ zs) =
   not (null xs) && not (null zs) ==>
     forAll (choose (-m, m)) $ \i -> size a == size (move i a)

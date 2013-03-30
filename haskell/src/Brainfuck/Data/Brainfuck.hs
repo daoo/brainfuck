@@ -36,7 +36,11 @@ instance Arbitrary Token where
   arbitrary = oneof $ map return [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
 
 instance Arbitrary Brainfuck where
-  arbitrary = Token <$> arbitrary <*> arbitrary
+  arbitrary = frequency
+    [ (5, return Nop)
+    , (20, Token <$> arbitrary <*> arbitrary)
+    , (1, Repeat <$> arbitrary <*> arbitrary)
+    ]
 
   shrink (Repeat inner next) = map (`Repeat` next) (shrink inner)
   shrink _                   = []

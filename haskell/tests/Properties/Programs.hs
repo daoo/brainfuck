@@ -9,10 +9,10 @@ import Tests.Programs
 propReverse :: Property
 propReverse = forAll printableString $ \str -> out str == reverse str
   where
-    out str = run1 (str ++ "\NUL") bfReverse
+    out str = run1 (str ++ "\NUL") $ parseCompile bfReverse
 
 propASCIIValues :: Property
 propASCIIValues = forAll printableString $ \str -> values str == map ord str
   where
-    out str = run1 (str ++ "\NUL") bfASCIIValues
+    out str = run1 (str ++ "\NUL") $ parseCompile bfASCIIValues
     values  = map length . words . out

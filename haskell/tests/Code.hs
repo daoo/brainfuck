@@ -1,9 +1,10 @@
 module Code where
 
-import Brainfuck.CodeGen.Indented as Indented
+import Brainfuck.CodeGen.Indented
 import Brainfuck.Data.Tarpit
 import Brainfuck.Interpret
 import Test.QuickCheck hiding (output)
+import Text.CodeWriter
 
 printableChar :: Gen Char
 printableChar = frequency
@@ -19,11 +20,8 @@ printableString = sized $ \n ->
 
 newtype PrettyTarpit = PrettyTarpit { getAst :: Tarpit }
 
-instance Arbitrary PrettyTarpit where
-  arbitrary = fmap PrettyTarpit arbitrary
-
 instance Show PrettyTarpit where
-  show (PrettyTarpit ast) = Indented.showTarpit ast
+  show (PrettyTarpit ast) = writeCode $ writeIndented ast
 
 testCode :: Tarpit -> Tarpit -> Bool
 testCode ast ast' = run [] ast == run [] ast'

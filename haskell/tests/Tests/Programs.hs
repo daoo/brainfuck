@@ -3,49 +3,50 @@ module Tests.Programs where
 import Brainfuck.Compile
 import Brainfuck.Data.Tarpit
 import Brainfuck.Parse
+import qualified Data.ByteString.Char8 as BS
 
-parseCompile :: String -> Tarpit
-parseCompile = (\(Right bf) -> compile bf) . parseBrainfuck
+parseCompile :: BS.ByteString -> Tarpit
+parseCompile = compile . parseBrainfuck
 
 -- Prints "Hello World!\n"
-bfHello :: Tarpit
-bfHello = parseCompile
+bfHello :: BS.ByteString
+bfHello = BS.pack
   "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
 
 -- Prints "brainfuck\n"
-bfPrintBrainFuck :: Tarpit
-bfPrintBrainFuck = parseCompile
+bfPrintBrainFuck :: BS.ByteString
+bfPrintBrainFuck = BS.pack
   ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
 
-bfRot13 :: Tarpit
-bfRot13 = parseCompile
+bfRot13 :: BS.ByteString
+bfRot13 = BS.pack
   "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
 
-bfReverse :: Tarpit
-bfReverse = parseCompile
+bfReverse :: BS.ByteString
+bfReverse = BS.pack
   ">,[>,]<[.<]"
 
 -- Outputs in unary (with bangs (!))
-bfASCIIValues :: Tarpit
-bfASCIIValues = parseCompile
+bfASCIIValues :: BS.ByteString
+bfASCIIValues = BS.pack
   "++++[>++++++++<-],[[>+.-<-]>.<,]"
 
 -- Prints the squars (as ASCII numbers)
-bfSquares :: Tarpit
-bfSquares = parseCompile
+bfSquares :: BS.ByteString
+bfSquares = BS.pack
   "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
 
 -- Goes to the 30000th cell
-bf30000 :: Tarpit
-bf30000 = parseCompile
+bf30000 :: BS.ByteString
+bf30000 = BS.pack
   "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
 
 -- Prints the fibonacci sequence
-bfFib :: Tarpit
-bfFib = parseCompile
+bfFib :: BS.ByteString
+bfFib = BS.pack
   ">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]"
 
 -- Prints "\n\EOT"
-bfIO :: Tarpit
-bfIO = parseCompile
+bfIO :: BS.ByteString
+bfIO = BS.pack
   ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."

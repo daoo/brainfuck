@@ -25,12 +25,8 @@ tests =
       , testProperty "Parse Show invariant" propParser
       ]
     , testGroup "Expressions"
-      [ testProperty "Optimize Const Expression" propExprOptimizeConst
-      , testProperty "Optimize Twice Invariant" propExprOptimizeTwice
-      , testProperty "Evaluation" propExprEval
+      [ testProperty "Evaluation" propExprEvalConst
       ]
-    , testGroup "Optimization"
-      [ ]
     , testGroup "Programs"
       [ testProperty "Reverse" propReverse
       , testProperty "ASCII Values" propASCIIValues
