@@ -68,8 +68,8 @@ add (Expr c1 v1) (Expr c2 v2) = Expr (c1 + c2) (merge v1 v2)
 eval :: (Int -> Int) -> Expr -> Int
 eval f = foldExpr (\acc (Mult n, Var d) -> acc + n * f d)
 
-inlineExpr :: Int -> Expr -> Expr -> Expr
-inlineExpr d (Expr c v) b = case findExpr d b of
+inlineExpr :: Var -> Expr -> Expr -> Expr
+inlineExpr (Var d) (Expr c v) b = case findExpr d b of
   Nothing              -> b
   Just (m@(Mult n), _) ->
     add

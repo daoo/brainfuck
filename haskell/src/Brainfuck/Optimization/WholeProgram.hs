@@ -30,7 +30,7 @@ removeFromEnd = \case
   Instruction (Assign _ _) Nop -> Nop
   Instruction (Shift _) Nop    -> Nop
   Instruction (GetChar _) Nop  -> Nop
-  Instruction fun Nop -> Instruction fun Nop
+  Instruction fun Nop          -> Instruction fun Nop
 
   Instruction fun next -> case removeFromEnd next of
 
