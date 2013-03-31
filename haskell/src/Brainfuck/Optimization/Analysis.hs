@@ -17,7 +17,7 @@ exprDepends = ((.) isJust) . findExpr
 --     other value we can not determine if it reaches zero or overflows.
 --   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: Int -> Tarpit -> Maybe [(Int, Int)]
+copyLoop :: Int -> Tarpit -> Maybe [(Mult, Var)]
 copyLoop d1 = go False
   where
     go b = \case
@@ -25,7 +25,7 @@ copyLoop d1 = go False
 
       Instruction (Assign d2 (Expr c [(1, Var d3)])) next
         | d2 == d3 && d1 == d2 && c == -1 -> go True next
-        | d2 == d3 && d1 /= d2            -> ((d2, c):) <$> go b next
+        | d2 == d3 && d1 /= d2            -> ((Mult c, Var d2):) <$> go b next
         | otherwise                       -> Nothing
 
       _ -> Nothing

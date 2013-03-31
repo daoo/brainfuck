@@ -11,30 +11,18 @@ fullOptimization :: Tarpit -> Tarpit
 fullOptimization = inlineZeros
                  . optimizeAssign
                  . removeFromEnd
+                 . flowReduction
                  . tryMaybe (rewrite
-                   [ reflectiveAssign
-                   , shiftZero
-                   , flowInnerNop
-                   , flowNever
-                   , flowOnce
-                   , flowConst
-                   , movePut
-                   , moveShifts
+                   [ movePut
                    , reduceCopyLoops
                    , whileToIf
                    ])
+                 . shiftReduction
                  . inlineZeros
 
 simpleOptimizations :: Tarpit -> Tarpit
 simpleOptimizations = inlineZeros
-                    . tryMaybe (rewrite
-                      [ reflectiveAssign
-                      , shiftZero
-                      , flowInnerNop
-                      , flowNever
-                      , flowOnce
-                      , flowConst
-                      , movePut
-                      , moveShifts
-                      ])
+                    . flowReduction
+                    . tryMaybe (rewrite [movePut])
+                    . shiftReduction
                     . inlineZeros
