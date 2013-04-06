@@ -1,4 +1,4 @@
-module Tests.Programs where
+module Programs where
 
 import Brainfuck.Compile
 import Brainfuck.Data.Tarpit

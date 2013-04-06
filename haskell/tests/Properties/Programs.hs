@@ -4,8 +4,8 @@ module Properties.Programs
   ) where
 
 import Data.List
+import Programs
 import Test.QuickCheck
-import Tests.Programs
 import Utility
 
 propReverse :: Property

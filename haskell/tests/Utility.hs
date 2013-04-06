@@ -4,8 +4,9 @@ module Utility
   , printWord8
   , printInput
   , PrettyTarpit (..)
-  , testCode
-  , checkTransform
+  , tests
+  , testOutput
+  , testMemory
   , expectedOutput
   ) where
 
@@ -14,7 +15,7 @@ import Brainfuck.Data.Tarpit
 import Brainfuck.Interpret
 import Control.Monad
 import Data.Char
-import Data.Foldable
+import Data.Foldable hiding (all)
 import Data.Word
 import Test.QuickCheck
 import Text.CodeWriter
@@ -36,16 +37,21 @@ printWord8 = frequency
 printInput :: Gen Input
 printInput = sized $ \n -> choose (0, n) >>= (`replicateM` printWord8)
 
-newtype PrettyTarpit = PrettyTarpit { getAst :: Tarpit }
+newtype PrettyTarpit = PrettyTarpit { getTarpit :: Tarpit }
 
 instance Show PrettyTarpit where
-  show (PrettyTarpit ast) = writeCode $ writeIndented ast
+  show (PrettyTarpit code) = writeCode $ writeIndented code
 
-testCode :: Tarpit -> Tarpit -> Bool
-testCode ast ast' = run [] ast == run [] ast'
+tests :: [Machine -> Machine -> Bool] -> Tarpit -> Tarpit -> Bool
+tests fs a b = let a' = run [] a
+                   b' = run [] b
+                in all (\f -> f a' b') fs
 
-checkTransform :: (Tarpit -> Tarpit) -> Tarpit -> Bool
-checkTransform f ast = testCode ast (f ast)
+testOutput :: Machine -> Machine -> Bool
+testOutput a b = moutput a == moutput b
+
+testMemory :: Machine -> Machine -> Bool
+testMemory a b = mmemory a == mmemory b
 
 expectedOutput :: Tarpit -> Input -> Input -> Bool
-expectedOutput code inp out = toList (run inp code) == out
+expectedOutput code inp out = toList (exec inp code) == out
