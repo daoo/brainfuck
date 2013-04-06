@@ -3,7 +3,6 @@ module Main where
 import Properties.Compiler
 import Properties.Expressions
 import Properties.Misc
-import Properties.Optimizations
 import Properties.Programs
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
@@ -34,9 +33,6 @@ tests =
       , testProperty "Eval constant" propExprEvalConst
       , testProperty "Eval variable" propExprEvalVar
       , testProperty "Eval add" propExprEvalAdd
-      ]
-    , testGroup "Optimizations"
-      [ testProperty "Assignments" propOptAssign
       ]
     ]
   ]
