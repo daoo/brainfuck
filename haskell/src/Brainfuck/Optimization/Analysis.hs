@@ -10,26 +10,6 @@ import Data.Maybe
 exprDepends :: Int -> Expr -> Bool
 exprDepends = ((.) isJust) . findExpr
 
--- |Analyze a loop for a copy/multiply structure
--- A copy loop is a loop that follow these criteria:
---   * Contains no shifts, puts or gets.
---   * The loop memory position is decremented by 1. If it's decremented by some
---     other value we can not determine if it reaches zero or overflows.
---   * Increment or decrement any other memory cell by any integer.
--- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: Int -> Tarpit -> Maybe [(Mult, Var)]
-copyLoop d1 = go False
-  where
-    go b = \case
-      Nop -> if b then Just [] else Nothing
-
-      Instruction (Assign d2 (Expr c [(1, Var d3)])) next
-        | d2 == d3 && d1 == d2 && c == -1 -> go True next
-        | d2 == d3 && d1 /= d2            -> ((Mult c, Var d2):) <$> go b next
-        | otherwise                       -> Nothing
-
-      _ -> Nothing
-
 -- |Heuristically decide how much memory a program uses.
 memorySize :: Tarpit -> (Int, Int)
 memorySize = \case
@@ -74,6 +54,26 @@ usesMemory = \case
       Assign _ _          -> True
       GetChar _           -> True
       Shift _             -> True
+
+-- |Analyze a loop for a copy/multiply structure
+-- A copy loop is a loop that follow these criteria:
+--   * Contains no shifts, puts or gets.
+--   * The loop memory position is decremented by 1. If it's decremented by some
+--     other value we can not determine if it reaches zero or overflows.
+--   * Increment or decrement any other memory cell by any integer.
+-- If the supplied instruction isn't a Loop, we will return Nothing.
+copyLoop :: Int -> Tarpit -> Maybe [(Mult, Var)]
+copyLoop d1 = go False
+  where
+    go b = \case
+      Nop -> if b then Just [] else Nothing
+
+      Instruction (Assign d2 (Expr c [(1, Var d3)])) next
+        | d2 == d3 && d1 == d2 && c == -1 -> go True next
+        | d2 == d3 && d1 /= d2            -> ((Mult c, Var d2):) <$> go b next
+        | otherwise                       -> Nothing
+
+      _ -> Nothing
 
 -- |Check if a while loop executes more than once
 whileOnce :: Expr -> Tarpit -> Bool
