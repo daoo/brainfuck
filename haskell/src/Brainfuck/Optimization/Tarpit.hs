@@ -8,10 +8,6 @@ import Data.Monoid
 
 flowReduction :: Tarpit -> Tarpit
 flowReduction = \case
-  Nop -> Nop
-
-  Instruction fun next -> Instruction fun $ flowReduction next
-
   Flow _ Nop next      -> flowReduction next
   Flow Never _ next    -> flowReduction next
   Flow Once inner next -> flowReduction $ inner `mappend` next
@@ -21,6 +17,8 @@ flowReduction = \case
   Flow (While (Expr _ [])) inner next -> Flow Forever (flowReduction inner) (flowReduction next)
   Flow (If (Expr _ [])) inner next    -> flowReduction $ inner `mappend` next
 
+  Nop                  -> Nop
+  Instruction fun next -> Instruction fun (flowReduction next)
   Flow ctrl inner next -> Flow ctrl (flowReduction inner) (flowReduction next)
 
 loopReduction :: Tarpit -> Tarpit
@@ -45,8 +43,6 @@ loopReduction = \case
 
 shiftReduction :: Tarpit -> Tarpit
 shiftReduction = \case
-  Nop -> Nop
-
   Instruction (Shift 0) next -> shiftReduction next
 
   Instruction (Shift s) next -> case next of
@@ -63,6 +59,7 @@ shiftReduction = \case
       (shiftReduction $ mapTarpit (function s) (control s) inner)
       (shiftReduction $ Instruction (Shift s) next')
 
+  Nop                  -> Nop
   Instruction fun next -> Instruction fun (shiftReduction next)
   Flow ctrl inner next -> Flow ctrl (shiftReduction inner) (shiftReduction next)
 
