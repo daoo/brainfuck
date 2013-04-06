@@ -6,7 +6,7 @@ import Brainfuck.Data.Tarpit
 import Text.CodeWriter
 
 writeHaskell :: Tarpit -> CodeWriter ()
-writeHaskell ast = do
+writeHaskell code = do
   line "import Brainfuck.Data.Expr"
   line "import Brainfuck.Data.IOMemory"
   line ""
@@ -17,7 +17,7 @@ writeHaskell ast = do
     line "program (setMemory m) (putMemory m) (getMemory m) (evalMemory m) (whileMemory m) (ifMemory m)"
   line ""
   line "program set put get eval while when = runMemory $ do"
-  indentedM $ go ast
+  indentedM $ go code
 
   where
     go = \case

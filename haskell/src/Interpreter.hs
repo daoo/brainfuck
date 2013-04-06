@@ -53,9 +53,9 @@ main = do
   case optAction opts of
     Help      -> printHelp
     Interpret -> do
-      ast <- astFrom file
+      code <- codeFrom file
       inp <- getContents
-      putStr $ run1 inp $ optimize ast
+      putStr $ exec1 inp $ optimize code
 
   where
-    astFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)
+    codeFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)

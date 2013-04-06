@@ -77,7 +77,7 @@ usesMemory = \case
 
 -- |Check if a while loop executes more than once
 whileOnce :: Expr -> Tarpit -> Bool
-whileOnce (Expr 0 [(1, Var d)]) ast = go d False ast
+whileOnce (Expr 0 [(1, Var d)]) code = go d False code
   where
     go d1 b = \case
       Nop -> b

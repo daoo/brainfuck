@@ -1,7 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Interpret
   ( run
-  , run1
+  , exec
+  , exec1
+  , Machine (..)
   , Input
   , Output
   , Memory
@@ -52,11 +54,14 @@ newMemory :: Memory
 newMemory = ListZipper zeros 0 zeros
   where zeros = repeat 0
 
-run1 :: String -> Tarpit -> String
-run1 inp = map (chr . fromIntegral) . toList . run (map (fromIntegral . ord) inp)
+exec :: Input -> Tarpit -> Output
+exec inp = moutput . run inp
 
-run :: Input -> Tarpit -> Output
-run inp ast = moutput $ execState (go ast) (Machine inp S.empty newMemory)
+exec1 :: String -> Tarpit -> String
+exec1 inp = map (chr . fromIntegral) . toList . exec (map (fromIntegral . ord) inp)
+
+run :: Input -> Tarpit -> Machine
+run inp code = execState (go code) (Machine inp S.empty newMemory)
   where
     go :: Tarpit -> State Machine ()
     go = \case

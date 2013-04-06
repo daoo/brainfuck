@@ -18,7 +18,7 @@ inlineZeros = go S.empty
         GetChar d  -> Instruction fun (go (S.delete d s) next)
         Shift _    -> Instruction fun next
 
-      ast -> ast
+      code -> code
 
     remove :: S.Set Int -> Expr -> Expr
     remove s = filterExpr ((`S.member` s) . mkVar . snd)

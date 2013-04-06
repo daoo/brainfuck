@@ -37,9 +37,9 @@ makeExpr :: Expr -> DotState ()
 makeExpr e = get >>= makeNode ellipse (string (show e))
 
 writeDot :: Tarpit -> CodeWriter ()
-writeDot ast = do
-  line "digraph ast {"
-  indentedM $ evalStateT (go ast) 0
+writeDot code = do
+  line "digraph code {"
+  indentedM $ evalStateT (go code) 0
   line "}"
 
   where
@@ -69,10 +69,10 @@ writeDot ast = do
         nextNode n inner
         nextNode n next
 
-    nextNode n ast' = do
+    nextNode n code' = do
       n' <- newId
       makeEdge n n'
-      go ast'
+      go code'
 
     exprNode outline l expr n = do
       makeNode outline l n

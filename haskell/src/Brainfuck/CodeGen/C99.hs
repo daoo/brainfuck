@@ -22,16 +22,16 @@ writeExpr = \case
     mult ((Mult n), Var d) = int n >> string " * ptr[" >> int d >> string "]"
 
 writeC99 :: Tarpit -> CodeWriter ()
-writeC99 ast = do
+writeC99 code = do
   line "#include <stdio.h>"
   line ""
   line "int main() {"
   indentedM $ do
-    when (usesMemory ast) $ do
+    when (usesMemory code) $ do
       line "unsigned char mem[30001];"
       line "unsigned char* ptr = mem;"
 
-    go ast
+    go code
 
     line "return 0;"
   line "}"
