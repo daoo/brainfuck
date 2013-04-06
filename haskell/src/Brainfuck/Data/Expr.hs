@@ -20,12 +20,12 @@ data Expr = Expr { econst :: {-# UNPACK #-} !Int, evars :: [(Mult, Var)] }
   deriving Show
 
 instance Arbitrary Expr where
-  arbitrary = Expr <$> arbitrary <*> sized (go (-100))
+  arbitrary = Expr <$> choose (-1000, 1000) <*> sized (go (-100))
     where
       go _ 0 = return []
 
       go m s = do
-        n <- arbitrary
+        n <- choose (-10, 10)
         d <- choose (m, 100)
         ((Mult n, Var d) :) <$> go d (s `div` 2)
 
