@@ -1,5 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Interpret (run, run1) where
+module Brainfuck.Interpret
+  ( run
+  , run1
+  , Input
+  , Output
+  , Memory
+  ) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit

@@ -1,18 +1,24 @@
-module Properties.Programs where
+module Properties.Programs
+  ( propReverse
+  , propASCIIValues
+  ) where
 
-import Brainfuck.Interpret
-import Code
-import Data.Char
-import Test.QuickCheck hiding (output)
+import Data.List
+import Test.QuickCheck
 import Tests.Programs
+import Utility
 
 propReverse :: Property
-propReverse = forAll printableString $ \str -> out str == reverse str
-  where
-    out str = run1 (str ++ "\NUL") $ parseCompile bfReverse
+propReverse = forAll printInput $ \inp ->
+  expectedOutput (parseCompile bfReverse) (inp ++ [wnull]) (reverse inp)
 
 propASCIIValues :: Property
-propASCIIValues = forAll printableString $ \str -> values str == map ord str
+propASCIIValues = forAll printInput $ \inp -> expectedOutput
+  (parseCompile bfASCIIValues)
+  (inp ++ [wnull])
+  (spacify $ map bangs inp)
   where
-    out str = run1 (str ++ "\NUL") $ parseCompile bfASCIIValues
-    values  = map length . words . out
+    bangs = (`replicate` 33) . fromIntegral
+
+    spacify [] = []
+    spacify xs = intercalate [wspace] xs ++ [wspace]
