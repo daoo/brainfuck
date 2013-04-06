@@ -24,15 +24,15 @@ tests =
       [ testProperty "Compile Decompile invariant" propCompileDecompile
       , testProperty "Parse Show invariant" propParser
       ]
+    , testGroup "Programs"
+      [ testProperty "Reverse" propReverse
+      , testProperty "ASCII Values" propASCIIValues
+      ]
     , testGroup "Expressions"
       [ testProperty "Is sorted" propExprIsSorted
       , testProperty "Eval constant" propExprEvalConst
       , testProperty "Eval variable" propExprEvalVar
       , testProperty "Eval add" propExprEvalAdd
-      ]
-    , testGroup "Programs"
-      [ testProperty "Reverse" propReverse
-      , testProperty "ASCII Values" propASCIIValues
       ]
     ]
   ]

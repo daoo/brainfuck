@@ -69,7 +69,7 @@ main = do
 
   case optAction opts of
     Help    -> printHelp
-    Compile -> astFrom file >>= hPutBuilder stdout . runCodeWriter . codegen . optimize
+    Compile -> codeFrom file >>= hPutBuilder stdout . runCodeWriter . codegen . optimize
 
   where
-    astFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)
+    codeFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)
