@@ -4,7 +4,6 @@ module Brainfuck.Optimization.Tarpit where
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
-import Brainfuck.Optimization.Rewriting
 import Data.Monoid
 
 flowReduction :: Tarpit -> Tarpit
@@ -24,29 +23,25 @@ flowReduction = \case
 
   Flow ctrl inner next -> Flow ctrl (flowReduction inner) (flowReduction next)
 
-movePut :: Tarpit -> Rule Tarpit
-movePut (Instruction s@(Assign d e1) (Instruction (PutChar e2) next)) =
-  return $ Instruction (PutChar (inlineExpr (Var d) e1 e2)) (Instruction s next)
-movePut _ = nope
+loopReduction :: Tarpit -> Tarpit
+loopReduction = \case
+  -- TODO: the (Assign d (Const 0)) operation could be moved out of the if for futher optimization
+  Flow (While e) inner next | whileOnce e inner ->
+    Flow (If e) (loopReduction inner) (loopReduction next)
 
--- |Reduce multiplications and clear loops
-reduceCopyLoops :: Tarpit -> Rule Tarpit
-reduceCopyLoops (Flow (While (Expr 0 [(1, Var d)])) inner next) = do
-  inner' <- copyLoop d inner
-  return $ mappend (foldr f zero inner') next
-  where
-    zero = Instruction (Assign d $ constant 0) Nop
+  Flow ctrl@(While (Expr 0 [(1, Var d)])) inner next -> case go inner of
+    Just inner' -> mappend inner' (loopReduction next)
+    Nothing     -> Flow ctrl (loopReduction inner) (loopReduction next)
+    where
+      go = fmap (foldr f zero) . copyLoop d
 
-    f (Mult n, Var ds) = Instruction . Assign ds $ variable ds `add` variable' n d
+      zero = Instruction (Assign d $ constant 0) Nop
 
-reduceCopyLoops _ = nope
+      f (Mult n, Var ds) = Instruction . Assign ds $ variable ds `add` variable' n d
 
--- |Convert while loops that are only run once to if statements
--- TODO: the (Assign d (Const 0)) operation could be moved out of the if for futher optimization
-whileToIf :: Tarpit -> Rule Tarpit
-whileToIf (Flow (While e) inner next)
-  | whileOnce e inner = return $ Flow (If e) inner next
-whileToIf _           = nope
+  Nop                  -> Nop
+  Instruction fun next -> Instruction fun (loopReduction next)
+  Flow ctrl inner next -> Flow ctrl (loopReduction inner) (loopReduction next)
 
 shiftReduction :: Tarpit -> Tarpit
 shiftReduction = \case
