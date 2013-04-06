@@ -8,16 +8,10 @@ import qualified Data.List as List
 
 -- Use a newtype for keeping my sanity
 newtype Mult = Mult { mkMult :: Int }
-  deriving (Eq, Ord, Num, Arbitrary)
+  deriving (Eq, Ord, Num, Arbitrary, Show)
 
 newtype Var = Var { mkVar :: Int }
-  deriving (Eq, Ord, Num, Arbitrary)
-
-instance Show Mult where
-  showsPrec _ (Mult n) = showString "Mult " . shows n
-
-instance Show Var where
-  showsPrec _ (Var d) = showString "Var " . shows d
+  deriving (Eq, Ord, Num, Arbitrary, Show)
 
 type Variable = (Mult, Var)
 
