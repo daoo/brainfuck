@@ -4,18 +4,18 @@ module Properties.Expressions where
 import Brainfuck.Data.Expr
 
 propExprIsSorted :: Expr -> Bool
-propExprIsSorted (Expr _ v) = go v
+propExprIsSorted = go True
   where
-    go = \case
-      []                     -> True
-      [_]                    -> True
-      (_, d1) : (_, d2) : xs -> d1 <= d2 && go xs
+    go b = \case
+      Const _                -> b
+      Var _ _ (Const _)      -> b
+      Var _ d1 (Var _ d2 xs) -> go (b && d1 <= d2) xs
 
-propExprEvalConst :: Int -> Bool
-propExprEvalConst c = eval undefined (constant c) == c
-
-propExprEvalVar :: Int -> Bool
-propExprEvalVar d = eval id (variable d) == d
+propExprAddSorted :: Expr -> Expr -> Bool
+propExprAddSorted a b = propExprIsSorted (add a b)
 
 propExprEvalAdd :: Expr -> Expr -> Bool
 propExprEvalAdd a b = eval id (a `add` b) == eval id a + eval id b
+
+propExprMapId :: Expr -> Bool
+propExprMapId a = mapExpr id id a == a

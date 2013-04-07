@@ -21,7 +21,7 @@ inlineZeros = go S.empty
       code -> code
 
     remove :: S.Set Int -> Expr -> Expr
-    remove s = filterExpr ((`S.member` s) . mkVar . snd)
+    remove s = filterVars ((`S.member` s) . snd)
 
 -- |Remove instructions from the end that does not performe any side effects
 removeFromEnd :: Tarpit -> Tarpit

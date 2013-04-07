@@ -30,9 +30,9 @@ tests =
       ]
     , testGroup "Expressions"
       [ testProperty "Is sorted" propExprIsSorted
-      , testProperty "Eval constant" propExprEvalConst
-      , testProperty "Eval variable" propExprEvalVar
+      , testProperty "Sorted after add" propExprAddSorted
       , testProperty "Eval add" propExprEvalAdd
+      , testProperty "Map id" propExprMapId
       ]
     ]
   ]

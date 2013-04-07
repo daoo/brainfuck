@@ -1,71 +1,77 @@
 {-# LANGUAGE LambdaCase, GeneralizedNewtypeDeriving #-}
-module Brainfuck.Data.Expr where
+module Brainfuck.Data.Expr
+  ( Expr (..)
+  , findVar
+  , filterVars
+  , mapExpr
+  , foldVarsR
+  , foldVarsL'
+  , add
+  , eval
+  , inlineExpr
+  ) where
 
 import Brainfuck.Utility
-import Control.Applicative
+import Control.Applicative hiding (Const)
 import Test.QuickCheck
-import qualified Data.List as List
-
--- Use a newtype for keeping my sanity
-newtype Mult = Mult { mkMult :: Int }
-  deriving (Eq, Ord, Num, Arbitrary, Show)
-
-newtype Var = Var { mkVar :: Int }
-  deriving (Eq, Ord, Num, Arbitrary, Show)
-
-type Variable = (Mult, Var)
 
 -- |An expression is a constant and a sum of multiples of variables
-data Expr = Expr { econst :: {-# UNPACK #-} !Int, evars :: [(Mult, Var)] }
-  deriving Show
+data Expr = Var {-# UNPACK #-} !Int {-# UNPACK #-} !Int Expr
+          | Const {-# UNPACK #-} !Int
+  deriving (Eq, Show)
 
 instance Arbitrary Expr where
-  arbitrary = Expr <$> choose (-1000, 1000) <*> sized (go (-100))
+  arbitrary = sized (go (-10))
     where
-      go _ 0 = return []
+      go _ 0 = Const <$> choose (-10, 10)
+      go d n = do
+        i <- choose (d, 10)
+        Var <$> choose (-10, 10) <*> pure i <*> go i (n `div` 2)
 
-      go m s = do
-        n <- choose (-10, 10)
-        d <- choose (m, 100)
-        ((Mult n, Var d) :) <$> go d (s `div` 2)
+findVar :: Int -> Expr -> Maybe Int
+findVar _ (Const _)                 = Nothing
+findVar d (Var n d' xs) | d == d'   = Just n
+                        | otherwise = findVar d xs
 
-  shrink (Expr c v) = concatMap (\c' -> map (Expr c') $ shrink v) $ shrink c
+filterVars :: ((Int, Int) -> Bool) -> Expr -> Expr
+filterVars _ e@(Const _)              = e
+filterVars f (Var n d xs) | f (n, d)  = Var n d (filterVars f xs)
+                          | otherwise = filterVars f xs
 
-constant :: Int -> Expr
-constant = (`Expr` [])
+mapExpr :: ((Int, Int) -> (Int, Int)) -> (Int -> Int) -> Expr -> Expr
+mapExpr _ g (Const c)    = Const (g c)
+mapExpr f g (Var n d xs) = uncurry Var (f (n, d)) $ mapExpr f g xs
 
-variable :: Int -> Expr
-variable d = Expr 0 [(Mult 1, Var d)]
+foldVarsR :: (Int -> Int -> a -> a) -> a -> Expr -> a
+foldVarsR _ acc (Const _)    = acc
+foldVarsR f acc (Var n d xs) = f n d $ foldVarsR f acc xs
 
-variable' :: Int -> Int -> Expr
-variable' n d = Expr 0 [(Mult n, Var d)]
-
-foldExpr :: (Int -> Variable -> Int) -> Expr -> Int
-foldExpr f (Expr c v) = foldl f c v
-
-findExpr :: Int -> Expr -> Maybe Variable
-findExpr d = List.find ((==d) . mkVar . snd) . evars
-
-filterExpr :: (Variable -> Bool) -> Expr -> Expr
-filterExpr f (Expr c v) = Expr c (List.filter f v)
+foldVarsL' :: (a -> Int -> Int -> a) -> a -> Expr -> a
+foldVarsL' _ acc (Const _)    = acc
+foldVarsL' f acc (Var n d xs) = let acc' = f acc n d
+                                 in seq acc' $ foldVarsL' f acc' xs
 
 add :: Expr -> Expr -> Expr
-add (Expr c1 v1) (Expr c2 v2) = Expr (c1 + c2) (merge v1 v2)
+add (Const c1)       (Const c2)       = Const (c1 + c2)
+add (Var n1 d1 x')   c2@(Const _)     = Var n1 d1 (add x' c2)
+add c1@(Const _)     (Var n2 d2 y')   = Var n2 d2 (add c1 y')
+add x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
+  LT -> Var n1 d1        $ add x' y
+  EQ -> app (n1 + n2) d1 $ add x' y'
+  GT -> Var n2 d2        $ add x y'
+
   where
-    merge []              ys              = ys
-    merge xs              []              = xs
-    merge (x@(m1, d1):xs) (y@(m2, d2):ys) = case compare d1 d2 of
-      LT -> x             : merge xs (y:ys)
-      EQ -> (m1 + m2, d1) : merge xs ys
-      GT -> y             : merge (x:xs) ys
+    app 0 _ xs = xs
+    app n d xs = Var n d xs
 
 eval :: (Int -> Int) -> Expr -> Int
-eval f = foldExpr (\acc (Mult n, Var d) -> acc + n * f d)
+eval f = go 0
+  where
+    go acc = \case
+      Const c    -> acc + c
+      Var n d xs -> go (acc + n * f d) xs
 
-inlineExpr :: Var -> Expr -> Expr -> Expr
-inlineExpr (Var d) (Expr c v) b = case findExpr d b of
-  Nothing              -> b
-  Just (m@(Mult n), _) ->
-    add
-      (Expr (c * n) (map (mapFst (*m)) v))
-      (filterExpr ((/= d) . mkVar . snd) b)
+inlineExpr :: Int -> Expr -> Expr -> Expr
+inlineExpr d a b = case findVar d b of
+  Nothing -> b
+  Just n  -> mapExpr (mapFst (*n)) (*n) a `add` filterVars ((/= d) . snd) b

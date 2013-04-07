@@ -9,17 +9,12 @@ import Text.CodeWriter
 
 writeExpr :: Expr -> CodeWriter ()
 writeExpr = \case
-  Expr c [] -> int c
-  Expr 0 v  -> go v
-  Expr c v  -> int c >> string " + " >> go v
+  Const c           -> int c
+  Var n d (Const 0) -> mult n d
+  Var n d xs        -> mult n d >> string " + " >> writeExpr xs
   where
-    go = \case
-      []   -> return ()
-      [x]  -> mult x
-      x:xs -> mult x >> string " + " >> go xs
-
-    mult (Mult 1, Var d) = string "ptr[" >> int d >> string "]"
-    mult ((Mult n), Var d) = int n >> string " * ptr[" >> int d >> string "]"
+    mult 1 d = string "ptr[" >> int d >> string "]"
+    mult n d = int n >> string " * ptr[" >> int d >> string "]"
 
 writeC99 :: Tarpit -> CodeWriter ()
 writeC99 code = do
@@ -43,10 +38,10 @@ writeC99 code = do
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
-      Forever -> block "while" (constant 1)
+      Forever -> block "while" (Const 1)
       While e -> block "while" e
-      Once    -> block "if" (constant 1)
-      Never   -> block "if" (constant 0)
+      Once    -> block "if" (Const 1)
+      Never   -> block "if" (Const 0)
       If e    -> block "if" e
 
     block :: String -> Expr -> Tarpit -> CodeWriter ()

@@ -4,6 +4,7 @@ module Brainfuck.Optimization.Tarpit where
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
+import Brainfuck.Utility
 import Data.Monoid
 
 flowReduction :: Tarpit -> Tarpit
@@ -12,10 +13,10 @@ flowReduction = \case
   Flow Never _ next    -> flowReduction next
   Flow Once inner next -> flowReduction $ inner `mappend` next
 
-  Flow (While (Expr 0 [])) _ next     -> flowReduction next
-  Flow (If (Expr 0 [])) _ next        -> flowReduction next
-  Flow (While (Expr _ [])) inner next -> Flow Forever (flowReduction inner) (flowReduction next)
-  Flow (If (Expr _ [])) inner next    -> flowReduction $ inner `mappend` next
+  Flow (While (Const 0)) _ next     -> flowReduction next
+  Flow (If (Const 0)) _ next        -> flowReduction next
+  Flow (While (Const _)) inner next -> Flow Forever (flowReduction inner) (flowReduction next)
+  Flow (If (Const _)) inner next    -> flowReduction $ inner `mappend` next
 
   Nop                  -> Nop
   Instruction fun next -> Instruction fun (flowReduction next)
@@ -27,15 +28,15 @@ loopReduction = \case
   Flow (While e) inner next | whileOnce e inner ->
     Flow (If e) (loopReduction inner) (loopReduction next)
 
-  Flow ctrl@(While (Expr 0 [(1, Var d)])) inner next -> case go inner of
+  Flow ctrl@(While (Var 1 d (Const 0))) inner next -> case go inner of
     Just inner' -> mappend inner' (loopReduction next)
     Nothing     -> Flow ctrl (loopReduction inner) (loopReduction next)
     where
       go = fmap (foldr f zero) . copyLoop d
 
-      zero = Instruction (Assign d $ constant 0) Nop
+      zero = Instruction (Assign d $ Const 0) Nop
 
-      f (Mult n, Var ds) = Instruction . Assign ds $ variable ds `add` variable' n d
+      f (n, ds) = Instruction . Assign ds $ Var 1 ds (Const 0) `add` Var n d (Const 0)
 
   Nop                  -> Nop
   Instruction fun next -> Instruction fun (loopReduction next)
@@ -43,32 +44,29 @@ loopReduction = \case
 
 shiftReduction :: Tarpit -> Tarpit
 shiftReduction = \case
+  Nop -> Nop
+
   Instruction (Shift 0) next -> shiftReduction next
 
   Instruction (Shift s) next -> case next of
-    Nop -> Nop
 
-    Instruction fun next' -> case fun of
-
-      GetChar d  -> Instruction (GetChar (s + d))           $ ins s next'
-      PutChar e  -> Instruction (PutChar (expr s e))        $ ins s next'
-      Assign d e -> Instruction (Assign (s + d) (expr s e)) $ ins s next'
-      Shift s'   -> shiftReduction $ Instruction (Shift (s + s')) $ next'
+    Nop                          -> Instruction (Shift s) Nop
+    Instruction (Shift s') next' -> shiftReduction $ Instruction (Shift (s + s')) $ next'
+    Instruction fun next'        -> Instruction (function s fun) $ shiftReduction $ Instruction (Shift s) next'
 
     Flow ctrl inner next' -> Flow (control s ctrl)
       (shiftReduction $ mapTarpit (function s) (control s) inner)
       (shiftReduction $ Instruction (Shift s) next')
 
-  Nop                  -> Nop
   Instruction fun next -> Instruction fun (shiftReduction next)
   Flow ctrl inner next -> Flow ctrl (shiftReduction inner) (shiftReduction next)
 
   where
-    function s' = \case
-      GetChar d  -> GetChar (s' + d)
-      PutChar e  -> PutChar (expr s' e)
-      Assign d e -> Assign (s' + d) (expr s' e)
-      Shift s''  -> Shift s''
+    function s = \case
+      GetChar d   -> GetChar (d + s)
+      PutChar e   -> PutChar (expr s e)
+      Assign d e  -> Assign (d + s) (expr s e)
+      x@(Shift _) -> x
 
     control s' = \case
       Forever -> Forever
@@ -77,6 +75,4 @@ shiftReduction = \case
       If e    -> If $ expr s' e
       While e -> While $ expr s' e
 
-    ins s = shiftReduction . Instruction (Shift s)
-
-    expr s (Expr c v) = Expr c $ map (fmap ((+) (Var s))) v
+    expr s = mapExpr (mapSnd (+s)) id

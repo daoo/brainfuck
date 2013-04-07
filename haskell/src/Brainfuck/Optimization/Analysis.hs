@@ -8,7 +8,7 @@ import Data.Maybe
 
 -- |Check if an expression reads a certain memory position
 exprDepends :: Int -> Expr -> Bool
-exprDepends = ((.) isJust) . findExpr
+exprDepends = ((.) isJust) . findVar
 
 -- |Heuristically decide how much memory a program uses.
 memorySize :: Tarpit -> (Int, Int)
@@ -30,7 +30,7 @@ memorySize = \case
       _       -> (0, 0)
 
     expr :: Expr -> (Int, Int)
-    expr = foldl (\x y -> x <+> (g $ mkVar $ snd y)) (0, 0) . evars
+    expr = foldVarsL' (\x _ y -> x <+> (g y)) (0, 0)
 
     g :: Int -> (Int, Int)
     g d = case compare d 0 of
@@ -49,11 +49,8 @@ usesMemory = \case
 
   where
     f = \case
-      PutChar (Expr _ []) -> False
-      PutChar (Expr _ _)  -> True
-      Assign _ _          -> True
-      GetChar _           -> True
-      Shift _             -> True
+      PutChar (Const _) -> False
+      _                 -> True
 
 -- |Analyze a loop for a copy/multiply structure
 -- A copy loop is a loop that follow these criteria:
@@ -62,37 +59,37 @@ usesMemory = \case
 --     other value we can not determine if it reaches zero or overflows.
 --   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: Int -> Tarpit -> Maybe [(Mult, Var)]
+copyLoop :: Int -> Tarpit -> Maybe [(Int, Int)]
 copyLoop d1 = go False
   where
     go b = \case
       Nop -> if b then Just [] else Nothing
 
-      Instruction (Assign d2 (Expr c [(1, Var d3)])) next
-        | d2 == d3 && d1 == d2 && c == -1 -> go True next
-        | d2 == d3 && d1 /= d2            -> ((Mult c, Var d2):) <$> go b next
-        | otherwise                       -> Nothing
+      Instruction (Assign d2 (Var 1 d3 (Const c))) next
+        | d1 == d2 && d2 == d3 && c == (-1) -> go True next
+        | d1 /= d2 && d2 == d3              -> ((c, d2):) <$> go b next
+        | otherwise                         -> Nothing
 
       _ -> Nothing
 
 -- |Check if a while loop executes more than once
 whileOnce :: Expr -> Tarpit -> Bool
-whileOnce (Expr 0 [(1, Var d)]) code = go d False code
-  where
-    go d1 b = \case
-      Nop -> b
+whileOnce (Var 1 d (Const 0)) code = go False code
+    where
+      go b = \case
+        Nop -> b
 
-      Instruction (Assign d2 (Expr c [])) next ->
-        let a = d1 == d2 in go d1 (a && (c == 0) || b && (not a)) next
+        Instruction (Assign d' (Const c)) next ->
+          let a = d == d' in go (a && (c == 0) || b && (not a)) next
 
-      Instruction (Assign _ _) next -> go d1 b next
+        Instruction (Assign _ _) next -> go b next
 
-      Flow (If (Expr 0 [(1, Var d')])) inner next | d == d' ->
-        let b' = go d1 b inner in go d1 b' next
+        Flow (If (Var 1 d' (Const 0))) inner next | d == d' ->
+          let b' = go b inner in go b' next
 
-      Instruction (GetChar _) _ -> False
-      Instruction (PutChar _) _ -> False
-      Instruction (Shift _) _   -> False
-      Flow _ _ _                -> False
+        Instruction (GetChar _) _ -> False
+        Instruction (PutChar _) _ -> False
+        Instruction (Shift _) _   -> False
+        Flow _ _ _                -> False
 
 whileOnce _ _ = False
