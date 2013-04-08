@@ -62,14 +62,13 @@ type AssignOp = (Int, Expr)
 -- |Calculate the optimal representation of some Assign ILs
 -- TODO: Handle cyclical dependencies
 findOptimal :: [AssignOp] -> [AssignOp]
-findOptimal = topSort . go M.empty
-  where
-    go :: M.IntMap Expr -> [AssignOp] -> [AssignOp]
-    go m []          = M.assocs m
-    go m ((x, e):xs) = go (M.alter (const $ Just $ f m e) x m) xs
+findOptimal = topSort . inlineOps
 
-    f :: M.IntMap Expr -> Expr -> Expr
-    f = flip (M.foldrWithKey' inlineExpr)
+inlineOps :: [AssignOp] -> [AssignOp]
+inlineOps = go M.empty
+  where
+    go m []          = M.assocs m
+    go m ((x, e):xs) = go (M.insert x (M.foldrWithKey' inlineExpr e m) m) xs
 
 topSort :: [AssignOp] -> [AssignOp]
 topSort xs = let (graph, vertex, _) = G.graphFromEdges $ map f xs
