@@ -54,37 +54,34 @@ putConstOnly = \case
 --     other value we can not determine if it reaches zero or overflows.
 --   * Increment or decrement any other memory cell by any integer.
 -- If the supplied instruction isn't a Loop, we will return Nothing.
-copyLoop :: Int -> Tarpit -> Maybe [(Int, Int)]
-copyLoop d1 = go False
+copyLoop :: Int -> Tarpit -> Maybe Tarpit
+copyLoop d1 = go
   where
-    go b = \case
-      Nop -> if b then Just [] else Nothing
+    go = \case
+      Nop -> Just $ Instruction (Assign d1 $ Const 0) Nop
 
       Instruction (Assign d2 (Var 1 d3 (Const c))) next
-        | d1 == d2 && d2 == d3 && c == (-1) -> go True next
-        | d1 /= d2 && d2 == d3              -> ((c, d2):) <$> go b next
+        | d1 == d2 && d2 == d3 && c == (-1) -> go next
+        | d1 /= d2 && d2 == d3              -> Instruction (Assign d2 $ mult d2 c) <$> go next
         | otherwise                         -> Nothing
 
       _ -> Nothing
 
--- |Check if a while loop executes more than once
-whileOnce :: Expr -> Tarpit -> Bool
-whileOnce (Var 1 d (Const 0)) code = go False code
+    mult d2 c = Var c d1 (Const 0) `add` Var 1 d2 (Const 0)
+
+-- |Check if a while loop could be an if statement
+-- This happens when the loop condition is simple (ptr[x]), for all integer x,
+-- and when there is an instruction ptr[x] = 0 in the loop body.
+whileOnce :: Int -> Tarpit -> Maybe Tarpit
+whileOnce d = go
   where
-    go b = \case
-      Nop -> b
+    go = \case
+      Nop -> Just Nop
 
-      Instruction (Assign d' (Const c)) next ->
-        let a = d == d' in go (a && (c == 0) || b && (not a)) next
+      Instruction fun@(Assign d' (Const c)) next
+        | d == d' && c == 0 -> go next
+        | otherwise         -> Instruction fun `fmap` go next
 
-      Instruction (Assign _ _) next -> go b next
+      Flow ctrl@(If _) inner next -> Flow ctrl inner `fmap` go next
 
-      Flow (If (Var 1 d' (Const 0))) inner next | d == d' ->
-        let b' = go b inner in go b' next
-
-      Instruction (GetChar _) _ -> False
-      Instruction (PutChar _) _ -> False
-      Instruction (Shift _) _   -> False
-      Flow _ _ _                -> False
-
-whileOnce _ _ = False
+      _ -> Nothing

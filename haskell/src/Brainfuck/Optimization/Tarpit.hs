@@ -24,19 +24,13 @@ flowReduction = \case
 
 loopReduction :: Tarpit -> Tarpit
 loopReduction = \case
-  -- TODO: the (Assign d (Const 0)) operation could be moved out of the if for futher optimization
-  Flow (While e) inner next | whileOnce e inner ->
-    Flow (If e) (loopReduction inner) (loopReduction next)
+  Flow ctrl@(While e@(Var 1 d (Const 0))) inner next -> case whileOnce d inner of
 
-  Flow ctrl@(While (Var 1 d (Const 0))) inner next -> case go inner of
-    Just inner' -> mappend inner' (loopReduction next)
-    Nothing     -> Flow ctrl (loopReduction inner) (loopReduction next)
-    where
-      go = fmap (foldr f zero) . copyLoop d
+    Just inner' -> Flow (If e) inner' (Instruction (Assign d $ Const 0) (loopReduction next))
+    Nothing     -> case copyLoop d inner of
 
-      zero = Instruction (Assign d $ Const 0) Nop
-
-      f (n, ds) = Instruction . Assign ds $ Var 1 ds (Const 0) `add` Var n d (Const 0)
+      Just inner'' -> inner'' `mappend` (loopReduction next)
+      Nothing      -> Flow ctrl (loopReduction inner) (loopReduction next)
 
   Nop                  -> Nop
   Instruction fun next -> Instruction fun (loopReduction next)
