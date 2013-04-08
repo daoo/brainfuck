@@ -5,6 +5,7 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Utility
 import Control.Arrow
+import Data.List
 import Data.Monoid
 import qualified Data.Graph as G
 import qualified Data.IntMap as M
@@ -65,7 +66,7 @@ findOptimal :: [AssignOp] -> [AssignOp]
 findOptimal = topSort . inlineOps
 
 inlineOps :: [AssignOp] -> [AssignOp]
-inlineOps = M.assocs . foldr (\(x, e) m -> M.insert x (rebuild m e) m) M.empty
+inlineOps = M.assocs . foldl' (\m (x, e) -> M.insert x (rebuild m e) m) M.empty
 
 -- |Inline only on each variable, instead of on the whole expression every time
 rebuild :: M.IntMap Expr -> Expr -> Expr
