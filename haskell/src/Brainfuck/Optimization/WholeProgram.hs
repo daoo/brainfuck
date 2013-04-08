@@ -3,13 +3,13 @@ module Brainfuck.Optimization.WholeProgram where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import qualified Data.Set as S
+import qualified Data.IntSet as S
 
 -- |Inline initial zeroes
 inlineZeros :: Tarpit -> Tarpit
 inlineZeros = go S.empty
   where
-    go :: S.Set Int -> Tarpit -> Tarpit
+    go :: S.IntSet -> Tarpit -> Tarpit
     go s = \case
       Instruction fun next -> case fun of
 
@@ -20,7 +20,7 @@ inlineZeros = go S.empty
 
       code -> code
 
-    remove :: S.Set Int -> Expr -> Expr
+    remove :: S.IntSet -> Expr -> Expr
     remove s = filterVars ((`S.member` s) . snd)
 
 -- |Remove instructions from the end that does not performe any side effects
