@@ -1,5 +1,6 @@
 module Utility
-  ( wnull
+  ( var
+  , wnull
   , wspace
   , printWord8
   , printInput
@@ -9,6 +10,7 @@ module Utility
   , expectedOutput
   ) where
 
+import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Interpret
 import Control.Monad
@@ -17,6 +19,18 @@ import Data.Foldable hiding (all)
 import Data.ListZipper
 import Data.Word
 import Test.QuickCheck
+
+instance Num Expr where
+  fromInteger = Const . fromInteger
+
+  (+) = add
+
+  (*)    = undefined
+  abs    = undefined
+  signum = undefined
+
+var :: Int -> Int -> Expr
+var n d = Var n d 0
 
 wnull, wspace :: Word8
 wnull  = 0
