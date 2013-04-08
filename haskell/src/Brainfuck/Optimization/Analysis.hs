@@ -70,21 +70,21 @@ copyLoop d1 = go False
 -- |Check if a while loop executes more than once
 whileOnce :: Expr -> Tarpit -> Bool
 whileOnce (Var 1 d (Const 0)) code = go False code
-    where
-      go b = \case
-        Nop -> b
+  where
+    go b = \case
+      Nop -> b
 
-        Instruction (Assign d' (Const c)) next ->
-          let a = d == d' in go (a && (c == 0) || b && (not a)) next
+      Instruction (Assign d' (Const c)) next ->
+        let a = d == d' in go (a && (c == 0) || b && (not a)) next
 
-        Instruction (Assign _ _) next -> go b next
+      Instruction (Assign _ _) next -> go b next
 
-        Flow (If (Var 1 d' (Const 0))) inner next | d == d' ->
-          let b' = go b inner in go b' next
+      Flow (If (Var 1 d' (Const 0))) inner next | d == d' ->
+        let b' = go b inner in go b' next
 
-        Instruction (GetChar _) _ -> False
-        Instruction (PutChar _) _ -> False
-        Instruction (Shift _) _   -> False
-        Flow _ _ _                -> False
+      Instruction (GetChar _) _ -> False
+      Instruction (PutChar _) _ -> False
+      Instruction (Shift _) _   -> False
+      Flow _ _ _                -> False
 
 whileOnce _ _ = False
