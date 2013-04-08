@@ -40,17 +40,12 @@ memorySize = \case
 
     (a, b) <+> (c, d) = (a + c, b + d)
 
--- |Check if some program uses the memory or the global pointer
-usesMemory :: Tarpit -> Bool
-usesMemory = \case
-  Nop                  -> False
-  Instruction fun next -> f fun || usesMemory next
-  Flow _ inner next    -> usesMemory inner || usesMemory next
-
-  where
-    f = \case
-      PutChar (Const _) -> False
-      _                 -> True
+-- |Check if some tarpit consists soley of PutChar (Const _) instructions
+putConstOnly :: Tarpit -> Bool
+putConstOnly = \case
+  Nop                                  -> True
+  Instruction (PutChar (Const _)) next -> putConstOnly next
+  _                                    -> False
 
 -- |Analyze a loop for a copy/multiply structure
 -- A copy loop is a loop that follow these criteria:
