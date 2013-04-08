@@ -65,10 +65,7 @@ findOptimal :: [AssignOp] -> [AssignOp]
 findOptimal = topSort . inlineOps
 
 inlineOps :: [AssignOp] -> [AssignOp]
-inlineOps = go M.empty
-  where
-    go m []          = M.assocs m
-    go m ((x, e):xs) = go (M.insert x (rebuild m e) m) xs
+inlineOps = M.assocs . foldr (\(x, e) m -> M.insert x (rebuild m e) m) M.empty
 
 -- |Inline only on each variable, instead of on the whole expression every time
 rebuild :: M.IntMap Expr -> Expr -> Expr
