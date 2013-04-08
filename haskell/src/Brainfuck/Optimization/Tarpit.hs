@@ -43,36 +43,23 @@ loopReduction = \case
   Flow ctrl inner next -> Flow ctrl (loopReduction inner) (loopReduction next)
 
 shiftReduction :: Tarpit -> Tarpit
-shiftReduction = \case
-  Nop -> Nop
-
-  Instruction (Shift 0) next -> shiftReduction next
-
-  Instruction (Shift s) next -> case next of
-
-    Nop                          -> Instruction (Shift s) Nop
-    Instruction (Shift s') next' -> shiftReduction $ Instruction (Shift (s + s')) $ next'
-    Instruction fun next'        -> Instruction (function s fun) $ shiftReduction $ Instruction (Shift s) next'
-
-    Flow ctrl inner next' -> Flow (control s ctrl)
-      (shiftReduction $ mapTarpit (function s) (control s) inner)
-      (shiftReduction $ Instruction (Shift s) next')
-
-  Instruction fun next -> Instruction fun (shiftReduction next)
-  Flow ctrl inner next -> Flow ctrl (shiftReduction inner) (shiftReduction next)
-
+shiftReduction = go 0 0
   where
-    function s = \case
-      GetChar d   -> GetChar (d + s)
-      PutChar e   -> PutChar (expr s e)
-      Assign d e  -> Assign (d + s) (expr s e)
-      x@(Shift _) -> x
-
-    control s' = \case
-      Forever -> Forever
-      Once    -> Once
-      Never   -> Never
-      If e    -> If $ expr s' e
-      While e -> While $ expr s' e
-
     expr s = mapExpr (mapSnd (+s)) id
+
+    go s t = \case
+      Nop -> if t /= 0 then Instruction (Shift t) Nop else Nop
+
+      Instruction fun next -> case fun of
+
+        GetChar d  -> Instruction (GetChar (d + s))           $ go s t next
+        PutChar e  -> Instruction (PutChar (expr s e))        $ go s t next
+        Assign d e -> Instruction (Assign (d + s) (expr s e)) $ go s t next
+        Shift s'   -> go (s + s') (t + s') next
+
+      Flow ctrl inner next -> case ctrl of
+        Forever -> Flow Forever            (go s 0 inner) (go s t next)
+        Once    -> Flow Once               (go s 0 inner) (go s t next)
+        Never   -> Flow Never              (go s 0 inner) (go s t next)
+        If e    -> Flow (If (expr s e))    (go s 0 inner) (go s t next)
+        While e -> Flow (While (expr s e)) (go s 0 inner) (go s t next)
