@@ -12,7 +12,7 @@ if [[ ! -x "$bfc" ]]; then
 elif [[ ! -f "$infile" ]]; then
   echo "usage: compare FILE"
 else
-  name="$(basename "$infile")"
+  name="$(basename "$infile" .bf)"
 
   old="$dir/$name.c.old"
   new="$dir/$name.c"
