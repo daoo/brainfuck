@@ -68,7 +68,16 @@ inlineOps :: [AssignOp] -> [AssignOp]
 inlineOps = go M.empty
   where
     go m []          = M.assocs m
-    go m ((x, e):xs) = go (M.insert x (M.foldrWithKey' inlineExpr e m) m) xs
+    go m ((x, e):xs) = go (M.insert x (rebuild m e) m) xs
+
+-- |Inline only on each variable, instead of on the whole expression every time
+rebuild :: M.IntMap Expr -> Expr -> Expr
+rebuild m = go
+  where
+    go (Const c)    = Const c
+    go (Var n d xs) = case M.lookup d m of
+      Just e  -> add (mapExpr (mapFst (*n)) (*n) e) (go xs)
+      Nothing -> Var n d (go xs)
 
 topSort :: [AssignOp] -> [AssignOp]
 topSort xs = let (graph, vertex, _) = G.graphFromEdges $ map f xs
