@@ -10,7 +10,8 @@ fullOptimization = inlineZeros
                  . optimizeAssign
                  . removeFromEnd
                  . flowReduction
-                 . loopReduction
+                 . whileToIf
+                 . copyLoopReduction
                  . shiftReduction
                  . inlineZeros
 

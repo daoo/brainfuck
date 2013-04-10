@@ -22,19 +22,27 @@ flowReduction = \case
   Instruction fun next -> Instruction fun (flowReduction next)
   Flow ctrl inner next -> Flow ctrl (flowReduction inner) (flowReduction next)
 
-loopReduction :: Tarpit -> Tarpit
-loopReduction = \case
-  Flow ctrl@(While e@(Var 1 d (Const 0))) inner next -> case whileOnce d inner of
+whileToIf :: Tarpit -> Tarpit
+whileToIf = \case
+  Flow ctrl@(While e@(Var 1 d (Const 0))) inner next -> case whileOnce d (whileToIf inner) of
 
-    Just inner' -> Flow (If e) inner' (Instruction (Assign d $ Const 0) (loopReduction next))
-    Nothing     -> case copyLoop d inner of
-
-      Just inner'' -> inner'' `mappend` (loopReduction next)
-      Nothing      -> Flow ctrl (loopReduction inner) (loopReduction next)
+    Just inner' -> Flow (If e) inner' (Instruction (Assign d $ Const 0) (whileToIf next))
+    Nothing     -> Flow ctrl (whileToIf inner) (whileToIf next)
 
   Nop                  -> Nop
-  Instruction fun next -> Instruction fun (loopReduction next)
-  Flow ctrl inner next -> Flow ctrl (loopReduction inner) (loopReduction next)
+  Instruction fun next -> Instruction fun (whileToIf next)
+  Flow ctrl inner next -> Flow ctrl (whileToIf inner) (whileToIf next)
+
+copyLoopReduction :: Tarpit -> Tarpit
+copyLoopReduction = \case
+  Flow ctrl@(While (Var 1 d (Const 0))) inner next -> case copyLoop d inner of
+
+    Just inner'' -> inner'' `mappend` (copyLoopReduction next)
+    Nothing      -> Flow ctrl (copyLoopReduction inner) (copyLoopReduction next)
+
+  Nop                  -> Nop
+  Instruction fun next -> Instruction fun (copyLoopReduction next)
+  Flow ctrl inner next -> Flow ctrl (copyLoopReduction inner) (copyLoopReduction next)
 
 shiftReduction :: Tarpit -> Tarpit
 shiftReduction = go 0 0

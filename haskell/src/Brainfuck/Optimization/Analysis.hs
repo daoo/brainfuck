@@ -73,15 +73,17 @@ copyLoop d1 = go
 -- This happens when the loop condition is simple (ptr[x]), for all integer x,
 -- and when there is an instruction ptr[x] = 0 in the loop body.
 whileOnce :: Int -> Tarpit -> Maybe Tarpit
-whileOnce d = go
+whileOnce d = go False
   where
-    go = \case
-      Nop -> Just Nop
+    go b = \case
+      Nop -> if b then Just Nop else Nothing
 
-      Instruction fun@(Assign d' (Const c)) next
-        | d == d' && c == 0 -> go next
-        | otherwise         -> Instruction fun `fmap` go next
+      Instruction fun next -> case fun of
 
-      Flow ctrl@(If _) inner next -> Flow ctrl inner `fmap` go next
+        Assign d' (Const c) | d == d' && c == 0 -> go True next
+        Assign d' _         | d == d'           -> Instruction fun `fmap` (go False next)
+        GetChar d'          | d == d'           -> Instruction fun `fmap` (go False next)
 
-      _ -> Nothing
+        _ -> Instruction fun `fmap` (go b next)
+
+      Flow ctrl inner next -> Flow ctrl inner `fmap` go False next
