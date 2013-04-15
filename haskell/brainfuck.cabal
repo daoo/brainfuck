@@ -14,8 +14,8 @@ executable bf
   main-is: Interpreter.hs
   build-depends:
     base       == 4.*,
-    containers == 0.5.0.0,
-    mtl        == 2.1.2,
+    containers == 0.5.*,
+    mtl        == 2.1.*,
     bytestring == 0.10.2.0,
     QuickCheck < 2.6
   ghc-options: -Wall
@@ -25,8 +25,8 @@ executable bfc
   main-is: Compiler.hs
   build-depends:
     base       == 4.*,
-    containers == 0.5.0.0,
-    mtl        == 2.1.2,
+    containers == 0.5.*,
+    mtl        == 2.1.*,
     bytestring == 0.10.2.0,
     QuickCheck < 2.6
   ghc-options: -Wall
@@ -37,10 +37,10 @@ test-suite brainfuck-tests
   main-is: MainTestSuite.hs
   build-depends:
     base                       == 4.*,
-    containers                 == 0.5.0.0,
-    mtl                        == 2.1.2,
+    containers                 == 0.5.*,
+    mtl                        == 2.1.*,
     bytestring                 == 0.10.2.0,
-    QuickCheck                 < 2.6,
-    test-framework             == 0.8,
-    test-framework-quickcheck2 == 0.3.0.1
+    QuickCheck                 == 2.5.*,
+    test-framework             >= 0.8,
+    test-framework-quickcheck2 >= 0.3
   ghc-options: -Wall -fno-warn-orphans
