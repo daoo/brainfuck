@@ -1,11 +1,11 @@
 build:
-	@cabal build
+	@cabal-dev build
 
 test:
 	@./dist/build/brainfuck-tests/brainfuck-tests
 
 clean:
-	@cabal clean --save-configure
+	@cabal-dev clean --save-configure
 
 ctags:
 	@echo ":ctags" | ghci -isrc/ -v0 src/TestProperties.hs
