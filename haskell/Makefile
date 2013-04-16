@@ -1,5 +1,7 @@
-build:
-	@cabal-dev build
+build: prof
+
+prof:
+	@cabal-dev build --ghc-options="-rtsopts -prof -fprof-auto -H64m"
 
 test:
 	@./dist/build/brainfuck-tests/brainfuck-tests
