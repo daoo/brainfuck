@@ -6,6 +6,8 @@ import Brainfuck.Data.Tarpit
 import qualified Data.IntSet as S
 
 -- |Inline initial zeroes
+-- Assumes that the memory is all zeroes from the start and inlines those
+-- values into the code.
 inlineZeros :: Tarpit -> Tarpit
 inlineZeros = go S.empty
   where

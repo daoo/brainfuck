@@ -9,14 +9,14 @@ import Data.Monoid
 
 flowReduction :: Tarpit -> Tarpit
 flowReduction = \case
-  Flow _ Nop next      -> flowReduction next
-  Flow Never _ next    -> flowReduction next
+  Flow _     Nop  next -> flowReduction next
+  Flow Never _    next -> flowReduction next
   Flow Once inner next -> flowReduction $ inner `mappend` next
 
-  Flow (While (Const 0)) _ next     -> flowReduction next
-  Flow (If (Const 0)) _ next        -> flowReduction next
+  Flow (While (Const 0)) _     next -> flowReduction next
+  Flow (If    (Const 0)) _     next -> flowReduction next
   Flow (While (Const _)) inner next -> Flow Forever (flowReduction inner) (flowReduction next)
-  Flow (If (Const _)) inner next    -> flowReduction $ inner `mappend` next
+  Flow (If    (Const _)) inner next -> flowReduction $ inner `mappend` next
 
   Nop                  -> Nop
   Instruction fun next -> Instruction fun (flowReduction next)
