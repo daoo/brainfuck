@@ -84,6 +84,8 @@ whileOnce d = go False
         Assign d' _         | d == d'           -> Instruction fun `fmap` (go False next)
         GetChar d'          | d == d'           -> Instruction fun `fmap` (go False next)
 
+        Shift _ -> Nothing
+
         _ -> Instruction fun `fmap` (go b next)
 
       Flow ctrl inner next -> Flow ctrl inner `fmap` go False next
