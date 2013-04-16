@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 module Text.CodeWriter
   ( CodeWriter()
   , decIndent
@@ -12,16 +13,42 @@ module Text.CodeWriter
   , string
   , surround
 
-  , runCodeWriter
   , writeCode
+  , writeCode1
   ) where
 
+import Brainfuck.Utility
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
 import Data.ByteString.Builder
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-type CodeWriter = StateT String (Writer Builder)
+newtype CodeWriter a = CodeWriter { runCodeWriter :: String -> (a, String, Builder) }
+
+instance Monad CodeWriter where
+  return x = CodeWriter $ \ind -> (x, ind, mempty)
+
+  h >>= f = CodeWriter $ \ind -> case (runCodeWriter h) ind of
+    (a, ind', build) -> case (runCodeWriter $ f a) ind' of
+      (b, ind'', build') -> (b, ind'', build `mappend` build')
+
+  fail = error
+
+instance MonadState String CodeWriter where
+  get     = CodeWriter $ \ind -> (ind, ind, mempty)
+  put new = CodeWriter $ \_ -> ((), new, mempty)
+  state f = CodeWriter $ \ind -> case f ind of (a, ind') -> (a, ind', mempty)
+
+instance MonadWriter Builder CodeWriter where
+  writer (a, w) = CodeWriter $ \ind -> (a, ind, w)
+  tell w        = CodeWriter $ \ind -> ((), ind, w)
+
+  listen f = do
+    x <- f
+    return (x, mempty)
+
+  pass f = CodeWriter $ \ind -> case (runCodeWriter f) ind of
+    ((a, g), ind', build) -> (a, ind', g build)
 
 incIndent, decIndent :: CodeWriter ()
 incIndent = modify ((:) ' ' . (:) ' ')
@@ -53,8 +80,8 @@ string = tell . stringUtf8
 line :: String -> CodeWriter ()
 line = lineM . string
 
-writeCode :: CodeWriter () -> String
-writeCode = BS.unpack . toLazyByteString . runCodeWriter
+writeCode :: CodeWriter () -> Builder
+writeCode f = thrd $ runCodeWriter f ""
 
-runCodeWriter :: CodeWriter () -> Builder
-runCodeWriter = execWriter . (`execStateT` "")
+writeCode1 :: CodeWriter () -> String
+writeCode1 = BS.unpack . toLazyByteString . writeCode

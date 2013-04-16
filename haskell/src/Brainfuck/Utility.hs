@@ -36,6 +36,9 @@ mapIndex f i xs | i < 0     = error "negative index"
 pipe :: [a -> a] -> a -> a
 pipe = flip (foldr ($))
 
+thrd :: (a, b, c) -> c
+thrd (_, _, z) = z
+
 mapFst :: (a -> b) -> (a, c) -> (b, c)
 mapFst = (*** id)
 
