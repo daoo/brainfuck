@@ -2,6 +2,7 @@
 module Brainfuck.Data.Expr
   ( Expr (..)
   , findVar
+  , filterVars
   , mapExpr
   , foldVarsR
   , foldVarsL'
