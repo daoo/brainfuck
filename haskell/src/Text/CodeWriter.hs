@@ -18,9 +18,10 @@ module Text.CodeWriter
   ) where
 
 import Brainfuck.Utility
-import Control.Monad.State.Strict
-import Control.Monad.Writer.Strict
+import Control.Monad.State.Class
+import Control.Monad.Writer.Class
 import Data.ByteString.Builder
+import Data.Monoid
 import qualified Data.ByteString.Lazy.Char8 as BS
 
 newtype CodeWriter a = CodeWriter { runCodeWriter :: String -> (a, String, Builder) }
