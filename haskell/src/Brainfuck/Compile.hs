@@ -27,7 +27,7 @@ decompile = \case
 
   Flow (While (Var 1 0 (Const 0))) inner next -> Repeat (decompile inner) (decompile next)
 
-  tarpit -> error $ "Brainfuck.Compile.decompile unsupported: " ++ show tarpit
+  _ -> undefined
 
   where
     tokenize = \case
@@ -38,4 +38,4 @@ decompile = \case
       PutChar (Var 1 0 (Const 0))     -> Token Output
       GetChar 0                       -> Token Input
 
-      fun -> error $ "Brainfuck.Compile.decompile.tokenize unsupported: " ++ show fun
+      _ -> undefined
