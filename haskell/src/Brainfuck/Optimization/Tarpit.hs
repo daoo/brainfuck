@@ -86,7 +86,7 @@ movePut = \case
 
   Instruction fun@(Assign d e1) next -> case movePut next of
     Instruction (PutChar e2) next' ->
-      Instruction (PutChar $ insertVariable d e1 e2) $ movePut $ Instruction fun next'
+      Instruction (PutChar $ insertExpression d e1 e2) $ movePut $ Instruction fun next'
 
     next' -> Instruction fun next'
 

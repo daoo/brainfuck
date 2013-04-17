@@ -8,7 +8,7 @@ module Brainfuck.Data.Expr
   , foldVarsL'
   , add
   , eval
-  , insertVariable
+  , insertExpression
   , insertConstant
   ) where
 
@@ -97,8 +97,8 @@ eval f = foldVarsL' (\acc n d -> acc + n * f d) 0
 
 -- |Insert the value of a variable into an expression
 -- Time complexity: O(n + m)
-insertVariable :: Int -> Expr -> Expr -> Expr
-insertVariable d a b = case findVar d b of
+insertExpression :: Int -> Expr -> Expr -> Expr
+insertExpression d a b = case findVar d b of
   Nothing -> b
   Just n  -> mul n a `add` filterVars ((/= d) . snd) b
 
