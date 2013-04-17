@@ -6,7 +6,8 @@ import Brainfuck.Optimization.Tarpit
 import Brainfuck.Optimization.WholeProgram
 
 fullOptimization :: Tarpit -> Tarpit
-fullOptimization = inlineZeros
+fullOptimization = inlineConstants
+                 . inlineZeros
                  . optimizeAssign
                  . removeFromEnd
                  . flowReduction

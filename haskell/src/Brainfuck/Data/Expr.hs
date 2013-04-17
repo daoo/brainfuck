@@ -9,6 +9,7 @@ module Brainfuck.Data.Expr
   , add
   , eval
   , inlineExpr
+  , inlineConst
   ) where
 
 import Brainfuck.Utility
@@ -99,3 +100,12 @@ inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d a b = case findVar d b of
   Nothing -> b
   Just n  -> mul n a `add` filterVars ((/= d) . snd) b
+
+-- |Special case of inlineExpr when the inlined value is a constant
+-- Time complexity: O(n)
+inlineConst :: Int -> Int -> Expr -> Expr
+inlineConst d c = go
+  where
+    go (Const c')                = Const c'
+    go (Var n d' xs) | d == d'   = mapExpr id (+ (n * c)) xs
+                     | otherwise = Var n d' $ go xs

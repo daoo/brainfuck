@@ -6,6 +6,7 @@ import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Utility
 import Data.Monoid
+import qualified Data.IntMap as M
 
 flowReduction :: Tarpit -> Tarpit
 flowReduction = \case
@@ -65,3 +66,30 @@ shiftReduction = go 0 0
         Never   -> Flow Never              (go s 0 inner) (go s t next)
         If e    -> Flow (If (expr s e))    (go s 0 inner) (go s t next)
         While e -> Flow (While (expr s e)) (go s 0 inner) (go s t next)
+
+inlineConstants :: Tarpit -> Tarpit
+inlineConstants = go M.empty
+  where
+    go m = \case
+      Nop -> Nop
+
+      Instruction fun next -> case fun of
+
+        GetChar d          -> Instruction fun                   $ go (M.delete d m) next
+        PutChar e          -> Instruction (PutChar $ expr e m)  $ go m next
+        Assign d (Const c) -> Instruction fun                   $ go (M.insert d c m) next
+        Shift _            -> Instruction fun                   $ go M.empty next
+
+        Assign d e -> case expr e m of
+
+          e'@(Const c) -> Instruction (Assign d e') $ go (M.insert d c m) next
+          e'           -> Instruction (Assign d e') $ go (M.delete d m) next
+
+      Flow ctrl inner next -> case ctrl of
+        Forever -> Flow ctrl            (go M.empty inner) (go M.empty next)
+        Once    -> Flow ctrl            (go m inner)       (go M.empty next)
+        Never   -> Flow ctrl            (go m inner)       (go m next)
+        If e    -> Flow (If (expr e m)) (go m inner)       (go M.empty next)
+        While _ -> Flow ctrl            (go M.empty inner) (go M.empty next)
+
+    expr = M.foldrWithKey' inlineConst
