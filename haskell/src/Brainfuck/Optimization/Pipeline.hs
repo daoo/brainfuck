@@ -10,16 +10,15 @@ loopUnrolling :: Tarpit -> Tarpit
 loopUnrolling = times fullOptimization 1000 . unrollLoops 100 . fullOptimization
 
 fullOptimization :: Tarpit -> Tarpit
-fullOptimization = inlineConstants
+fullOptimization = removeFromEnd
                  . movePut
+                 . flowReduction
+                 . inlineConstants
                  . inlineZeros
                  . optimizeAssign
-                 . removeFromEnd
-                 . flowReduction
                  . whileToIf
                  . copyLoopReduction
                  . shiftReduction
-                 . inlineZeros
 
 simpleOptimizations :: Tarpit -> Tarpit
 simpleOptimizations = inlineZeros
