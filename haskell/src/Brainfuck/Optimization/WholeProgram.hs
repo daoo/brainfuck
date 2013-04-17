@@ -20,6 +20,8 @@ inlineZeros = go S.empty
         GetChar d  -> Instruction fun (go (S.delete d s) next)
         Shift _    -> Instruction fun next
 
+      Flow (If e) inner next -> Flow (If $ remove s e) (go s inner) next
+
       code -> code
 
     remove :: S.IntSet -> Expr -> Expr
