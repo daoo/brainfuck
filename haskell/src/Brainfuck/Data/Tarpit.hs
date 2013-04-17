@@ -10,7 +10,7 @@ import Data.Monoid
 data Function = Assign Int Expr | Shift Int | PutChar Expr | GetChar Int
   deriving Show
 
-data Control = Forever | Once | Never | If Expr | While Expr
+data Control = If Expr | While Expr
   deriving Show
 
 data Tarpit = Nop

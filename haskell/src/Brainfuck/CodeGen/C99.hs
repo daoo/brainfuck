@@ -38,10 +38,7 @@ writeC99 code = do
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
-      Forever -> block "while" (Const 1)
       While e -> block "while" e
-      Once    -> block "if" (Const 1)
-      Never   -> block "if" (Const 0)
       If e    -> block "if" e
 
     block :: String -> Expr -> Tarpit -> CodeWriter ()

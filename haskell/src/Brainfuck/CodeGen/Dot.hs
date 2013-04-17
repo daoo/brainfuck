@@ -60,9 +60,6 @@ writeDot code = do
       Flow ctrl inner next -> do
         n <- get
         case ctrl of
-          Forever -> makeNode diamond (string "Forever") n
-          Once    -> makeNode diamond (string "Once") n
-          Never   -> makeNode diamond (string "Never") n
           If e    -> exprNode diamond (string "If") e n
           While e -> exprNode diamond (string "While") e n
 

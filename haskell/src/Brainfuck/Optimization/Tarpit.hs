@@ -10,13 +10,11 @@ import qualified Data.IntMap as M
 
 flowReduction :: Tarpit -> Tarpit
 flowReduction = \case
-  Flow _     Nop  next -> flowReduction next
-  Flow Never _    next -> flowReduction next
-  Flow Once inner next -> flowReduction $ inner `mappend` next
+  Flow _ Nop next -> flowReduction next
 
   Flow (While (Const 0)) _     next -> flowReduction next
   Flow (If    (Const 0)) _     next -> flowReduction next
-  Flow (While (Const _)) inner next -> Flow Forever (flowReduction inner) (flowReduction next)
+  Flow (While (Const _)) inner next -> Flow (While (Const 1)) (flowReduction inner) (flowReduction next)
   Flow (If    (Const _)) inner next -> flowReduction $ inner `mappend` next
 
   Nop                  -> Nop
@@ -61,9 +59,6 @@ shiftReduction = go 0 0
         Shift s'   -> go (s + s') (t + s') next
 
       Flow ctrl inner next -> case ctrl of
-        Forever -> Flow Forever            (go s 0 inner) (go s t next)
-        Once    -> Flow Once               (go s 0 inner) (go s t next)
-        Never   -> Flow Never              (go s 0 inner) (go s t next)
         If e    -> Flow (If (expr s e))    (go s 0 inner) (go s t next)
         While e -> Flow (While (expr s e)) (go s 0 inner) (go s t next)
 
@@ -112,9 +107,6 @@ inlineConstants = go M.empty
           e'           -> Instruction (Assign d e') $ go (M.delete d m) next
 
       Flow ctrl inner next -> case ctrl of
-        Forever -> Flow ctrl            (go M.empty inner) (go M.empty next)
-        Once    -> Flow ctrl            (go m inner)       (go M.empty next)
-        Never   -> Flow ctrl            (go m inner)       (go m next)
         If e    -> Flow (If (expr e m)) (go m inner)       (go M.empty next)
         While _ -> Flow ctrl            (go M.empty inner) (go M.empty next)
 

@@ -1,7 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.CodeGen.Haskell (writeHaskell) where
 
-import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Text.CodeWriter
 
@@ -26,10 +25,7 @@ writeHaskell code = do
       Flow ctrl inner next -> control ctrl >> indentedM (go inner) >> go next
 
     control = \case
-      Forever -> block "while" (Const 1)
       While e -> block "while" e
-      Once    -> block "when" (Const 1)
-      Never   -> block "when" (Const 0)
       If e    -> block "when" e
 
     function = \case

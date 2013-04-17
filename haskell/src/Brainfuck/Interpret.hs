@@ -76,9 +76,6 @@ run inp code = execState (go code) (Machine inp S.empty newMemory)
       GetChar d  -> input >>= set d
 
     flow inner = \case
-      Forever -> forever (go inner)
-      Never   -> return ()
-      Once    -> go inner
       While e -> while (continue e) (go inner)
       If e    -> when' (continue e) (go inner)
 

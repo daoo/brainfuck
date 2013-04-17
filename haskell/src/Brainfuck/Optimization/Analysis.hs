@@ -27,7 +27,6 @@ memorySize = \case
     control = \case
       If e    -> expr e
       While e -> expr e
-      _       -> (0, 0)
 
     expr :: Expr -> (Int, Int)
     expr = foldVarsL' (\x _ y -> x <+> (g y)) (0, 0)
