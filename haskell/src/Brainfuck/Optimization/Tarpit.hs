@@ -92,4 +92,4 @@ inlineConstants = go M.empty
         If e    -> Flow (If (expr e m)) (go m inner)       (go M.empty next)
         While _ -> Flow ctrl            (go M.empty inner) (go M.empty next)
 
-    expr = M.foldrWithKey' inlineConst
+    expr = M.foldrWithKey' insertConstant

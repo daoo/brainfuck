@@ -8,8 +8,8 @@ module Brainfuck.Data.Expr
   , foldVarsL'
   , add
   , eval
-  , inlineExpr
-  , inlineConst
+  , insertVariable
+  , insertConstant
   ) where
 
 import Brainfuck.Utility
@@ -94,17 +94,17 @@ mul n = mapExpr (mapFst (*n)) (*n)
 eval :: (Int -> Int) -> Expr -> Int
 eval f = foldVarsL' (\acc n d -> acc + n * f d) 0
 
--- |Inline the value of a variable into an expression
+-- |Insert the value of a variable into an expression
 -- Time complexity: O(n + m)
-inlineExpr :: Int -> Expr -> Expr -> Expr
-inlineExpr d a b = case findVar d b of
+insertVariable :: Int -> Expr -> Expr -> Expr
+insertVariable d a b = case findVar d b of
   Nothing -> b
   Just n  -> mul n a `add` filterVars ((/= d) . snd) b
 
--- |Special case of inlineExpr when the inlined value is a constant
+-- |Special case of insertVariable when the value is a constant
 -- Time complexity: O(n)
-inlineConst :: Int -> Int -> Expr -> Expr
-inlineConst d c = go
+insertConstant :: Int -> Int -> Expr -> Expr
+insertConstant d c = go
   where
     go (Const c')                = Const c'
     go (Var n d' xs) | d == d'   = mapExpr id (+ (n * c)) xs
