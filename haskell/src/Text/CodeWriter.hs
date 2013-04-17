@@ -29,8 +29,12 @@ newtype CodeWriter a = CodeWriter { runCodeWriter :: String -> (a, String, Build
 instance Monad CodeWriter where
   return x = CodeWriter $ \ind -> (x, ind, mempty)
 
-  h >>= f = CodeWriter $ \ind -> case (runCodeWriter h) ind of
-    (a, ind', build) -> case (runCodeWriter $ f a) ind' of
+  m >>= f = CodeWriter $ \ind -> case runCodeWriter m ind of
+    (a, ind', build) -> case runCodeWriter (f a) ind' of
+      (b, ind'', build') -> (b, ind'', build `mappend` build')
+
+  m1 >> m2 = CodeWriter $ \ind -> case runCodeWriter m1 ind of
+    (_, ind', build) -> case runCodeWriter m2 ind' of
       (b, ind'', build') -> (b, ind'', build `mappend` build')
 
   fail = error
