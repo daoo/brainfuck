@@ -58,7 +58,9 @@ main = do
         case optOptimize opts of
           0 -> id
           1 -> simpleOptimizations
-          _ -> fullOptimization
+          2 -> fullOptimization
+          3 -> loopUnrolling
+          _ -> undefined
 
       codegen =
         case optTarget opts of
