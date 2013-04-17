@@ -7,12 +7,12 @@ import Brainfuck.Optimization.WholeProgram
 import Brainfuck.Utility
 
 loopUnrolling :: Tarpit -> Tarpit
-loopUnrolling = id
+loopUnrolling = fullOptimization
               . times ( flowReduction
                       . inlineConstants
                       . inlineZeros
                       . shiftReduction
-                      ) 200
+                      ) 400
               . unrollLoops 100
               . fullOptimization
 
