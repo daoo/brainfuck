@@ -93,7 +93,8 @@ mul n = mapExpr (mapFst (*n)) (*n)
 eval :: (Int -> Int) -> Expr -> Int
 eval f = foldVarsL' (\acc n d -> acc + n * f d) 0
 
--- |Inline a the value of a variable into an expression
+-- |Inline the value of a variable into an expression
+-- Time complexity: O(n + m)
 inlineExpr :: Int -> Expr -> Expr -> Expr
 inlineExpr d a b = case findVar d b of
   Nothing -> b
