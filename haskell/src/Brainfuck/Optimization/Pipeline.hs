@@ -7,6 +7,7 @@ import Brainfuck.Optimization.WholeProgram
 
 fullOptimization :: Tarpit -> Tarpit
 fullOptimization = inlineConstants
+                 . movePut
                  . inlineZeros
                  . optimizeAssign
                  . removeFromEnd

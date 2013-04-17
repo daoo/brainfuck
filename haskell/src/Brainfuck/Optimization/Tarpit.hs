@@ -67,6 +67,19 @@ shiftReduction = go 0 0
         If e    -> Flow (If (expr s e))    (go s 0 inner) (go s t next)
         While e -> Flow (While (expr s e)) (go s 0 inner) (go s t next)
 
+movePut :: Tarpit -> Tarpit
+movePut = \case
+  Nop -> Nop
+
+  Instruction fun@(Assign d e1) next -> case movePut next of
+    Instruction (PutChar e2) next' ->
+      Instruction (PutChar $ insertVariable d e1 e2) $ movePut $ Instruction fun next'
+
+    next' -> Instruction fun next'
+
+  Instruction fun next -> Instruction fun (movePut next)
+  Flow ctrl inner next -> Flow ctrl (movePut inner) (movePut next)
+
 inlineConstants :: Tarpit -> Tarpit
 inlineConstants = go M.empty
   where
