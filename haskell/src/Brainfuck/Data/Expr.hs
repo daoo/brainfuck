@@ -87,6 +87,7 @@ add x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
     app n d xs = Var n d xs
 
 -- |Multiply an expression with a constant
+-- Time complexity: O(n)
 mul :: Int -> Expr -> Expr
 mul n = mapExpr (mapFst (*n)) (*n)
 
