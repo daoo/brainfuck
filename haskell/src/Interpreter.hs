@@ -58,4 +58,4 @@ main = do
       putStr $ exec1 inp $ optimize code
 
   where
-    codeFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)
+    codeFrom = fmap (compile . parseBrainfuck) . BS.readFile

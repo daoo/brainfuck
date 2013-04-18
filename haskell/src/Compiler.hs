@@ -74,4 +74,4 @@ main = do
     Compile -> codeFrom file >>= hPutBuilder stdout . writeCode . codegen . optimize
 
   where
-    codeFrom file = BS.readFile file >>= (return . compile . parseBrainfuck)
+    codeFrom = fmap (compile . parseBrainfuck) . BS.readFile

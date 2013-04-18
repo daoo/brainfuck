@@ -41,7 +41,7 @@ instance Monad CodeWriter where
 
 instance MonadState String CodeWriter where
   get     = CodeWriter $ \ind -> (ind, ind, mempty)
-  put new = CodeWriter $ \_ -> ((), new, mempty)
+  put new = CodeWriter $ const ((), new, mempty)
   state f = CodeWriter $ \ind -> case f ind of (a, ind') -> (a, ind', mempty)
 
 instance MonadWriter Builder CodeWriter where
@@ -52,7 +52,7 @@ instance MonadWriter Builder CodeWriter where
     x <- f
     return (x, mempty)
 
-  pass f = CodeWriter $ \ind -> case (runCodeWriter f) ind of
+  pass f = CodeWriter $ \ind -> case runCodeWriter f ind of
     ((a, g), ind', build) -> (a, ind', g build)
 
 incIndent, decIndent :: CodeWriter ()
