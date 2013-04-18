@@ -41,7 +41,7 @@ options :: [OptDescr (Options -> Options)]
 options =
   [ Option "c" ["compile"] (NoArg (\opt -> opt { optAction = Compile })) "compile input"
   , Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "{Indented|C99|Haskell|Dot}") "target language"
-  , Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1|2}") "optimizations"
+  , Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1|2|3}") "optimizations"
   , Option "h" ["help"] (NoArg (\opt -> opt { optAction = Help})) "show help"
   ]
 
