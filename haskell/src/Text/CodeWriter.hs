@@ -86,7 +86,7 @@ line :: String -> CodeWriter ()
 line = lineM . string
 
 writeCode :: CodeWriter () -> Builder
-writeCode f = thrd $ runCodeWriter f ""
+writeCode = thrd . (`runCodeWriter` "")
 
 writeCode1 :: CodeWriter () -> String
 writeCode1 = BS.unpack . toLazyByteString . writeCode

@@ -10,9 +10,10 @@ data ListZipper a = ListZipper
   } deriving (Show, Eq)
 
 instance Arbitrary a => Arbitrary (ListZipper a) where
-  arbitrary = liftA3 ListZipper arbitrary arbitrary arbitrary
+  arbitrary = ListZipper <$> arbitrary <*> arbitrary <*> arbitrary
 
-  shrink (ListZipper xs y zs) = map (\(xs', zs') -> ListZipper xs' y zs') $ zip (shrink xs) (shrink zs)
+  shrink (ListZipper xs y zs) = map (\(xs', zs') -> ListZipper xs' y zs')
+                              $ zip (shrink xs) (shrink zs)
 
 size :: ListZipper a -> Int
 size (ListZipper xs _ zs) = length xs + 1 + length zs
