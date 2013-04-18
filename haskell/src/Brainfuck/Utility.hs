@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Utility where
 
 import Control.Arrow

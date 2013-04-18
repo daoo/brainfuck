@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module Properties.Misc where
 
 import Brainfuck.Utility
