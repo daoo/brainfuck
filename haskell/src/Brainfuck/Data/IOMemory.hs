@@ -1,48 +1,48 @@
-module Brainfuck.Data.IOMemory where
+module Brainfuck.Data.IOMemory
+  ( read
+  , write
+  , shift
+  , eval
+  , when
+  , while
+  , runMemory
+  ) where
 
-import Brainfuck.Data.Expr
-import Control.Applicative ((<$>), (<*>))
-import Control.Monad
-import Control.Monad.State.Strict
+import Brainfuck.Data.Expr hiding (eval)
+import Control.Applicative hiding (Const)
+import Control.Monad.State.Strict hiding (when)
 import Data.Array.IO
-import Data.Char
+import Prelude hiding (read)
 
-type IOMemory a = StateT Int IO a
-type Memory = IOArray Int Int
+data Memory = Memory { ptr :: Int, array :: IOArray Int Int }
+
+type IOMemory a = StateT Memory IO a
 
 newMemory :: Int -> IO Memory
-newMemory i = newArray (0, i) 0
+newMemory i = Memory <$> pure 0 <*> newArray (0, i) 0
 
-evalMemory :: Memory -> Expr -> IOMemory Int
-evalMemory m e = case e of
-  Const i   -> return i
-  Get d     -> get >>= liftIO . readArray m . (+d)
-  Add e1 e2 -> (+) <$> evalMemory m e1 <*> evalMemory m e2
-  Mul e1 e2 -> (*) <$> evalMemory m e1 <*> evalMemory m e2
+read :: Int -> IOMemory Int
+read d = get >>= (\m -> lift $ readArray (array m) (ptr m + d))
 
-setMemory :: Memory -> Int -> Expr -> IOMemory ()
-setMemory m d e = do
-  p <- get
-  r <- evalMemory m e
-  liftIO $ writeArray m (p + d) r
-
-putMemory :: Memory -> Expr -> IOMemory ()
-putMemory m e = chr <$> evalMemory m e >>= liftIO . putChar
-
-getMemory :: Memory -> Int -> IOMemory ()
-getMemory m d = do
-  p <- get
-  c <- liftIO $ ord <$> getChar
-  liftIO $ writeArray m (p + d) c
+write :: Int -> Int -> IOMemory ()
+write d v = get >>= (\m -> lift $ writeArray (array m) (ptr m + d) v)
 
 shift :: Int -> IOMemory ()
-shift = modify . (+)
+shift d = modify (\m -> m { ptr = ptr m + d })
 
-ifMemory :: Memory -> Expr -> IOMemory () -> IOMemory ()
-ifMemory m e f = evalMemory m e >>= \i -> when (i /= 0) f
+eval :: Expr -> IOMemory Int
+eval = go 0
+  where
+    go acc (Const c)    = return $ acc + c
+    go acc (Var n d xs) = (*n) <$> read d >>= (\acc' -> go (acc + acc') xs)
 
-whileMemory :: Memory -> Expr -> IOMemory () -> IOMemory ()
-whileMemory m e f = evalMemory m e >>= \i -> when (i /= 0) (f >> whileMemory m e f)
+when :: Expr -> IOMemory () -> IOMemory ()
+when e f = do
+  x <- eval e
+  unless (x == 0) f
 
-runMemory :: IOMemory () -> IO ()
-runMemory f = evalStateT f 0
+while :: Expr -> IOMemory () -> IOMemory ()
+while e f = when e (f >> while e f)
+
+runMemory :: Int -> IOMemory () -> IO ()
+runMemory size m = newMemory size >>= (void . runStateT m)
