@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase, GeneralizedNewtypeDeriving #-}
 module Brainfuck.Data.Expr
   ( Expr (..)
   , findVar
@@ -29,40 +28,40 @@ instance Arbitrary Expr where
   arbitrary = sized (go (-10))
     where
       go _ 0 = Const <$> choose (-10, 10)
-      go d n = do
-        i <- choose (d, 10)
+      go v n = do
+        i <- choose (v, 10)
         Var <$> choose (-10, 10) <*> pure i <*> go i (n `div` 2)
 
 -- |Find a variable and return its multiple
 -- Ignores the constant
 findVar :: Int -> Expr -> Maybe Int
 findVar _ (Const _)                 = Nothing
-findVar d (Var n d' xs) | d == d'   = Just n
-                        | otherwise = findVar d xs
+findVar v (Var n v' xs) | v == v'   = Just n
+                        | otherwise = findVar v xs
 
 -- |Filter the variables of an expression
 -- Leaves the constant unchanged
 filterVars :: ((Int, Int) -> Bool) -> Expr -> Expr
 filterVars _ e@(Const _)              = e
-filterVars f (Var n d xs) | f (n, d)  = Var n d (filterVars f xs)
+filterVars f (Var n v xs) | f (n, v)  = Var n v (filterVars f xs)
                           | otherwise = filterVars f xs
 
 -- |Map the variables and the constant of an expression
 mapExpr :: ((Int, Int) -> (Int, Int)) -> (Int -> Int) -> Expr -> Expr
 mapExpr _ g (Const c)    = Const (g c)
-mapExpr f g (Var n d xs) = uncurry Var (f (n, d)) $ mapExpr f g xs
+mapExpr f g (Var n v xs) = uncurry Var (f (n, v)) $ mapExpr f g xs
 
 -- |Right fold variables in an expression
 -- Ignores the constant
 foldVarsR :: (Int -> Int -> a -> a) -> a -> Expr -> a
 foldVarsR _ acc (Const _)    = acc
-foldVarsR f acc (Var n d xs) = f n d $ foldVarsR f acc xs
+foldVarsR f acc (Var n v xs) = f n v $ foldVarsR f acc xs
 
 -- |Strict left fold variables in an expression
 -- Ignores the constant
 foldVarsL' :: (a -> Int -> Int -> a) -> a -> Expr -> a
 foldVarsL' _ acc (Const _)    = acc
-foldVarsL' f acc (Var n d xs) = let acc' = f acc n d
+foldVarsL' f acc (Var n v xs) = let acc' = f acc n v
                                  in seq acc' $ foldVarsL' f acc' xs
 
 -- |Addition of two expressions
@@ -84,7 +83,7 @@ add x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
 
   where
     app 0 _ xs = xs
-    app n d xs = Var n d xs
+    app n v xs = Var n v xs
 
 -- |Multiply an expression with a constant
 -- Time complexity: O(n)
@@ -93,20 +92,20 @@ mul n = mapExpr (mapFst (*n)) (*n)
 
 -- |Evaluate an expression using a function for resolving variables
 eval :: (Int -> Int) -> Expr -> Int
-eval f = foldVarsL' (\acc n d -> acc + n * f d) 0
+eval f = foldVarsL' (\acc n v -> acc + n * f v) 0
 
 -- |Insert the value of a variable into an expression
 -- Time complexity: O(n + m)
 insertExpression :: Int -> Expr -> Expr -> Expr
-insertExpression d a b = case findVar d b of
+insertExpression v a b = case findVar v b of
   Nothing -> b
-  Just n  -> mul n a `add` filterVars ((/= d) . snd) b
+  Just n  -> mul n a `add` filterVars ((/= v) . snd) b
 
 -- |Special case of insertVariable when the value is a constant
 -- Time complexity: O(n)
 insertConstant :: Int -> Int -> Expr -> Expr
-insertConstant d c = go
+insertConstant v c = go
   where
     go (Const c')                = Const c'
-    go (Var n d' xs) | d == d'   = mapExpr id (+ (n * c)) xs
-                     | otherwise = Var n d' $ go xs
+    go (Var n v' xs) | v == v'   = mapExpr id (+ (n * c)) xs
+                     | otherwise = Var n v' $ go xs
