@@ -92,7 +92,11 @@ mul n = mapExpr (mapFst (*n)) (*n)
 
 -- |Evaluate an expression using a function for resolving variables
 eval :: (Int -> Int) -> Expr -> Int
-eval f = foldVarsL' (\acc n v -> acc + n * f v) 0
+eval f = go 0
+  where
+    go acc (Const c)    = acc + c
+    go acc (Var n v xs) = let acc' = (acc + n * f v)
+                           in seq acc' $ go acc' xs
 
 -- |Insert the value of a variable into an expression
 -- Time complexity: O(n + m)
