@@ -53,16 +53,17 @@ writeC99 code = do
       line "}"
 
     function = \case
-      Assign d e -> ptr d (writeExpr e)
       Shift s    -> string "ptr += " >> int s
-      GetChar d  -> ptr d (string "getchar()")
+      GetChar d  -> ptr d .= string "getchar()"
 
-      PutChar (Const c) -> string "putchar(" >> string (show $ chr c) >> string ")"
-      PutChar e         -> string "putchar(" >> writeExpr e >> string ")"
+      Assign d (Var 1 d' (Const c)) | d == d' -> ptr d .+= int c
+      Assign d e                              -> ptr d .= writeExpr e
 
-    ptr :: Int -> CodeWriter () -> CodeWriter ()
-    ptr diff value = do
-      string "ptr["
-      int diff
-      string "] = "
-      value
+      PutChar (Const c) -> putchar $ string $ show $ chr c
+      PutChar e         -> putchar $ writeExpr e
+
+    putchar a = string "putchar(" >> a >> string ")"
+    ptr d = string "ptr[" >> int d >> string "]"
+
+    a .=  b = a >> string " = " >> b
+    a .+= b = a >> string " += " >> b
