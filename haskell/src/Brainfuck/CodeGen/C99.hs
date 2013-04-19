@@ -5,6 +5,7 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Control.Monad
+import Data.Char
 import Text.CodeWriter
 
 writeExpr :: Expr -> CodeWriter ()
@@ -53,10 +54,11 @@ writeC99 code = do
 
     function = \case
       Assign d e -> ptr d (writeExpr e)
+      Shift s    -> string "ptr += " >> int s
+      GetChar d  -> ptr d (string "getchar()")
 
-      Shift s   -> string "ptr += " >> int s
-      PutChar e -> string "putchar(" >> writeExpr e >> string ")"
-      GetChar d -> ptr d (string "getchar()")
+      PutChar (Const c) -> string "putchar(" >> string (show $ chr c) >> string ")"
+      PutChar e         -> string "putchar(" >> writeExpr e >> string ")"
 
     ptr :: Int -> CodeWriter () -> CodeWriter ()
     ptr diff value = do
