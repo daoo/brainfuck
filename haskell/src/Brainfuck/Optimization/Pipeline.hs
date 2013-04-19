@@ -18,11 +18,11 @@ loopUnrolling = fullOptimization
 
 fullOptimization :: Tarpit -> Tarpit
 fullOptimization = removeFromEnd
+                 . optimizeAssign
                  . movePut
                  . flowReduction
                  . inlineConstants
                  . inlineZeros
-                 . optimizeAssign
                  . whileToIf
                  . copyLoopReduction
                  . shiftReduction
