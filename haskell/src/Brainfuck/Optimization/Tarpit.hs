@@ -104,7 +104,24 @@ inlineConstants = go M.empty
           e'           -> Instruction (Assign d e') $ go (M.delete d m) next
 
       Flow ctrl inner next -> case ctrl of
-        If e    -> Flow (If (expr e m)) (go m inner)       (go M.empty next)
-        While _ -> Flow ctrl            (go M.empty inner) (go M.empty next)
+
+        If e -> case e of
+
+          Var 1 d (Const 0) -> case M.lookup d m of
+
+            Nothing -> Flow (If e) (go m inner) (go M.empty next)
+            Just 0  -> go m next
+            Just _  -> go m $ inner `mappend` next
+
+          _ -> Flow (If $ expr e m) (go m inner) (go M.empty next)
+
+        While e -> case e of
+
+          Var 1 d (Const 0) -> case M.lookup d m of
+
+            Just 0 -> go m next
+            _      -> Flow (While e) (go M.empty inner) (go M.empty next)
+
+          _ -> Flow (While $ expr e m) (go M.empty inner) (go M.empty next)
 
     expr = M.foldrWithKey' insertConstant
