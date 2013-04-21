@@ -10,7 +10,9 @@ import Data.Monoid
 import qualified Data.Graph as G
 import qualified Data.IntMap as M
 
--- |Merge sequences of Assign ILs using full program analysis
+-- |Finds sequenses of assignments and calculates the optimal representation
+-- In this case optimal with respect to the number of assignment operations.
+-- Thus we do not care about the size of the expressions.
 optimizeAssign :: Tarpit -> Tarpit
 optimizeAssign = \case
   Nop -> Nop
