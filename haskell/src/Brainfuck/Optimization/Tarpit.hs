@@ -62,14 +62,11 @@ shiftReduction = go 0 0
         If e    -> Flow (If (expr s e))    (go s 0 inner) (go s t next)
         While e -> Flow (While (expr s e)) (go s 0 inner) (go s t next)
 
-unrollLoops :: Int -> Tarpit -> Tarpit
-unrollLoops n = go
+unrollLoop :: Tarpit -> Tarpit
+unrollLoop = go
   where
-    rep 0 _ b = b
-    rep m f b = f $ rep (m - 1) f b
-
     go = \case
-      Flow (While e) inner next -> rep n (Flow (If e) (go inner)) (go next)
+      Flow (While e) inner next -> Flow (If e) inner $ Flow (While e) inner next
 
       Nop                  -> Nop
       Flow ctrl inner next -> Flow ctrl (go inner) (go next)
