@@ -93,10 +93,10 @@ inlineConstants = go M.empty
 
       Instruction fun next -> case fun of
 
-        GetChar d          -> Instruction fun                   $ go (M.delete d m) next
-        PutChar e          -> Instruction (PutChar $ expr e m)  $ go m next
-        Assign d (Const c) -> Instruction fun                   $ go (M.insert d c m) next
-        Shift s            -> Instruction fun                   $ go (M.mapKeysMonotonic (subtract s) m) next
+        GetChar d          -> Instruction fun                  $ go (M.delete d m) next
+        PutChar e          -> Instruction (PutChar $ expr e m) $ go m next
+        Assign d (Const c) -> Instruction fun                  $ go (M.insert d c m) next
+        Shift s            -> Instruction fun                  $ go (M.mapKeysMonotonic (subtract s) m) next
 
         Assign d e -> case expr e m of
 
