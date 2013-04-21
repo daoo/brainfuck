@@ -14,7 +14,7 @@ flowReduction = \case
 
   Flow (While (Const 0)) _     next -> flowReduction next
   Flow (If    (Const 0)) _     next -> flowReduction next
-  Flow (While (Const _)) inner next -> Flow (While (Const 1)) (flowReduction inner) (flowReduction next)
+  Flow (While (Const _)) inner _    -> Flow (While (Const 1)) (flowReduction inner) Nop
   Flow (If    (Const _)) inner next -> flowReduction $ inner `mappend` next
 
   Nop                  -> Nop
