@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, BangPatterns #-}
 module Brainfuck.Optimization.Tarpit where
 
 import Brainfuck.Data.Expr
@@ -48,7 +48,7 @@ shiftReduction = go 0 0
   where
     expr s = mapExpr (mapSnd (+s)) id
 
-    go s t = \case
+    go !s !t = \case
       Nop -> if t /= 0 then Instruction (Shift t) Nop else Nop
 
       Instruction fun next -> case fun of
