@@ -9,11 +9,12 @@ import Brainfuck.Utility
 loopUnrolling :: Tarpit -> Tarpit
 loopUnrolling = removeFromEnd
               . movePut
-              . times ( inlineConstants
+              . times ( optimizeAssign
+                      . inlineConstants
                       . inlineZeros
                       . shiftReduction
                       . unrollLoop
-                      ) 100
+                      ) 50
               . fullOptimization
 
 fullOptimization :: Tarpit -> Tarpit
