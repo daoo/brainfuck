@@ -90,7 +90,7 @@ unrollEntierly = go M.empty
       Flow (While e) inner next -> case expr m e of
 
         Const 0 -> go m next
-        _       -> go m $ Flow (If e) inner $ Flow (While e) inner next
+        _       -> go m $ inner `mappend` Flow (While e) inner next
 
     expr, constants, zeros :: M.IntMap Int -> Expr -> Expr
     expr m    = constants m . zeros m
