@@ -71,29 +71,27 @@ unrollEntierly = go M.empty
 
       Instruction fun next -> case fun of
 
-        Assign d e -> case expr m e of
+        Assign d e -> go (M.insert d (valuesFromMap m e) m) next
+        PutChar e  -> Instruction (PutChar $ Const $ valuesFromMap m e) (go m next)
+        Shift s    -> go (shift s m) next
+        GetChar _  -> Instruction fun next
 
-          Const c -> go (M.insert d c m) next
-          _       -> Instruction fun next
+      Flow (If e) inner next -> if valuesFromMap m e == 0
+        then go m next
+        else go m $ inner `mappend` next
 
-        PutChar e -> Instruction (PutChar $ expr m e) (go m next)
-        Shift s   -> go (shift s m) next
+      Flow (While e) inner next -> if valuesFromMap m e == 0
+        then go m next
+        else go m $ inner `mappend` Flow (While e) inner next
 
-        GetChar _ -> Instruction fun next
-
-      Flow (If e) inner next -> case expr m e of
-
-        Const 0 -> go m next
-        Const _ -> go m $ inner `mappend` next
-        e'      -> Flow (If e') (go m inner) next
-
-      Flow (While e) inner next -> case expr m e of
-
-        Const 0 -> go m next
-        _       -> go m $ inner `mappend` Flow (While e) inner next
-
-    expr, constants, zeros :: M.IntMap Int -> Expr -> Expr
-    expr m    = constants m . zeros m
-    constants = flip $ M.foldrWithKey' insertConstant
-    zeros m   = filterVars ((`M.member` m) . snd)
     shift s m = M.mapKeysMonotonic (subtract s) m
+
+valuesFromMap :: M.IntMap Int -> Expr -> Int
+valuesFromMap m = go 0
+  where
+    go !acc = \case
+      Const c    -> acc + c
+      Var n d xs -> case M.lookup d m of
+
+        Just c  -> go (acc + n * c) xs
+        Nothing -> go acc xs
