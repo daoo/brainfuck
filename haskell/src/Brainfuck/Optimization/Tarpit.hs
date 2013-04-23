@@ -62,16 +62,6 @@ shiftReduction = go 0 0
         If e    -> Flow (If (expr s e))    (go s 0 inner) (go s t next)
         While e -> Flow (While (expr s e)) (go s 0 inner) (go s t next)
 
-unrollLoop :: Tarpit -> Tarpit
-unrollLoop = go
-  where
-    go = \case
-      Flow (While e) inner next -> Flow (If e) inner $ Flow (While e) inner next
-
-      Nop                  -> Nop
-      Flow ctrl inner next -> Flow ctrl (go inner) (go next)
-      Instruction fun next -> Instruction fun $ go next
-
 movePut :: Tarpit -> Tarpit
 movePut = \case
   Nop -> Nop
