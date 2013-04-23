@@ -46,21 +46,21 @@ copyLoopReduction = \case
 shiftReduction :: Tarpit -> Tarpit
 shiftReduction = go 0 0
   where
-    expr s = mapExpr (mapSnd (+s)) id
-
     go !s !t = \case
       Nop -> if t /= 0 then Instruction (Shift t) Nop else Nop
 
       Instruction fun next -> case fun of
 
-        GetChar d  -> Instruction (GetChar (d + s))           $ go s t next
-        PutChar e  -> Instruction (PutChar (expr s e))        $ go s t next
-        Assign d e -> Instruction (Assign (d + s) (expr s e)) $ go s t next
+        GetChar d  -> Instruction (GetChar $ d + s)           $ go s t next
+        PutChar e  -> Instruction (PutChar $ expr s e)        $ go s t next
+        Assign d e -> Instruction (Assign (d + s) $ expr s e) $ go s t next
         Shift s'   -> go (s + s') (t + s') next
 
       Flow ctrl inner next -> case ctrl of
-        If e    -> Flow (If (expr s e))    (go s 0 inner) (go s t next)
-        While e -> Flow (While (expr s e)) (go s 0 inner) (go s t next)
+        If e    -> Flow (If $ expr s e)    (go s 0 inner) (go s t next)
+        While e -> Flow (While $ expr s e) (go s 0 inner) (go s t next)
+
+    expr s = mapExpr (mapSnd (+s)) id
 
 movePut :: Tarpit -> Tarpit
 movePut = \case
@@ -68,7 +68,9 @@ movePut = \case
 
   Instruction fun@(Assign d e1) next -> case movePut next of
     Instruction (PutChar e2) next' ->
-      Instruction (PutChar $ insertExpression d e1 e2) $ movePut $ Instruction fun next'
+      Instruction
+        (PutChar $ insertExpression d e1 e2)
+        (movePut $ Instruction fun next')
 
     next' -> Instruction fun next'
 
@@ -86,7 +88,7 @@ inlineConstants = go M.empty
         GetChar d          -> Instruction fun                  $ go (M.delete d m) next
         PutChar e          -> Instruction (PutChar $ expr e m) $ go m next
         Assign d (Const c) -> Instruction fun                  $ go (M.insert d c m) next
-        Shift s            -> Instruction fun                  $ go (M.mapKeysMonotonic (subtract s) m) next
+        Shift s            -> Instruction fun                  $ go (shift s m) next
 
         Assign d e -> case expr e m of
 
@@ -106,4 +108,5 @@ inlineConstants = go M.empty
           Const 0 -> go m next
           _       -> Flow (While e) (go M.empty inner) (go M.empty next)
 
-    expr = M.foldrWithKey' insertConstant
+    expr  = M.foldrWithKey' insertConstant
+    shift = M.mapKeysMonotonic . subtract

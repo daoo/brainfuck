@@ -23,10 +23,10 @@ inlineZeros = go S.empty
 
       Instruction fun next -> case fun of
 
-        Assign i e -> Instruction (Assign i (remove s e)) (go (S.insert i s) next)
-        PutChar e  -> Instruction (PutChar (remove s e)) (go s next)
-        GetChar d  -> Instruction fun (go (S.delete d s) next)
-        Shift _    -> Instruction fun next
+        Assign i e -> Instruction (Assign i $ remove s e) $ go (S.insert i s) next
+        PutChar e  -> Instruction (PutChar $ remove s e)  $ go s next
+        GetChar d  -> Instruction fun                     $ go (S.delete d s) next
+        Shift s'   -> Instruction fun                     $ go (shift s' s) next
 
       Flow (If e) inner next -> case remove s e of
 
@@ -40,8 +40,8 @@ inlineZeros = go S.empty
         Const _ -> Flow (While $ Const 1) inner Nop
         _       -> Flow (While e) inner next
 
-    remove :: S.IntSet -> Expr -> Expr
     remove s = filterVars ((`S.member` s) . snd)
+    shift    = S.map . subtract
 
 -- |Remove instructions from the end that does not performe any side effects
 removeFromEnd :: Tarpit -> Tarpit
@@ -62,7 +62,8 @@ removeFromEnd = \case
 
 -- |Loop unrolling optimization
 -- Fully unrolls the entire program, only works for terminating programs that
--- don't depend on inupt.
+-- don't depend on input. This is a special case of actual code execution. The
+-- difference being that this does not concern itself with GetChar.
 unrollEntierly :: Tarpit -> Tarpit
 unrollEntierly = go M.empty
   where
@@ -72,8 +73,8 @@ unrollEntierly = go M.empty
       Instruction fun next -> case fun of
 
         Assign d e -> go (M.insert d (valuesFromMap m e) m) next
-        PutChar e  -> Instruction (PutChar $ Const $ valuesFromMap m e) (go m next)
         Shift s    -> go (shift s m) next
+        PutChar e  -> Instruction (PutChar $ Const $ valuesFromMap m e) (go m next)
         GetChar _  -> Instruction fun next
 
       Flow (If e) inner next -> if valuesFromMap m e == 0
@@ -84,7 +85,7 @@ unrollEntierly = go M.empty
         then go m next
         else go m $ inner `mappend` Flow (While e) inner next
 
-    shift s m = M.mapKeysMonotonic (subtract s) m
+    shift = M.mapKeysMonotonic . subtract
 
 valuesFromMap :: M.IntMap Int -> Expr -> Int
 valuesFromMap m = go 0
