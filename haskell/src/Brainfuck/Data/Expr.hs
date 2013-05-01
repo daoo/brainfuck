@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Brainfuck.Data.Expr
   ( Expr (..)
   , findVar
@@ -12,8 +13,6 @@ module Brainfuck.Data.Expr
   ) where
 
 import Brainfuck.Utility
-import Control.Applicative hiding (Const)
-import Test.QuickCheck
 
 -- |An expression is a sum of some multiples of variables and a constant
 -- It is important that the sequence of variables are sorted by their value.
@@ -22,15 +21,7 @@ import Test.QuickCheck
 -- terminator contains a value (the constant).
 data Expr = Var {-# UNPACK #-} !Int {-# UNPACK #-} !Int Expr
           | Const {-# UNPACK #-} !Int
-  deriving (Eq, Show)
-
-instance Arbitrary Expr where
-  arbitrary = sized (go (-10))
-    where
-      go _ 0 = Const <$> choose (-10, 10)
-      go v n = do
-        i <- choose (v, 10)
-        Var <$> choose (-10, 10) <*> pure i <*> go i (n `div` 2)
+  deriving Show
 
 -- |Find a variable and return its multiple
 -- Ignores the constant
@@ -60,9 +51,8 @@ foldVarsR f acc (Var n v xs) = f n v $ foldVarsR f acc xs
 -- |Strict left fold variables in an expression
 -- Ignores the constant
 foldVarsL' :: (a -> Int -> Int -> a) -> a -> Expr -> a
-foldVarsL' _ acc (Const _)    = acc
-foldVarsL' f acc (Var n v xs) = let acc' = f acc n v
-                                 in seq acc' $ foldVarsL' f acc' xs
+foldVarsL' _ !acc (Const _)    = acc
+foldVarsL' f !acc (Var n v xs) = foldVarsL' f (f acc n v) xs
 
 -- |Addition of two expressions
 -- Time complexity: O(n + m), follows the additon laws:
@@ -94,9 +84,8 @@ mul n = mapExpr (mapFst (*n)) (*n)
 eval :: (Int -> Int) -> Expr -> Int
 eval f = go 0
   where
-    go acc (Const c)    = acc + c
-    go acc (Var n v xs) = let acc' = (acc + n * f v)
-                           in seq acc' $ go acc' xs
+    go !acc (Const c)    = acc + c
+    go !acc (Var n v xs) = go (acc + n * f v) xs
 
 -- |Insert the value of a variable into an expression
 -- Time complexity: O(n + m)
