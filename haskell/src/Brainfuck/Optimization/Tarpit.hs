@@ -6,7 +6,7 @@ import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Brainfuck.Utility
 import Data.Monoid
-import qualified Data.IntMap as M
+import qualified Data.IntMap.Strict as M
 
 flowReduction :: Tarpit -> Tarpit
 flowReduction = \case

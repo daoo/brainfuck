@@ -18,7 +18,7 @@ inlineZeros :: Tarpit -> Tarpit
 inlineZeros = go S.empty
   where
     go :: S.IntSet -> Tarpit -> Tarpit
-    go s = \case
+    go !s = \case
       Nop -> Nop
 
       Instruction fun next -> case fun of

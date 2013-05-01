@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, BangPatterns #-}
 module Brainfuck.Optimization.Analysis where
 
 import Brainfuck.Data.Expr
@@ -74,7 +74,7 @@ copyLoop d1 = go
 whileOnce :: Int -> Tarpit -> Maybe Tarpit
 whileOnce d = go False
   where
-    go b = \case
+    go !b = \case
       Nop -> if b then Just Nop else Nothing
 
       Instruction fun next -> case fun of
