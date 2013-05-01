@@ -18,15 +18,3 @@ propMapIndexEq x (NonEmpty xs) = forAll (choose (0, length xs - 1)) $
 propMapIndexLength :: Int -> NonEmptyList Int -> Property
 propMapIndexLength x (NonEmpty xs) = forAll (choose (0, length xs - 1)) $
   \i -> length (mapIndex (const x) i xs) == length xs
-
-propPipeAdd :: Property
-propPipeAdd = forAll (choose (0, 1000)) $
-  \i -> pipe (replicate i (+1)) 0 == i
-
-propWhileModified :: Property
-propWhileModified = forAll (choose (-1000, 1000)) ((== 0) . whileModified f)
-  where
-    f :: Int -> Int
-    f j | j < 0     = j + 1
-        | j == 0    = 0
-        | otherwise = j - 1

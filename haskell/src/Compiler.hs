@@ -7,7 +7,6 @@ import Brainfuck.CodeGen.Indented
 import Brainfuck.Compile
 import Brainfuck.Optimization.Pipeline
 import Brainfuck.Parse
-import Brainfuck.Utility
 import Data.ByteString.Builder
 import System.Console.GetOpt
 import System.Environment
@@ -52,7 +51,7 @@ main = do
     (flags , nonOpts , [])   -> return (flags, concat nonOpts)
     (_     , _       , errs) -> hPutStr stderr (concat errs) >> printHelp >> exitWith (ExitFailure 1)
 
-  let opts = pipe flags defaultOptions
+  let opts = foldr ($) defaultOptions flags
 
       optimize =
         case optOptimize opts of
