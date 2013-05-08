@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Data.ListZipper where
 
 import Control.Applicative
@@ -25,13 +26,13 @@ moveRight (ListZipper xs y (z :zs)) = ListZipper (y : xs) z zs
 moveRight _                         = error "moveRight: right is empty"
 
 move :: Int -> ListZipper a -> ListZipper a
-move n lz = case compare n 0 of
+move !n lz = case compare n 0 of
   EQ -> lz
   LT -> move (n + 1) (moveLeft lz)
   GT -> move (n - 1) (moveRight lz)
 
 peek :: Int -> ListZipper a -> a
-peek n lz = case compare n 0 of
+peek !n lz = case compare n 0 of
   EQ -> focus lz
   LT -> left lz !! (abs n - 1)
   GT -> right lz !! (n - 1)
@@ -49,9 +50,9 @@ applyAt f n (ListZipper xs y zs) = case compare n 0 of
   GT -> ListZipper xs y (go (n - 1) zs)
 
   where
-    go 0 (a : as) = f a : as
-    go j (a : as) = a : go (j - 1) as
-    go _ _        = error "list to short"
+    go  0 (a : as) = f a : as
+    go !j (a : as) = a : go (j - 1) as
+    go  _ _        = error "list to short"
 
 takeBoth :: Int -> ListZipper a -> [a]
 takeBoth i (ListZipper xs y zs) = take i xs ++ [y] ++ take i zs

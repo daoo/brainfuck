@@ -6,20 +6,20 @@ import Control.Monad
 
 -- |Repeat a function a certain ammount of times
 times :: (a -> a) -> Int -> a -> a
-times f i a | i < 0     = error "negative number"
-            | otherwise = go i a
+times f !i a | i < 0     = error "negative number"
+             | otherwise = go i a
   where
-    go !0 !b = b
+    go  0 !b = b
     go !j !b = times f (j - 1) (f b)
 
 -- |Apply a function to a specific element in a list
 mapIndex :: (a -> a) -> Int -> [a] -> [a]
-mapIndex f i xs | i < 0     = error "negative index"
-                | otherwise = go i xs
+mapIndex f !i xs | i < 0     = error "negative index"
+                 | otherwise = go i xs
   where
-    go !0 (y : ys) = f y : ys
+    go  0 (y : ys) = f y : ys
     go !j (y : ys) = y : go (j - 1) ys
-    go !_ _        = error "list to short"
+    go  _ _        = error "list to short"
 
 {-# INLINE thrd #-}
 thrd :: (a, b, c) -> c
