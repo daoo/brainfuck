@@ -1,6 +1,5 @@
 module Utility
-  ( var
-  , wnull
+  ( wnull
   , wspace
   , printWord8
   , printInput
@@ -28,9 +27,6 @@ instance Num Expr where
   (*)    = undefined
   abs    = undefined
   signum = undefined
-
-var :: Int -> Int -> Expr
-var n d = Var n d 0
 
 wnull, wspace :: Word8
 wnull  = 0

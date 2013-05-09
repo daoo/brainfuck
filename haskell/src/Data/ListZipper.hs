@@ -1,20 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 module Data.ListZipper where
 
-import Control.Applicative
-import Test.QuickCheck.Arbitrary
-
 data ListZipper a = ListZipper
   { left :: [a]
   , focus :: !a
   , right :: [a]
   } deriving (Show, Eq)
-
-instance Arbitrary a => Arbitrary (ListZipper a) where
-  arbitrary = ListZipper <$> arbitrary <*> arbitrary <*> arbitrary
-
-  shrink (ListZipper xs y zs) = map (\(xs', zs') -> ListZipper xs' y zs')
-                              $ zip (shrink xs) (shrink zs)
 
 size :: ListZipper a -> Int
 size (ListZipper xs _ zs) = length xs + 1 + length zs

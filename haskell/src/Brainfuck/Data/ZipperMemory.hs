@@ -9,7 +9,6 @@ module Brainfuck.Data.ZipperMemory
   ) where
 
 import Brainfuck.Data.Expr hiding (eval)
-import Control.Applicative hiding (Const)
 import Control.Monad.State.Strict hiding (when)
 import Data.ListZipper
 import Prelude hiding (read)

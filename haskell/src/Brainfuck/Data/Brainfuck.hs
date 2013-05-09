@@ -1,9 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.Data.Brainfuck where
 
-import Control.Applicative
-import Test.QuickCheck
-
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq
 
@@ -31,13 +28,3 @@ instance Show Brainfuck where
     Token t next      -> shows t $ show next
 
   showList = flip (foldr shows)
-
-instance Arbitrary Token where
-  arbitrary = oneof $ map return [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
-
-instance Arbitrary Brainfuck where
-  arbitrary = frequency
-    [ (5, return Nop)
-    , (20, Token <$> arbitrary <*> arbitrary)
-    , (1, Repeat <$> arbitrary <*> arbitrary)
-    ]

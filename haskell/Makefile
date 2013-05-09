@@ -1,18 +1,25 @@
-build: prof
+build:
+	@cabal-dev build --ghc-options="-H64m -rtsopts"
 
 prof:
 	@cabal-dev build --ghc-options="-rtsopts -prof -fprof-auto -H64m"
 
-test:
-	@./dist/build/brainfuck-tests/brainfuck-tests
+release:
+	@cabal-dev build --ghc-options="-fllvm -H64m"
+
+configure:
+	@cabal-dev install \
+		--force-reinstalls \
+		--enable-library-profiling \
+		--enable-executable-profiling \
+		--enable-benchmarks \
+		--enable-tests
+
+ghci:
+	@cabal-dev ghci
 
 clean:
 	@cabal-dev clean --save-configure
 
-ctags:
-	@echo ":ctags" | ghci -isrc/ -v0 src/TestProperties.hs
-
 lint:
 	@hlint src -xc
-
-.PHONY: build clean lint

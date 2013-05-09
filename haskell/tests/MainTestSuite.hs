@@ -17,8 +17,6 @@ tests =
       [ testProperty "ListZipper move size" propZipperMoveSize
       , testProperty "Map Index const x" propMapIndexEq
       , testProperty "Map Index length invariant" propMapIndexLength
-      , testProperty "Pipe add invariant" propPipeAdd
-      , testProperty "While Modified towards zero" propWhileModified
       ]
     , testGroup "Compiler"
       [ testProperty "Compile Decompile invariant" propCompileDecompile
