@@ -30,26 +30,31 @@ data Machine = Machine
   , mmemory :: Memory
   }
 
+{-# INLINE input #-}
 input :: State Machine Word8
 input = do
   m <- get
   put (m { minput = tail (minput m) })
   return (head (minput m))
 
+{-# INLINE output #-}
 output :: Word8 -> State Machine ()
 output x = modify $ \m -> m { moutput = moutput m S.|> x }
 
+{-# INLINE set #-}
 set :: Int -> Word8 -> State Machine ()
 set d x = modify $ \m -> m { mmemory = applyAt (const x) d (mmemory m) }
 
+{-# INLINE shift #-}
 shift :: Int -> State Machine ()
 shift d = modify $ \m -> m { mmemory = move d (mmemory m) }
 
 expr :: Expr -> State Machine Word8
-expr e = mmemory <$> get >>= \mem -> return $ eval' (`peek` mem) e
+expr e = (\s -> eval' (`peek` mmemory s) e) <$> get
   where
     eval' f = fromIntegral . eval (fromIntegral . f)
 
+{-# INLINE newMemory #-}
 newMemory :: Memory
 newMemory = ListZipper zeros 0 zeros
   where zeros = repeat 0

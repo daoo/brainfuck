@@ -30,7 +30,7 @@ printHelp = putStrLn (usageInfo header options)
 
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1|2}") "optimizations"
+  [ Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1|2|3}") "optimizations"
   , Option "h" ["help"] (NoArg (\opt -> opt { optAction = Help})) "show help"
   ]
 
@@ -47,7 +47,9 @@ main = do
         case optOptimize opts of
           0 -> id
           1 -> simpleOptimizations
-          _ -> fullOptimization
+          2 -> fullOptimization
+          3 -> loopUnrolling
+          _ -> undefined
 
   case optAction opts of
     Help      -> printHelp
