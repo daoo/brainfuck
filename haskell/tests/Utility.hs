@@ -54,7 +54,7 @@ testOutput :: Machine -> Machine -> Bool
 testOutput a b = moutput a == moutput b
 
 testMemory :: Int -> Machine -> Machine -> Bool
-testMemory i a b = takeBoth i (mmemory a) == takeBoth i (mmemory b)
+testMemory i a b = cut i (mmemory a) == cut i (mmemory b)
 
 expectedOutput :: Tarpit -> Input -> Input -> Bool
 expectedOutput code inp out = toList (exec inp code) == out
