@@ -15,8 +15,6 @@ tests =
   [ testGroup "QuickCheck"
     [ testGroup "Misc"
       [ testProperty "ListZipper move size" propZipperMoveSize
-      , testProperty "Map Index const x" propMapIndexEq
-      , testProperty "Map Index length invariant" propMapIndexLength
       ]
     , testGroup "Compiler"
       [ testProperty "Compile Decompile invariant" propCompileDecompile
