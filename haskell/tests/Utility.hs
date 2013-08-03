@@ -1,7 +1,7 @@
 module Utility
   ( wnull
   , wspace
-  , printWord8
+  , printNum
   , printInput
   , tests
   , testOutput
@@ -16,7 +16,6 @@ import Control.Monad
 import Data.Char
 import Data.Foldable hiding (all)
 import Data.ListZipper
-import Data.Word
 import Test.QuickCheck
 
 instance Num Expr where
@@ -28,12 +27,12 @@ instance Num Expr where
   abs    = undefined
   signum = undefined
 
-wnull, wspace :: Word8
+wnull, wspace :: Num n => n
 wnull  = 0
 wspace = 32
 
-printWord8 :: Gen Word8
-printWord8 = frequency
+printNum :: Num n => Gen n
+printNum = frequency
   [ (5, f ['a'..'z'])
   , (4, f ['A'..'Z'])
   , (4, f ['0'..'9'])
@@ -43,17 +42,17 @@ printWord8 = frequency
     f = oneof . map (return . fromIntegral . ord)
 
 printInput :: Gen Input
-printInput = sized $ \n -> choose (0, n) >>= (`replicateM` printWord8)
+printInput = sized $ \n -> choose (0, n) >>= (`replicateM` printNum)
 
-tests :: [Machine -> Machine -> Bool] -> Tarpit -> Tarpit -> Bool
+tests :: [MachineState -> MachineState -> Bool] -> Tarpit -> Tarpit -> Bool
 tests fs a b = let a' = run [] a
                    b' = run [] b
                 in all (\f -> f a' b') fs
 
-testOutput :: Machine -> Machine -> Bool
+testOutput :: MachineState -> MachineState -> Bool
 testOutput a b = moutput a == moutput b
 
-testMemory :: Int -> Machine -> Machine -> Bool
+testMemory :: Int -> MachineState -> MachineState -> Bool
 testMemory i a b = cut i (mmemory a) == cut i (mmemory b)
 
 expectedOutput :: Tarpit -> Input -> Input -> Bool

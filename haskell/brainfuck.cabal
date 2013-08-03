@@ -19,9 +19,10 @@ library
     Brainfuck.Compile
     Brainfuck.Data.Brainfuck
     Brainfuck.Data.Expr
-    Brainfuck.Data.IOMemory
+    Brainfuck.Data.IOMachine
     Brainfuck.Data.Tarpit
-    Brainfuck.Data.ZipperMemory
+    Brainfuck.Data.VirtualMachine
+    Brainfuck.Data.ZipperMachine
     Brainfuck.Interpret
     Brainfuck.Optimization.Analysis
     Brainfuck.Optimization.Assignment

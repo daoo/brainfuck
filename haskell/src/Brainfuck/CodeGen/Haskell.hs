@@ -1,14 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.Haskell (writeHaskell) where
+module Brainfuck.CodeGen.Haskell
+  ( writeHaskell
+  ) where
 
-import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Text.CodeWriter
 
 writeHaskell :: Tarpit -> CodeWriter ()
 writeHaskell code = do
   line "import Brainfuck.Data.Expr"
-  line "import Brainfuck.Data.IOMemory"
+  line "import Brainfuck.Data.IOMachine"
   line ""
   line "main :: IO ()"
   line "main = runMemory 30001 $ do"
@@ -25,12 +26,10 @@ writeHaskell code = do
       While e -> block "while" e
 
     function = \case
-      Assign d (Const c) -> string "write "                >> safeint d       >> string " "   >> safeint c
-      Assign d e         -> string "set "                  >> safeint d       >> string " $ " >> string (show e)
-      PutChar (Const c)  -> string "lift $ putChar $ chr " >> safeint c
-      PutChar e          -> string "putchr $ "             >> string (show e)
-      GetChar d          -> string "getchr "               >> safeint d
-      Shift d            -> string "shift "                >> safeint d
+      Assign d e -> string "set "   >> safeint d       >> string " $ " >> string (show e)
+      PutChar e  -> string "put $ " >> string (show e)
+      GetChar d  -> string "get "   >> safeint d
+      Shift d    -> string "shift " >> safeint d
 
     safeint d = surround '(' ')' (d < 0) (int d)
 
