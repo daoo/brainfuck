@@ -14,21 +14,26 @@ class (Functor vm, Monad vm) => VirtualMachine vm where
   putchr :: Int -> vm ()
   getchr :: Int -> vm ()
 
+{-# INLINE eval #-}
 eval :: VirtualMachine vm => Expr -> vm Int
 eval = go 0
   where
     go !acc (Const c)    = return $ acc + c
     go !acc (Var n d xs) = (*n) <$> read d >>= (\acc' -> go (acc + acc') xs)
 
+{-# INLINE set #-}
 set :: VirtualMachine vm => Int -> Expr -> vm ()
 set d e = eval e >>= write d
 
+{-# INLINE put #-}
 put :: VirtualMachine vm => Expr -> vm ()
 put e = eval e >>= putchr
 
+{-# INLINE get #-}
 get :: VirtualMachine vm => Int -> vm ()
 get = getchr
 
+{-# INLINE when #-}
 when :: VirtualMachine vm => Expr -> vm () -> vm ()
 when e f = do
   x <- eval e
