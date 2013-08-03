@@ -81,6 +81,7 @@ mul :: Int -> Expr -> Expr
 mul n = mapExpr (mapFst (*n)) (*n)
 
 -- |Evaluate an expression using a function for resolving variables
+-- Time complexity: O(n) if f is constant time
 eval :: (Int -> Int) -> Expr -> Int
 eval f = go 0
   where

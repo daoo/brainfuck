@@ -1,5 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.C99 where
+module Brainfuck.CodeGen.C99
+  ( writeC99
+  ) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit

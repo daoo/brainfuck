@@ -1,5 +1,11 @@
 {-# LANGUAGE LambdaCase, BangPatterns #-}
-module Brainfuck.Optimization.Analysis where
+module Brainfuck.Optimization.Analysis
+  ( exprDepends
+  , memorySize
+  , putConstOnly
+  , copyLoop
+  , whileOnce
+  ) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit

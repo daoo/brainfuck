@@ -1,5 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Data.Brainfuck where
+module Brainfuck.Data.Brainfuck
+  ( Token(..)
+  , Brainfuck(..)
+  , toChar
+  ) where
 
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq

@@ -1,5 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.CodeGen.Dot (writeDot) where
+module Brainfuck.CodeGen.Dot
+  ( writeDot
+  ) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit

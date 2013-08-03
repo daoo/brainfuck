@@ -1,5 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
-module Brainfuck.Optimization.Assignment (optimizeAssign) where
+module Brainfuck.Optimization.Assignment
+  ( optimizeAssign
+  ) where
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit

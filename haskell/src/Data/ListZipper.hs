@@ -1,5 +1,15 @@
 {-# LANGUAGE BangPatterns #-}
-module Data.ListZipper where
+module Data.ListZipper
+  ( ListZipper(..)
+  , size
+  , moveLeft
+  , moveRight
+  , move
+  , peek
+  , apply
+  , applyAt
+  , cut
+  ) where
 
 -- |List zipper data structure.
 -- Tuned for performance, thus does not throw any errors if you try to access
