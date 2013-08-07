@@ -5,7 +5,6 @@ module Brainfuck.Optimization.Assignment
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import Brainfuck.Utility
 import qualified Data.Graph as G
 import qualified Data.IntMap as M
 
@@ -29,7 +28,7 @@ rebuild m = go
   where
     go (Const c)    = Const c
     go (Var n d xs) = case M.lookup d m of
-      Just e  -> add (mapExpr (mapFst (*n)) (*n) e) (go xs)
+      Just e  -> add (mul n e) (go xs)
       Nothing -> Var n d (go xs)
 
 type AssignOp = (Int, Expr)

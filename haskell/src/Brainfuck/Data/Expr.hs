@@ -7,6 +7,7 @@ module Brainfuck.Data.Expr
   , foldVarsR
   , foldVarsL'
   , add
+  , mul
   , eval
   , insertExpression
   , insertConstant

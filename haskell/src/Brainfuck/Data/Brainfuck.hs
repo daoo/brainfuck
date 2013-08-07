@@ -28,7 +28,7 @@ instance Show Token where
 instance Show Brainfuck where
   show = \case
     Nop               -> ""
-    Repeat inner next -> showString "[" $ shows inner $ showString "]" $ show next
+    Repeat inner next -> showChar '[' $ shows inner $ showChar ']' $ show next
     Token t next      -> shows t $ show next
 
   showList = flip (foldr shows)
