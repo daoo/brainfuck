@@ -16,8 +16,8 @@ writeExpr = \case
   Var n d (Const 0) -> mult n d
   Var n d xs        -> mult n d >> string " + " >> writeExpr xs
   where
-    mult 1 d = string "ptr[" >> int d >> string "]"
-    mult n d = int n >> string " * ptr[" >> int d >> string "]"
+    mult 1 d = string "ptr[" >> int d >> char ']'
+    mult n d = int n >> string " * ptr[" >> int d >> char ']'
 
 writeC99 :: Tarpit -> CodeWriter ()
 writeC99 code = do
@@ -54,17 +54,17 @@ writeC99 code = do
       line "}"
 
     function = \case
-      Shift s    -> string "ptr += " >> int s
+      Shift s    -> string "ptr" .+= int s
       GetChar d  -> ptr d .= string "getchar()"
 
       Assign d (Var 1 d' (Const c)) | d == d' -> ptr d .+= int c
       Assign d e                              -> ptr d .= writeExpr e
 
-      PutChar (Const c) -> putchar $ string $ show $ chr c
+      PutChar (Const c) -> putchar $ char $ chr c
       PutChar e         -> putchar $ writeExpr e
 
-    putchar a = string "putchar(" >> a >> string ")"
-    ptr d = string "ptr[" >> int d >> string "]"
+    putchar a = string "putchar(" >> a >> char ')'
+    ptr d = string "ptr[" >> int d >> char ']'
 
     a .=  b = a >> string " = " >> b
     a .+= b = a >> string " += " >> b
