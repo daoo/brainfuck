@@ -13,7 +13,7 @@ import Control.Applicative hiding (Const)
 import Data.Maybe
 
 -- |Check if an expression reads a certain memory position
-exprDepends :: Int -> Expr -> Bool
+exprDepends :: Int -> Expr a -> Bool
 exprDepends = ((.) isJust) . findVar
 
 -- |Heuristically decide how much memory a program uses.
@@ -34,7 +34,7 @@ memorySize = \case
       If e    -> expr e
       While e -> expr e
 
-    expr :: Expr -> (Int, Int)
+    expr :: Expr Int -> (Int, Int)
     expr = foldVarsL' (\x _ y -> x <+> (g y)) (0, 0)
 
     g :: Int -> (Int, Int)

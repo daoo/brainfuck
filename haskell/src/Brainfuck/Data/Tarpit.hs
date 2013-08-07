@@ -7,10 +7,10 @@ module Brainfuck.Data.Tarpit
 import Brainfuck.Data.Expr
 import Data.Monoid
 
-data Function = Assign Int Expr | Shift Int | PutChar Expr | GetChar Int
+data Function = Assign Int (Expr Int) | Shift Int | PutChar (Expr Int) | GetChar Int
   deriving Show
 
-data Control = If Expr | While Expr
+data Control = If (Expr Int) | While (Expr Int)
   deriving Show
 
 data Tarpit = Nop

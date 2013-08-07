@@ -23,7 +23,7 @@ optimizeAssign = go M.empty
       Flow ctrl inner next -> makeOptimal m $ Flow ctrl (go M.empty inner) (go M.empty next)
 
 -- |Inline only on each variable, instead of on the whole expression every time
-rebuild :: M.IntMap Expr -> Expr -> Expr
+rebuild :: M.IntMap (Expr Int) -> Expr Int -> Expr Int
 rebuild m = go
   where
     go (Const c)    = Const c
@@ -31,11 +31,11 @@ rebuild m = go
       Just e  -> add (mul n e) (go xs)
       Nothing -> Var n d (go xs)
 
-type AssignOp = (Int, Expr)
+type AssignOp = (Int, Expr Int)
 
 -- |Calculate the optimal representation of some Assign ILs
 -- TODO: Handle cyclical dependencies
-makeOptimal :: M.IntMap Expr -> Tarpit -> Tarpit
+makeOptimal :: M.IntMap (Expr Int) -> Tarpit -> Tarpit
 makeOptimal ops next = mergeOps next $ topSort $ M.assocs ops
 
 mergeOps :: Tarpit -> [AssignOp] -> Tarpit
@@ -72,11 +72,11 @@ topSort :: [AssignOp] -> [AssignOp]
 topSort xs = let (graph, vertex, _) = G.graphFromEdges $ map f xs
               in map (g . vertex) $ G.topSort graph
   where
-    f :: AssignOp -> (Expr, Int, [Int])
+    f :: AssignOp -> (Expr Int, Int, [Int])
     f (d, e) = (e, d, edges e)
 
-    g :: (Expr, Int, [Int]) -> AssignOp
+    g :: (Expr Int, Int, [Int]) -> AssignOp
     g (x, k, _) = (k, x)
 
-    edges :: Expr -> [Int]
+    edges :: Expr Int -> [Int]
     edges = foldVarsR (\_ d -> (:) d) []

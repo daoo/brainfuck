@@ -18,7 +18,7 @@ import Data.Foldable hiding (all)
 import Data.ListZipper
 import Test.QuickCheck
 
-instance Num Expr where
+instance (Ord n, Num n) => Num (Expr n) where
   fromInteger = Const . fromInteger
 
   (+) = add

@@ -35,7 +35,7 @@ makeEdge from to = lift $ lineM $ do
   int to
   string ";"
 
-makeExpr :: Expr -> DotState ()
+makeExpr :: Show a => Expr a -> DotState ()
 makeExpr e = get >>= makeNode ellipse (string (show e))
 
 writeDot :: Tarpit -> CodeWriter ()

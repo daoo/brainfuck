@@ -10,7 +10,7 @@ import Control.Monad
 import Data.Char
 import Text.CodeWriter
 
-writeExpr :: Expr -> CodeWriter ()
+writeExpr :: Expr Int -> CodeWriter ()
 writeExpr = \case
   Const c           -> int c
   Var n d (Const 0) -> mult n d
@@ -44,7 +44,6 @@ writeC99 code = do
       While e -> block "while" e
       If e    -> block "if" e
 
-    block :: String -> Expr -> Tarpit -> CodeWriter ()
     block word e ys = do
       lineM $ do
         string word
