@@ -32,21 +32,24 @@ data Memory = Memory
 
 type IOMachine = S.StateT Memory IO
 
+iomod :: (Memory -> IO a) -> IOMachine a
+iomod f = S.get >>= \m -> S.lift $ f m
+
 instance VirtualMachine IOMachine where
   {-# INLINE shift #-}
-  shift d = S.modify (\m -> m { ptr = ptr m + d })
+  shift d = S.modify $ \m -> m { ptr = ptr m + d }
 
   {-# INLINE read #-}
-  read d = S.get >>= (\m -> S.lift $ unsafeRead (array m) (ptr m + d))
+  read d = iomod $ \m -> unsafeRead (array m) (ptr m + d)
 
   {-# INLINE write #-}
-  write d v = S.get >>= (\m -> S.lift $ unsafeWrite (array m) (ptr m + d) v)
+  write d v = iomod $ \m -> unsafeWrite (array m) (ptr m + d) v
 
   {-# INLINE putchr #-}
   putchr = S.lift . putChar . chr
 
   {-# INLINE getchr #-}
-  getchr d = ord <$> S.lift getChar >>= write d
+  getchr = S.lift $ ord `fmap` getChar
 
 {-# INLINE newMemory #-}
 newMemory :: Int -> IO Memory

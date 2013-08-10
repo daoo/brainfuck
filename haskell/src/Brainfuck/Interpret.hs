@@ -30,8 +30,8 @@ run inp code = runMemory inp (go code)
     function = \case
       Shift s    -> shift s
       Assign d e -> set d e
-      PutChar e  -> eval e >>= putchr
-      GetChar d  -> getchr d
+      PutChar e  -> put e
+      GetChar d  -> get d
 
     flow inner = \case
       While e -> while e (go inner)

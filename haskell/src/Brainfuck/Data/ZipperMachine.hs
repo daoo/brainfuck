@@ -44,11 +44,11 @@ instance VirtualMachine ZipperMachine where
 
   write d v = ST.modify $ \s -> s { mmemory = applyAt (const v) d (mmemory s) }
 
-  getchr d = ST.modify $ \s ->
+  getchr = do
+    s <- ST.get
     let (x:xs) = minput s
-     in s { minput = xs
-          , mmemory = applyAt (const x) d (mmemory s)
-          }
+    ST.put $ s { minput = xs }
+    return x
 
   putchr x = ST.modify $ \m -> m { moutput = moutput m S.|> x }
 
