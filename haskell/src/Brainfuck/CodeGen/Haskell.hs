@@ -38,20 +38,3 @@ writeHaskell code = do
       string " ("
       string $ show e
       string ") $ do"
-
-writeHaskell2 :: Tarpit -> String
-writeHaskell2 code = go code
-  where
-    preamble =
-      "import Brainfuck.Data.Expr\
-      \\
-      \main :: IO ()\
-      \main = print $ "
-
-    go = \case
-      Nop                  -> ""
-      Instruction fun next -> go next ++ function fun
-      Flow ctrl inner next -> go next ++ control ctrl ++ " (" ++ go inner ++ ") "
-
-    function = undefined
-    control  = undefined
