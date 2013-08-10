@@ -2,15 +2,18 @@ module Brainfuck.Data.Tarpit
   ( Function (..)
   , Control (..)
   , Tarpit (..)
+  , IntExpr
   ) where
 
 import Brainfuck.Data.Expr
 import Data.Monoid
 
-data Function = Assign Int (Expr Int) | Shift Int | PutChar (Expr Int) | GetChar Int
+type IntExpr = Expr Int Int
+
+data Function = Assign Int IntExpr | Shift Int | PutChar IntExpr | GetChar Int
   deriving Show
 
-data Control = If (Expr Int) | While (Expr Int)
+data Control = If IntExpr | While IntExpr
   deriving Show
 
 data Tarpit = Nop

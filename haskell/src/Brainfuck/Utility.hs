@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 module Brainfuck.Utility where
 
 import Control.Arrow

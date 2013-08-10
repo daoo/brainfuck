@@ -12,8 +12,8 @@ import Brainfuck.Data.Tarpit
 import Control.Applicative hiding (Const)
 import Data.Maybe
 
--- |Check if an expression reads a certain memory position
-exprDepends :: Int -> Expr a -> Bool
+-- |Check if an expression reads a certain variable
+exprDepends :: Eq v => v -> Expr n v -> Bool
 exprDepends = ((.) isJust) . findVar
 
 -- |Heuristically decide how much memory a program uses.
@@ -34,10 +34,8 @@ memorySize = \case
       If e    -> expr e
       While e -> expr e
 
-    expr :: Expr Int -> (Int, Int)
     expr = foldVarsL' (\x _ y -> x <+> (g y)) (0, 0)
 
-    g :: Int -> (Int, Int)
     g d = case compare d 0 of
       LT -> (d, 0)
       EQ -> (0, 0)

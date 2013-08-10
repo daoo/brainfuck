@@ -10,7 +10,7 @@ import Control.Monad
 import Data.Char
 import Text.CodeWriter
 
-writeExpr :: Expr Int -> CodeWriter ()
+writeExpr :: IntExpr -> CodeWriter ()
 writeExpr = \case
   Const c           -> int c
   Var n d (Const 0) -> mult n d

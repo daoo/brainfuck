@@ -15,18 +15,18 @@ class (Functor vm, Monad vm) => VirtualMachine vm where
   getchr :: Int -> vm ()
 
 {-# INLINE eval #-}
-eval :: VirtualMachine vm => Expr Int -> vm Int
+eval :: VirtualMachine vm => Expr Int Int -> vm Int
 eval = go 0
   where
     go !acc (Const c)    = return $ acc + c
     go !acc (Var n d xs) = (*n) <$> read d >>= (\acc' -> go (acc + acc') xs)
 
 {-# INLINE set #-}
-set :: VirtualMachine vm => Int -> Expr Int -> vm ()
+set :: VirtualMachine vm => Int -> Expr Int Int -> vm ()
 set d e = eval e >>= write d
 
 {-# INLINE put #-}
-put :: VirtualMachine vm => Expr Int -> vm ()
+put :: VirtualMachine vm => Expr Int Int -> vm ()
 put e = eval e >>= putchr
 
 {-# INLINE get #-}
@@ -34,10 +34,10 @@ get :: VirtualMachine vm => Int -> vm ()
 get = getchr
 
 {-# INLINE when #-}
-when :: VirtualMachine vm => Expr Int -> vm () -> vm ()
+when :: VirtualMachine vm => Expr Int Int -> vm () -> vm ()
 when e f = do
   x <- eval e
   unless (x == 0) f
 
-while :: VirtualMachine vm => Expr Int -> vm () -> vm ()
+while :: VirtualMachine vm => Expr Int Int -> vm () -> vm ()
 while e f = when e (f >> while e f)
