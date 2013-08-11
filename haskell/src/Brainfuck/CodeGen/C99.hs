@@ -60,7 +60,7 @@ writeC99 code = do
       Assign d (Var 1 d' (Const c)) | d == d' -> ptr d .+= int c
       Assign d e                              -> ptr d .= writeExpr e
 
-      PutChar (Const c) -> putchar $ char $ chr c
+      PutChar (Const c) -> putchar $ string $ show (chr c)
       PutChar e         -> putchar $ writeExpr e
 
     putchar a = string "putchar(" >> a >> char ')'
