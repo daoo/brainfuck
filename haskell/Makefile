@@ -1,25 +1,26 @@
 build:
-	@cabal-dev build --ghc-options="-H64m -rtsopts"
+	@cabal build --ghc-options="-H64m -rtsopts"
 
 prof:
-	@cabal-dev build --ghc-options="-rtsopts -prof -fprof-auto -H64m"
+	@cabal build --ghc-options="-rtsopts -prof -fprof-auto -H64m"
 
 release:
-	@cabal-dev build --ghc-options="-fllvm -H64m"
+	@cabal build --ghc-options="-fllvm -H64m -O2"
 
-configure:
-	@cabal-dev install \
-		--force-reinstalls \
-		--enable-library-profiling \
-		--enable-executable-profiling \
-		--enable-benchmarks \
-		--enable-tests
+deps:
+	@cabal install --only-dependencies
 
-ghci:
-	@cabal-dev ghci
+conf:
+	@cabal configure
+
+test:
+	@cabal test
+
+repl:
+	@cabal repl
 
 clean:
-	@cabal-dev clean --save-configure
+	@cabal clean --save-configure
 
 lint:
-	@hlint src -xc
+	@hlint src

@@ -1,4 +1,6 @@
-cabal-dev
-dist
-tags
 *.prof
+.cabal-sandbox/
+cabal-dev/
+cabal.sandbox.config
+dist/
+tags
