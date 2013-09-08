@@ -77,13 +77,13 @@ unrollEntierly = go M.empty
         PutChar e  -> Instruction (PutChar $ Const $ valuesFromMap m e) (go m next)
         GetChar _  -> Instruction fun next
 
-      Flow (If e) inner next -> if valuesFromMap m e == 0
-        then go m next
-        else go m $ inner `mappend` next
+      Flow (If e) inner next -> go m $ if valuesFromMap m e == 0
+        then next
+        else inner `mappend` next
 
-      Flow (While e) inner next -> if valuesFromMap m e == 0
-        then go m next
-        else go m $ inner `mappend` Flow (While e) inner next
+      Flow (While e) inner next -> go m $ if valuesFromMap m e == 0
+        then next
+        else inner `mappend` Flow (While e) inner next
 
     shift = M.mapKeysMonotonic . subtract
 

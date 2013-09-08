@@ -36,7 +36,7 @@ copyLoopReduction :: Tarpit -> Tarpit
 copyLoopReduction = \case
   Flow ctrl@(While (Var 1 d (Const 0))) inner next -> case copyLoop d inner of
 
-    Just inner'' -> inner'' `mappend` (copyLoopReduction next)
+    Just inner'' -> inner'' `mappend` copyLoopReduction next
     Nothing      -> Flow ctrl (copyLoopReduction inner) (copyLoopReduction next)
 
   Nop                  -> Nop

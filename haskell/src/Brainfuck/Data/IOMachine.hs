@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Brainfuck.Data.IOMachine
   ( shift
   , read

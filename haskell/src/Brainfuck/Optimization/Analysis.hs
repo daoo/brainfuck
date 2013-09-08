@@ -14,7 +14,7 @@ import Data.Maybe
 
 -- |Check if an expression reads a certain variable
 exprDepends :: Eq v => v -> Expr n v -> Bool
-exprDepends = ((.) isJust) . findVar
+exprDepends = (isJust .) . findVar
 
 -- |Heuristically decide how much memory a program uses.
 memorySize :: Tarpit -> (Int, Int)
@@ -34,7 +34,7 @@ memorySize = \case
       If e    -> expr e
       While e -> expr e
 
-    expr = foldVarsL' (\x _ y -> x <+> (g y)) (0, 0)
+    expr = foldVarsL' (\x _ y -> x <+> g y) (0, 0)
 
     g d = case compare d 0 of
       LT -> (d, 0)
@@ -84,11 +84,11 @@ whileOnce d = go False
       Instruction fun next -> case fun of
 
         Assign d' (Const c) | d == d' && c == 0 -> go True next
-        Assign d' _         | d == d'           -> Instruction fun `fmap` (go False next)
-        GetChar d'          | d == d'           -> Instruction fun `fmap` (go False next)
+        Assign d' _         | d == d'           -> Instruction fun `fmap` go False next
+        GetChar d'          | d == d'           -> Instruction fun `fmap` go False next
 
         Shift _ -> Nothing
 
-        _ -> Instruction fun `fmap` (go b next)
+        _ -> Instruction fun `fmap` go b next
 
       Flow ctrl inner next -> Flow ctrl inner `fmap` go False next

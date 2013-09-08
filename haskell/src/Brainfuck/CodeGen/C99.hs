@@ -25,7 +25,7 @@ writeC99 code = do
   line ""
   line "int main() {"
   indentedM $ do
-    when (not $ putConstOnly code) $ do
+    unless (putConstOnly code) $ do
       line "unsigned char mem[30001];"
       line "unsigned char* ptr = mem;"
 
