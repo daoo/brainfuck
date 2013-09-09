@@ -7,20 +7,19 @@ prof:
 release:
 	@cabal build --ghc-options="-fllvm -H64m -O2"
 
-deps:
+init:
+	@cabal sandbox init
 	@cabal install --only-dependencies
-
-conf:
 	@cabal configure
 
 test:
 	@cabal test
 
-repl:
-	@cabal repl
-
 clean:
 	@cabal clean --save-configure
+
+tags:
+	@cabal repl :ctags
 
 lint:
 	@hlint src
