@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 module Brainfuck.Data.VirtualMachine where
 
-import Brainfuck.Data.Expr hiding (eval)
+import Brainfuck.Data.Expr
 import Control.Monad (unless)
 import Prelude hiding (read)
 

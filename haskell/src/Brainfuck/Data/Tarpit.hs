@@ -16,9 +16,9 @@ data Function = Assign Int IntExpr | Shift Int | PutChar IntExpr | GetChar Int
 data Control = If IntExpr | While IntExpr
   deriving Show
 
-data Tarpit = Nop
-            | Instruction Function Tarpit
+data Tarpit = Instruction Function Tarpit
             | Flow Control Tarpit Tarpit
+            | Nop
   deriving Show
 
 instance Monoid Tarpit where

@@ -29,7 +29,7 @@ rebuild m = go
     -- TODO: Could maybe improve this by traversing both structures at the same time
     go (Const c)    = Const c
     go (Var n d xs) = case M.lookup d m of
-      Just e  -> add (mul n e) (go xs)
+      Just e  -> addExpr (mulExpr n e) (go xs)
       Nothing -> Var n d (go xs)
 
 type AssignOp n v = (v, Expr n v)

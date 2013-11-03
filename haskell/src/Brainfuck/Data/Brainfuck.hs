@@ -8,9 +8,9 @@ module Brainfuck.Data.Brainfuck
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq
 
-data Brainfuck = Nop
+data Brainfuck = Token !Token Brainfuck
                | Repeat Brainfuck Brainfuck
-               | Token !Token Brainfuck
+               | Nop
   deriving Eq
 
 toChar :: Token -> Char
@@ -27,8 +27,8 @@ instance Show Token where
 
 instance Show Brainfuck where
   show = \case
-    Nop               -> ""
-    Repeat inner next -> showChar '[' $ shows inner $ showChar ']' $ show next
     Token t next      -> shows t $ show next
+    Repeat inner next -> showChar '[' $ shows inner $ showChar ']' $ show next
+    Nop               -> ""
 
   showList = flip (foldr shows)

@@ -26,7 +26,7 @@ import Prelude hiding (read)
 import qualified Control.Monad.State.Strict as S
 
 data Memory = Memory
-  { ptr :: Int
+  { ptr   :: !Int
   , array :: IOArray Int Int
   }
 

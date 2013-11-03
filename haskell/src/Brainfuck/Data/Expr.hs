@@ -3,17 +3,17 @@ module Brainfuck.Data.Expr
   ( Expr (..)
   , findVar
   , filterVars
-  , mapExpr
   , foldVarsR
   , foldVarsL'
-  , add
-  , mul
-  , eval
-  , insertExpression
-  , insertConstant
+  , addExpr
+  , shiftExpr
+  , mulExpr
+  , evalExpr
+  , insertExpr
+  , insertConst
   ) where
 
-import Brainfuck.Utility
+import Control.Arrow (first, second)
 
 -- |An expression is a sum of multiples of variables and an constant.
 -- Represented as a sorted list with the constant stored in the terminator
@@ -22,6 +22,7 @@ data Expr n v = Var !n !v (Expr n v)
               | Const !n
   deriving Show
 
+{-# SPECIALIZE findVar :: Int -> Expr Int Int -> Maybe Int #-}
 -- |Find a variable and return its multiple
 -- Ignores the constant
 findVar :: Eq v => v -> Expr n v -> Maybe n
@@ -53,6 +54,7 @@ foldVarsL' :: (a -> n -> v -> a) -> a -> Expr n v -> a
 foldVarsL' _ !acc (Const _)    = acc
 foldVarsL' f !acc (Var n v xs) = foldVarsL' f (f acc n v) xs
 
+{-# SPECIALIZE addExpr :: Expr Int Int -> Expr Int Int -> Expr Int Int #-}
 -- |Addition of two expressions
 -- Time complexity: O(n + m), follows the additon laws:
 --
@@ -61,43 +63,53 @@ foldVarsL' f !acc (Var n v xs) = foldVarsL' f (f acc n v) xs
 -- > a + (b + c) = (a + b) + c
 -- > a + 0       = a
 -- > 0 + a       = a
-add :: (Eq n, Num n, Ord v) => Expr n v -> Expr n v -> Expr n v
-add (Const c1)       (Const c2)       = Const (c1 + c2)
-add (Var n1 d1 x')   c2@(Const _)     = Var n1 d1 (add x' c2)
-add c1@(Const _)     (Var n2 d2 y')   = Var n2 d2 (add c1 y')
-add x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
-  LT -> Var n1 d1        $ add x' y
-  EQ -> app (n1 + n2) d1 $ add x' y'
-  GT -> Var n2 d2        $ add x y'
+addExpr :: (Eq n, Num n, Ord v) => Expr n v -> Expr n v -> Expr n v
+addExpr (Const c1)       (Const c2)       = Const (c1 + c2)
+addExpr (Var n1 d1 x')   c2@(Const _)     = Var n1 d1 (addExpr x' c2)
+addExpr c1@(Const _)     (Var n2 d2 y')   = Var n2 d2 (addExpr c1 y')
+addExpr x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
+  LT -> Var n1 d1        $ addExpr x' y
+  EQ -> app (n1 + n2) d1 $ addExpr x' y'
+  GT -> Var n2 d2        $ addExpr x y'
 
   where
     app 0 _ xs = xs
     app n v xs = Var n v xs
 
+{-# SPECIALIZE mulExpr :: Int -> Expr Int Int -> Expr Int Int #-}
 -- |Multiply an expression with a constant
 -- Time complexity: O(n)
-mul :: Num n => n -> Expr n v -> Expr n v
-mul n = mapExpr (mapFst (*n)) (*n)
+mulExpr :: Num n => n -> Expr n v -> Expr n v
+mulExpr n = mapExpr (first (*n)) (*n)
 
+{-# SPECIALIZE shiftExpr :: Int -> Expr Int Int -> Expr Int Int #-}
+-- |Shift all variables in an expression
+-- Time complexity: O(n)
+shiftExpr :: Num v => v -> Expr n v -> Expr n v
+shiftExpr s = mapExpr (second (+s)) id
+
+{-# SPECIALIZE evalExpr :: (Int -> Int) -> Expr Int Int -> Int #-}
 -- |Evaluate an expression using a function for resolving variables
 -- Time complexity: O(n) if f is constant time
-eval :: Num n => (v -> n) -> Expr n v -> n
-eval f = go 0
+evalExpr :: Num n => (v -> n) -> Expr n v -> n
+evalExpr f = go 0
   where
     go !acc (Const c)    = acc + c
     go !acc (Var n v xs) = go (acc + n * f v) xs
 
+{-# SPECIALIZE insertExpr :: Int -> Expr Int Int -> Expr Int Int -> Expr Int Int #-}
 -- |Insert the value of a variable into an expression
 -- Time complexity: O(n + m)
-insertExpression :: (Eq n, Num n, Ord v) => v -> Expr n v -> Expr n v -> Expr n v
-insertExpression v a b = case findVar v b of
+insertExpr :: (Eq n, Num n, Ord v) => v -> Expr n v -> Expr n v -> Expr n v
+insertExpr v a b = case findVar v b of
   Nothing -> b
-  Just n  -> mul n a `add` filterVars ((/= v) . snd) b
+  Just n  -> mulExpr n a `addExpr` filterVars ((/= v) . snd) b
 
+{-# SPECIALIZE insertConst :: Int -> Int -> Expr Int Int -> Expr Int Int #-}
 -- |Special case of insertVariable when the value is a constant
 -- Time complexity: O(n)
-insertConstant :: (Num n, Eq v) => v -> n -> Expr n v -> Expr n v
-insertConstant v c = go
+insertConst :: (Num n, Eq v) => v -> n -> Expr n v -> Expr n v
+insertConst v c = go
   where
     go (Const c')                = Const c'
     go (Var n v' xs) | v == v'   = mapExpr id (+ (n * c)) xs

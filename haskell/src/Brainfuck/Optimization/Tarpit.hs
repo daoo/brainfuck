@@ -4,7 +4,6 @@ module Brainfuck.Optimization.Tarpit where
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
-import Brainfuck.Utility
 import Data.Monoid
 import qualified Data.IntMap.Strict as M
 
@@ -51,16 +50,14 @@ shiftReduction = go 0 0
 
       Instruction fun next -> case fun of
 
-        GetChar d  -> Instruction (GetChar $ d + s)           $ go s t next
-        PutChar e  -> Instruction (PutChar $ expr s e)        $ go s t next
-        Assign d e -> Instruction (Assign (d + s) $ expr s e) $ go s t next
+        GetChar d  -> Instruction (GetChar $ d + s)                $ go s t next
+        PutChar e  -> Instruction (PutChar $ shiftExpr s e)        $ go s t next
+        Assign d e -> Instruction (Assign (d + s) $ shiftExpr s e) $ go s t next
         Shift s'   -> go (s + s') (t + s') next
 
       Flow ctrl inner next -> case ctrl of
-        If e    -> Flow (If $ expr s e)    (go s 0 inner) (go s t next)
-        While e -> Flow (While $ expr s e) (go s 0 inner) (go s t next)
-
-    expr s = mapExpr (mapSnd (+s)) id
+        If e    -> Flow (If $ shiftExpr s e)    (go s 0 inner) (go s t next)
+        While e -> Flow (While $ shiftExpr s e) (go s 0 inner) (go s t next)
 
 movePut :: Tarpit -> Tarpit
 movePut = \case
@@ -69,7 +66,7 @@ movePut = \case
   Instruction fun@(Assign d e1) next -> case movePut next of
     Instruction (PutChar e2) next' ->
       Instruction
-        (PutChar $ insertExpression d e1 e2)
+        (PutChar $ insertExpr d e1 e2)
         (movePut $ Instruction fun next')
 
     next' -> Instruction fun next'
@@ -108,5 +105,5 @@ inlineConstants = go M.empty
           Const 0 -> go m next
           _       -> Flow (While e) (go M.empty inner) (go M.empty next)
 
-    expr  = M.foldrWithKey' insertConstant
+    expr  = M.foldrWithKey' insertConst
     shift = M.mapKeysMonotonic . subtract
