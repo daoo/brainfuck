@@ -37,7 +37,7 @@ writeC99 code = do
     go :: Tarpit -> CodeWriter ()
     go = \case
       Nop                  -> return ()
-      Instruction fun next -> lineM (function fun >> string ";") >> go next
+      Instruction fun next -> lineM (function fun >> char ';') >> go next
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
