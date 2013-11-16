@@ -78,13 +78,17 @@ string = tell . stringUtf8
 indent :: CodeWriter ()
 indent = getIndent >>= string
 
+{-# INLINE lineM #-}
+{-# INLINE indentedM #-}
 lineM, indentedM :: CodeWriter () -> CodeWriter ()
 lineM m     = indent >> m >> newline
 indentedM m = incIndent >> m >> decIndent
 
+{-# INLINE line #-}
 line :: String -> CodeWriter ()
 line = lineM . string
 
+{-# INLINE surround #-}
 surround :: Char -> Char -> Bool -> CodeWriter () -> CodeWriter ()
 surround a b True inner  = char a >> inner >> char b
 surround _ _ False inner = inner
