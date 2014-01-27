@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module Brainfuck.Data.Tarpit
   ( Function (..)
   , Control (..)
@@ -10,15 +11,22 @@ import Data.Monoid
 
 type IntExpr = Expr Int Int
 
-data Function = Assign Int IntExpr | Shift Int | PutChar IntExpr | GetChar Int
+data Function where
+  Assign  :: Int -> IntExpr -> Function
+  Shift   :: Int -> Function
+  PutChar :: IntExpr -> Function
+  GetChar :: Int -> Function
   deriving Show
 
-data Control = If IntExpr | While IntExpr
+data Control where
+  If    :: IntExpr -> Control
+  While :: IntExpr -> Control
   deriving Show
 
-data Tarpit = Instruction Function Tarpit
-            | Flow Control Tarpit Tarpit
-            | Nop
+data Tarpit where
+  Instruction :: Function -> Tarpit -> Tarpit
+  Flow        :: Control -> Tarpit -> Tarpit -> Tarpit
+  Nop         :: Tarpit
   deriving Show
 
 instance Monoid Tarpit where

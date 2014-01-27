@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, GADTs #-}
 module Brainfuck.Data.Expr
   ( Expr (..)
   , findVar
@@ -18,8 +18,9 @@ import Control.Arrow (first, second)
 -- |An expression is a sum of multiples of variables and an constant.
 -- Represented as a sorted list with the constant stored in the terminator
 -- which allows for linear time addition of two expressions.
-data Expr n v = Var !n !v (Expr n v)
-              | Const !n
+data Expr n v where
+  Var   :: !n -> !v -> Expr n v -> Expr n v
+  Const :: !n -> Expr n v
   deriving Show
 
 {-# SPECIALIZE findVar :: Int -> Expr Int Int -> Maybe Int #-}
