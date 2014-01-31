@@ -11,69 +11,73 @@ import Text.CodeWriter
 type Id         = Int
 type DotState a = StateT Id CodeWriter a
 
-box, ellipse, diamond :: CodeWriter ()
-box     = string "shape=\"box\""
-ellipse = string "shape=\"ellipse\""
-diamond = string "shape=\"diamond\""
+box, ellipse, diamond :: String
+box     = "shape=\"box\""
+ellipse = "shape=\"ellipse\""
+diamond = "shape=\"diamond\""
 
 newId :: DotState Id
 newId = modify (+1) >> get
 
-makeNode :: CodeWriter () -> CodeWriter () -> Id -> DotState ()
-makeNode outline label n = lift $ lineM $ do
+writeNode :: String -> CodeWriter () -> Id -> DotState ()
+writeNode outline label n = lift $ lineM $ do
   int n
   string " [label=\""
   label
   string "\" "
-  outline
+  string outline
   string "];"
 
-makeEdge :: Id -> Id -> DotState ()
-makeEdge from to = lift $ lineM $ do
+writeEdge :: Id -> Id -> DotState ()
+writeEdge from to = lift $ lineM $ do
   int from
   string " -> "
   int to
   string ";"
 
-makeExpr :: (Show n, Show v) => Expr n v -> DotState ()
-makeExpr e = get >>= makeNode ellipse (string (show e))
+writeExpr :: (Show n, Show v) => Expr n v -> Id -> DotState ()
+writeExpr e = writeNode ellipse (string (show e))
 
 writeDot :: Tarpit -> CodeWriter ()
 writeDot code = do
   line "digraph code {"
-  indentedM $ evalStateT (go code) 0
+  indentedM $ (`evalStateT` 0) $ do
+    n <- newId
+    writeNode box (string "Root") n
+    go n code
   line "}"
 
   where
-    go :: Tarpit -> DotState ()
-    go = \case
-      Nop -> get >>= makeNode box (string "Nop")
+    go :: Id -> Tarpit -> DotState ()
+    go n = \case
+      Nop -> do
+        n' <- newId
+        writeNode box (string "Nop") n'
+        writeEdge n n'
 
       Instruction fun next -> do
-        n <- get
+        n' <- newId
         case fun of
-          Assign d e -> exprNode box (string "Assign " >> int d) e n
-          Shift i    -> makeNode box (string "Shift " >> int i) n
-          PutChar e  -> exprNode box (string "PutChar") e n
-          GetChar d  -> makeNode box (string "GetChar " >> int d) n
+          Assign  d e -> expr      box (string "Assign "  >> int d) n' e
+          Shift   i   -> writeNode box (string "Shift "   >> int i) n'
+          PutChar e   -> expr      box (string "PutChar"          ) n' e
+          GetChar d   -> writeNode box (string "GetChar " >> int d) n'
 
-        nextNode n next
+        writeEdge n n'
+        go n' next
 
       Flow ctrl inner next -> do
-        n <- get
+        n' <- newId
         case ctrl of
-          If e    -> exprNode diamond (string "If") e n
-          While e -> exprNode diamond (string "While") e n
+          If e    -> expr diamond (string "If"   ) n' e
+          While e -> expr diamond (string "While") n' e
 
-        nextNode n inner
-        nextNode n next
+        writeEdge n n'
+        go n' inner
+        go n' next
 
-    nextNode n code' = do
+    expr outline l n e = do
+      writeNode outline l n
       n' <- newId
-      makeEdge n n'
-      go code'
-
-    exprNode outline l expr n = do
-      makeNode outline l n
-      newId >>= makeEdge n
-      makeExpr expr
+      writeExpr e n'
+      writeEdge n n'
