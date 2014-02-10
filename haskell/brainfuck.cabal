@@ -32,7 +32,7 @@ library
     Brainfuck.Utility
     Data.ListZipper
     Text.CodeWriter
-  build-depends: base, mtl, array, containers, bytestring>=0.10.2.0
+  build-depends: base, mtl, array, containers, bytestring>=0.10.2.0, QuickCheck
   hs-source-dirs: src
   ghc-options: -Wall -fsimpl-tick-factor=200
   default-language: Haskell2010

@@ -70,7 +70,7 @@ copyLoop d1 = go
 
       _ -> Nothing
 
-    mult d2 c = Var c d1 (Const 0) `addExpr` Var 1 d2 (Const 0)
+    mult d2 c = Var c d1 (Const 0) .+ Var 1 d2 (Const 0)
 
 -- |Check if a while loop could be an if statement
 -- This happens when the loop condition is simple (ptr[x]), for all integer x,

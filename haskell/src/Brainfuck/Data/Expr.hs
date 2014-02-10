@@ -1,19 +1,24 @@
 {-# LANGUAGE BangPatterns, GADTs #-}
 module Brainfuck.Data.Expr
-  ( Expr (..)
+  ( Expr(..)
   , findVar
   , filterVars
   , foldVarsR
   , foldVarsL'
-  , addExpr
+
+  , (.+)
+  , (.*)
   , shiftExpr
-  , mulExpr
+
   , evalExpr
+
   , insertExpr
   , insertConst
   ) where
 
 import Control.Arrow (first, second)
+import Control.Applicative ((<$>), (<*>))
+import Test.QuickCheck
 
 -- |An expression is a sum of multiples of variables and an constant.
 -- Represented as a sorted list with the constant stored in the terminator
@@ -22,6 +27,17 @@ data Expr n v where
   Var   :: !n -> !v -> Expr n v -> Expr n v
   Const :: !n -> Expr n v
   deriving Show
+
+instance (Eq n, Eq v) => Eq (Expr n v) where
+  Const c1     == Const c2     = c1 == c2
+  Var n1 d1 xs == Var n2 d2 ys = n1 == n2 && d1 == d2 && xs == ys
+  _            == _            = False
+
+instance (Arbitrary n, Arbitrary v) => Arbitrary (Expr n v) where
+  arbitrary = frequency
+    [ (5, Const <$> arbitrary)
+    , (1, Var <$> arbitrary <*> arbitrary <*> arbitrary)
+    ]
 
 {-# SPECIALIZE findVar :: Int -> Expr Int Int -> Maybe Int #-}
 -- |Find a variable and return its multiple
@@ -55,7 +71,10 @@ foldVarsL' :: (a -> n -> v -> a) -> a -> Expr n v -> a
 foldVarsL' _ !acc (Const _)    = acc
 foldVarsL' f !acc (Var n v xs) = foldVarsL' f (f acc n v) xs
 
-{-# SPECIALIZE addExpr :: Expr Int Int -> Expr Int Int -> Expr Int Int #-}
+infixl 5 .+
+infixl 6 .*
+
+{-# SPECIALIZE (.+) :: Expr Int Int -> Expr Int Int -> Expr Int Int #-}
 -- |Addition of two expressions
 -- Time complexity: O(n + m), follows the additon laws:
 --
@@ -64,24 +83,24 @@ foldVarsL' f !acc (Var n v xs) = foldVarsL' f (f acc n v) xs
 -- > a + (b + c) = (a + b) + c
 -- > a + 0       = a
 -- > 0 + a       = a
-addExpr :: (Eq n, Num n, Ord v) => Expr n v -> Expr n v -> Expr n v
-addExpr (Const c1)       (Const c2)       = Const (c1 + c2)
-addExpr (Var n1 d1 x')   c2@(Const _)     = Var n1 d1 (addExpr x' c2)
-addExpr c1@(Const _)     (Var n2 d2 y')   = Var n2 d2 (addExpr c1 y')
-addExpr x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
-  LT -> Var n1 d1        $ addExpr x' y
-  EQ -> app (n1 + n2) d1 $ addExpr x' y'
-  GT -> Var n2 d2        $ addExpr x y'
+(.+) :: (Eq n, Num n, Ord v) => Expr n v -> Expr n v -> Expr n v
+(.+) (Const c1)       (Const c2)       = Const (c1 + c2)
+(.+) (Var n1 d1 x')   c2@(Const _)     = Var n1 d1 (x' .+ c2)
+(.+) c1@(Const _)     (Var n2 d2 y')   = Var n2 d2 (c1 .+ y')
+(.+) x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
+  LT -> Var n1 d1        $ x' .+ y
+  EQ -> app (n1 + n2) d1 $ x' .+ y'
+  GT -> Var n2 d2        $ x  .+ y'
 
   where
     app 0 _ xs = xs
     app n v xs = Var n v xs
 
-{-# SPECIALIZE mulExpr :: Int -> Expr Int Int -> Expr Int Int #-}
+{-# SPECIALIZE (.*) :: Int -> Expr Int Int -> Expr Int Int #-}
 -- |Multiply an expression with a constant
 -- Time complexity: O(n)
-mulExpr :: Num n => n -> Expr n v -> Expr n v
-mulExpr n = mapExpr (first (*n)) (*n)
+(.*) :: Num n => n -> Expr n v -> Expr n v
+(.*) n = mapExpr (first (*n)) (*n)
 
 {-# SPECIALIZE shiftExpr :: Int -> Expr Int Int -> Expr Int Int #-}
 -- |Shift all variables in an expression
@@ -104,7 +123,7 @@ evalExpr f = go 0
 insertExpr :: (Eq n, Num n, Ord v) => v -> Expr n v -> Expr n v -> Expr n v
 insertExpr v a b = case findVar v b of
   Nothing -> b
-  Just n  -> mulExpr n a `addExpr` filterVars ((/= v) . snd) b
+  Just n  -> (n .* a) .+ filterVars ((/= v) . snd) b
 
 {-# SPECIALIZE insertConst :: Int -> Int -> Expr Int Int -> Expr Int Int #-}
 -- |Special case of insertVariable when the value is a constant

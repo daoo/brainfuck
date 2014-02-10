@@ -11,17 +11,6 @@ import Brainfuck.Data.Expr
 import Control.Applicative hiding (Const)
 import Test.QuickCheck
 
-instance (Arbitrary n, Arbitrary v) => Arbitrary (Expr n v) where
-  arbitrary = frequency
-    [ (5, Const <$> arbitrary)
-    , (1, Var <$> arbitrary <*> arbitrary <*> arbitrary)
-    ]
-
-eq :: (Eq n, Eq v) => Expr n v -> Expr n v -> Bool
-eq (Const c1) (Const c2)         = c1 == c2
-eq (Var n1 d1 xs) (Var n2 d2 ys) = n1 == n2 && d1 == d2 && eq xs ys
-eq _ _                           = False
-
 propExprIsSorted :: Expr Int Int -> Bool
 propExprIsSorted = go True
   where
