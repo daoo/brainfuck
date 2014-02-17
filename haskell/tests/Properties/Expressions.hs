@@ -19,8 +19,12 @@ propExprIsSorted = go True
 propExprAddSorted :: Expr Int Int -> Expr Int Int -> Bool
 propExprAddSorted a b = propExprIsSorted (a .+ b)
 
-propExprEvalAdd :: Expr Int Int -> Expr Int Int -> Bool
-propExprEvalAdd a b = evalExpr id (a .+ b) == evalExpr id a + evalExpr id b
+propExprEvalAdd :: [Int] -> Expr Int Int -> Expr Int Int -> Bool
+propExprEvalAdd xs a b = evalExpr (mem xs) (a .+ b) == evalExpr (mem xs) a + evalExpr (mem xs) b
 
-propExprEvalMul :: Int -> Expr Int Int -> Bool
-propExprEvalMul i e = evalExpr id (i .* e) == i * evalExpr id e
+propExprEvalMul :: [Int] -> Int -> Expr Int Int -> Bool
+propExprEvalMul xs i e = evalExpr (mem xs) (i .* e) == i * evalExpr (mem xs) e
+
+mem :: [Int] -> Int -> Int
+mem [] _ = 0
+mem xs i = xs !! (i `mod` length xs)

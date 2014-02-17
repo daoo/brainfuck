@@ -26,7 +26,10 @@ import Test.QuickCheck
 data Expr n v where
   Var   :: !n -> !v -> Expr n v -> Expr n v
   Const :: !n -> Expr n v
-  deriving Show
+
+instance (Show n, Show v) => Show (Expr n v) where
+  show (Const c)   = show c
+  show (Var n v e) = shows n $ showString "*" $ shows v $ showString " + " $ show e
 
 instance (Eq n, Eq v) => Eq (Expr n v) where
   Const c1     == Const c2     = c1 == c2
