@@ -9,7 +9,6 @@ module Utility
   , expectedOutput
   ) where
 
-import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Interpret
 import Control.Monad
@@ -17,15 +16,6 @@ import Data.Char
 import Data.Foldable hiding (all)
 import Data.ListZipper
 import Test.QuickCheck
-
-instance (Eq n, Num n, Ord v) => Num (Expr n v) where
-  fromInteger = Const . fromInteger
-
-  (+) = add
-
-  (*)    = undefined
-  abs    = undefined
-  signum = undefined
 
 wnull, wspace :: Num n => n
 wnull  = 0

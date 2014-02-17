@@ -3,13 +3,10 @@ module Properties.Expressions
   ( propExprIsSorted
   , propExprAddSorted
   , propExprEvalAdd
-  , propExprMapId
-  , Arbitrary
+  , propExprEvalMul
   ) where
 
 import Brainfuck.Data.Expr
-import Control.Applicative hiding (Const)
-import Test.QuickCheck
 
 propExprIsSorted :: Expr Int Int -> Bool
 propExprIsSorted = go True
@@ -20,10 +17,10 @@ propExprIsSorted = go True
       Var _ d1 (Var _ d2 xs) -> go (b && d1 <= d2) xs
 
 propExprAddSorted :: Expr Int Int -> Expr Int Int -> Bool
-propExprAddSorted a b = propExprIsSorted (add a b)
+propExprAddSorted a b = propExprIsSorted (a .+ b)
 
 propExprEvalAdd :: Expr Int Int -> Expr Int Int -> Bool
-propExprEvalAdd a b = eval id (a `add` b) == eval id a + eval id b
+propExprEvalAdd a b = evalExpr id (a .+ b) == evalExpr id a + evalExpr id b
 
-propExprMapId :: Expr Int Int -> Bool
-propExprMapId a = mapExpr id id a `eq` a
+propExprEvalMul :: Int -> Expr Int Int -> Bool
+propExprEvalMul i e = evalExpr id (i .* e) == i * evalExpr id e

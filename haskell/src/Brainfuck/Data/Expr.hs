@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, GADTs #-}
+{-# LANGUAGE BangPatterns, GADTs, FlexibleInstances #-}
 module Brainfuck.Data.Expr
   ( Expr(..)
   , findVar
@@ -17,7 +17,7 @@ module Brainfuck.Data.Expr
   ) where
 
 import Control.Arrow (first, second)
-import Control.Applicative ((<$>), (<*>))
+import Control.Applicative ((<$>))
 import Test.QuickCheck
 
 -- |An expression is a sum of multiples of variables and an constant.
@@ -33,11 +33,18 @@ instance (Eq n, Eq v) => Eq (Expr n v) where
   Var n1 d1 xs == Var n2 d2 ys = n1 == n2 && d1 == d2 && xs == ys
   _            == _            = False
 
-instance (Arbitrary n, Arbitrary v) => Arbitrary (Expr n v) where
-  arbitrary = frequency
-    [ (5, Const <$> arbitrary)
-    , (1, Var <$> arbitrary <*> arbitrary <*> arbitrary)
-    ]
+instance Arbitrary (Expr Int Int) where
+  arbitrary = sized (go 0)
+    where
+      go _ 0 = Const <$> arbitrary
+      go i s = do
+        n <- arbitrary
+        v <- suchThat arbitrary (>=i)
+        Var n v <$> go v (s `div` 2)
+
+  shrink (Const c)   = map Const $ shrink c
+  shrink (Var n v e) = e : map (\n' -> Var n' v e) (shrink n) ++
+                           map (\v' -> Var n v' e) (shrink v)
 
 {-# SPECIALIZE findVar :: Int -> Expr Int Int -> Maybe Int #-}
 -- |Find a variable and return its multiple

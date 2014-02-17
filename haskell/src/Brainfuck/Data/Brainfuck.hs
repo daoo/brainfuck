@@ -5,13 +5,27 @@ module Brainfuck.Data.Brainfuck
   , toChar
   ) where
 
+import Control.Applicative
+import Test.QuickCheck
+
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
   deriving Eq
+
+instance Arbitrary Token where
+  arbitrary = elements [Plus, Minus, ShiftRight, ShiftLeft, Input, Output]
 
 data Brainfuck = Token !Token Brainfuck
                | Repeat Brainfuck Brainfuck
                | Nop
   deriving Eq
+
+instance Arbitrary Brainfuck where
+  arbitrary = sized go
+    where
+      go 0 = return Nop
+      go n = frequency [ (1, Repeat <$> go (n-1) <*> go (n `div` 2))
+                       , (7, Token <$> arbitrary <*> go (n-1))
+                       ]
 
 toChar :: Token -> Char
 toChar = \case

@@ -28,7 +28,7 @@ tests =
       [ testProperty "Is sorted" propExprIsSorted
       , testProperty "Sorted after add" propExprAddSorted
       , testProperty "Eval add" propExprEvalAdd
-      , testProperty "Map id" propExprMapId
+      , testProperty "Eval mul" propExprEvalMul
       ]
     ]
   ]
