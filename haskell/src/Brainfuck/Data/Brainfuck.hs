@@ -2,7 +2,6 @@
 module Brainfuck.Data.Brainfuck
   ( Token(..)
   , Brainfuck(..)
-  , toChar
   ) where
 
 import Control.Applicative
@@ -27,17 +26,14 @@ instance Arbitrary Brainfuck where
                        , (7, Token <$> arbitrary <*> go (n-1))
                        ]
 
-toChar :: Token -> Char
-toChar = \case
-  Plus       -> '+'
-  Minus      -> '-'
-  ShiftLeft  -> '<'
-  ShiftRight -> '>'
-  Input      -> ','
-  Output     -> '.'
-
 instance Show Token where
-  show t = [toChar t]
+  show = \case
+    Plus       -> "+"
+    Minus      -> "-"
+    ShiftLeft  -> "<"
+    ShiftRight -> ">"
+    Input      -> ","
+    Output     -> "."
 
 instance Show Brainfuck where
   show = \case

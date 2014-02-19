@@ -15,6 +15,9 @@ tests =
   [ testGroup "QuickCheck"
     [ testGroup "Misc"
       [ testProperty "ListZipper move size" propZipperMoveSize
+      , testProperty "ListZipper move inversion" propZipperMoveInv
+      , testProperty "ListZipper left right" propZipperLeftRight
+      , testProperty "ListZipper right left" propZipperRightLeft
       ]
     , testGroup "Compiler"
       [ testProperty "Compile Decompile invariant" propCompileDecompile

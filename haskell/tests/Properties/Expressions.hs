@@ -9,12 +9,12 @@ module Properties.Expressions
 import Brainfuck.Data.Expr
 
 propExprIsSorted :: Expr Int Int -> Bool
-propExprIsSorted = go True
+propExprIsSorted = go
   where
-    go b = \case
-      Const _                -> b
-      Var _ _ (Const _)      -> b
-      Var _ d1 (Var _ d2 xs) -> go (b && d1 <= d2) xs
+    go = \case
+      Const _                -> True
+      Var _ _ (Const _)      -> True
+      Var _ d1 (Var _ d2 xs) -> d1 <= d2 && go xs
 
 propExprAddSorted :: Expr Int Int -> Expr Int Int -> Bool
 propExprAddSorted a b = propExprIsSorted (a .+ b)

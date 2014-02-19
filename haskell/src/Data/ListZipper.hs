@@ -11,6 +11,9 @@ module Data.ListZipper
   , cut
   ) where
 
+import Control.Applicative
+import Test.QuickCheck
+
 -- |List zipper data structure.
 -- Tuned for performance, thus does not throw any errors if you try to access
 -- elements out of range etc.
@@ -24,6 +27,12 @@ data ListZipper a = ListZipper
   , focus :: !a
   , right :: [a]
   } deriving (Show, Eq)
+
+instance Arbitrary a => Arbitrary (ListZipper a) where
+  arbitrary = ListZipper <$> arbitrary <*> arbitrary <*> arbitrary
+
+  shrink (ListZipper xs y zs) =
+    [ ListZipper xs' y' zs' | xs' <- shrink xs, y' <- shrink y, zs' <- shrink zs ]
 
 -- |Return the length of the list zipper.
 -- That is the length of the left and the right plus 1 (for the focus).

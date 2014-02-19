@@ -1,18 +1,36 @@
-module Properties.Misc where
+module Properties.Misc
+  ( propZipperMoveSize
+  , propZipperMoveInv
+  , propZipperLeftRight
+  , propZipperRightLeft
+  ) where
 
 import Control.Applicative
 import Data.ListZipper
 import Test.QuickCheck
 
-instance Arbitrary a => Arbitrary (ListZipper a) where
-  arbitrary = ListZipper <$> arbitrary <*> arbitrary <*> arbitrary
+genNonEmpty :: Arbitrary a => Gen (ListZipper a)
+genNonEmpty = ListZipper <$> (listOf1 arbitrary) <*> arbitrary <*> (listOf1 arbitrary)
 
-  shrink (ListZipper xs y zs) = map (\(xs', zs') -> ListZipper xs' y zs')
-                              $ zip (shrink xs) (shrink zs)
-
-propZipperMoveSize :: ListZipper Int -> Property
-propZipperMoveSize a@(ListZipper xs _ zs) =
-  not (null xs) && not (null zs) ==>
-    forAll (choose (-m, m)) $ \i -> size a == size (move i a)
+genMinLen :: ListZipper a -> Gen Int
+genMinLen (ListZipper xs _ zs) = choose (-m, m)
   where
     m = min (length xs) (length zs)
+
+propZipperMoveSize :: Property
+propZipperMoveSize = forAll (genNonEmpty :: Gen (ListZipper ())) $
+  \a -> forAll (genMinLen a) $
+    \i -> size a == size (move i a)
+
+propZipperMoveInv :: Property
+propZipperMoveInv = forAll (genNonEmpty :: Gen (ListZipper ())) $
+  \a -> forAll (genMinLen a) $
+    \i -> a == (move (-i) $ move i a)
+
+propZipperLeftRight :: Property
+propZipperLeftRight = forAll (genNonEmpty :: Gen (ListZipper ())) $
+  \a -> a == moveRight (moveLeft a)
+
+propZipperRightLeft :: Property
+propZipperRightLeft = forAll (genNonEmpty :: Gen (ListZipper ())) $
+  \a -> a == moveLeft (moveRight a)
