@@ -26,4 +26,4 @@ clean:
 	@cabal configure $(disable_all)
 
 lint:
-	@hlint src
+	@hlint src tests

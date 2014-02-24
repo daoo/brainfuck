@@ -10,7 +10,7 @@ import Data.ListZipper
 import Test.QuickCheck
 
 genNonEmpty :: Arbitrary a => Gen (ListZipper a)
-genNonEmpty = ListZipper <$> (listOf1 arbitrary) <*> arbitrary <*> (listOf1 arbitrary)
+genNonEmpty = ListZipper <$> listOf1 arbitrary <*> arbitrary <*> listOf1 arbitrary
 
 genMinLen :: ListZipper a -> Gen Int
 genMinLen (ListZipper xs _ zs) = choose (-m, m)
@@ -25,7 +25,7 @@ propZipperMoveSize = forAll (genNonEmpty :: Gen (ListZipper ())) $
 propZipperMoveInv :: Property
 propZipperMoveInv = forAll (genNonEmpty :: Gen (ListZipper ())) $
   \a -> forAll (genMinLen a) $
-    \i -> a == (move (-i) $ move i a)
+    \i -> a == move (-i) (move i a)
 
 propZipperLeftRight :: Property
 propZipperLeftRight = forAll (genNonEmpty :: Gen (ListZipper ())) $

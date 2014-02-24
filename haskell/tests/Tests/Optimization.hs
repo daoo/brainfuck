@@ -8,13 +8,12 @@ import Text.CodeWriter
 import Utility
 
 example1 :: Tarpit
-example1 = Instruction (Assign 6 $ 0)
+example1 = Instruction (Assign 6 0)
          $ Instruction (Assign 6 $ var 1 5 + var 1 6)
-         $ Instruction (Assign 5 $ 0)
+         $ Instruction (Assign 5 0)
          $ Instruction (Assign 5 $ var 1 5 + var 1 7)
          $ Instruction (Assign 6 $ var 1 6 + var 1 7)
-         $ Instruction (Assign 7 $ 0)
-         $ Nop
+         $ Instruction (Assign 7 0) Nop
 
 test = tests [testMemory 100] example1 (optimizeAssign example1)
 
