@@ -8,8 +8,9 @@ prof:
 	@cabal build --ghc-options="-Wall -rtsopts -prof -fprof-auto"
 
 release:
+	@cabal clean
 	@cabal configure $(disable_all)
-	@cabal build --ghc-options="-Wall -O2 -fllvm -fignore-asserts -fforce-recomp"
+	@cabal build --ghc-options="-Wall -O2 -fignore-asserts"
 
 init:
 	@cabal sandbox init
