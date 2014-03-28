@@ -1,100 +1,90 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 module Text.CodeWriter
   ( CodeWriter()
+  , writeCode
+  , writeCode1
+
   , decIndent
   , incIndent
-  , lineM
-  , indentedM
+  , lined
+  , indented
+  , surround
 
   , char
   , int
   , line
-  , newline
   , string
-  , surround
-
-  , writeCode
-  , writeCode1
   ) where
 
-import Brainfuck.Utility
+import Control.Arrow
+import Control.Monad.State
 import Data.ByteString.Builder
 import Data.Monoid
 import qualified Data.ByteString.Lazy.Char8 as BS
 
-newtype CodeWriter a = CodeWriter { runCodeWriter :: String -> (a, String, Builder) }
+-- |Indentation with a cached builder.
+type Indent = (Int, Builder)
 
-instance Monad CodeWriter where
-  {-# INLINE return #-}
-  return x = CodeWriter $ \ind -> (x, ind, mempty)
+noindent :: Indent
+noindent = (0, mempty)
 
-  {-# INLINE (>>=) #-}
-  m >>= f = CodeWriter $ \ind -> case runCodeWriter m ind of
-    (a, ind', build) -> case runCodeWriter (f a) ind' of
-      (b, ind'', build') -> (b, ind'', build <> build')
+indentStep :: Builder
+indentStep = char8 ' ' <> char8 ' '
 
-  {-# INLINE (>>) #-}
-  m1 >> m2 = CodeWriter $ \ind -> case runCodeWriter m1 ind of
-    (_, ind', build) -> case runCodeWriter m2 ind' of
-      (b, ind'', build') -> (b, ind'', build <> build')
+findent :: (Int -> Int) -> Indent -> Indent
+findent f (i, _) = let i' = f i in (i', indents i')
+  where
+    indents = mconcat . (`replicate` indentStep)
 
-  fail = error
+inc, dec :: Indent -> Indent
+inc = findent (+1)
+dec = findent (subtract 1)
 
-{-# INLINE getIndent #-}
-getIndent :: CodeWriter String
-getIndent = CodeWriter $ \ind -> (ind, ind, mempty)
+type CodeWriter = State (Indent, Builder)
 
-{-# INLINE modIndent #-}
-modIndent :: (String -> String) -> CodeWriter ()
-modIndent f = CodeWriter $ \ind -> ((), f ind, mempty)
+getIndent :: CodeWriter Builder
+getIndent = gets (snd . fst)
 
-{-# INLINE tell #-}
+modIndent :: (Indent -> Indent) -> CodeWriter ()
+modIndent = modify . first
+
 tell :: Builder -> CodeWriter ()
-tell w = CodeWriter $ \ind -> ((), ind, w)
+tell = modify . second . flip mappend
 
-{-# INLINE incIndent #-}
-{-# INLINE decIndent #-}
 incIndent, decIndent :: CodeWriter ()
-incIndent = modIndent ((:) ' ' . (:) ' ')
-decIndent = modIndent (drop 2)
+incIndent = modIndent inc
+decIndent = modIndent dec
 
-{-# INLINE char #-}
 char :: Char -> CodeWriter ()
-char = tell . charUtf8
+char = tell . char8
 
-{-# INLINE int #-}
 int :: Int -> CodeWriter ()
 int = tell . intDec
 
-{-# INLINE newline #-}
 newline :: CodeWriter ()
 newline = char '\n'
 
-{-# INLINE string #-}
 string :: String -> CodeWriter ()
-string = tell . stringUtf8
+string = tell . string8
 
-{-# INLINE indent #-}
 indent :: CodeWriter ()
-indent = getIndent >>= string
+indent = getIndent >>= tell
 
-{-# INLINE lineM #-}
-{-# INLINE indentedM #-}
-lineM, indentedM :: CodeWriter () -> CodeWriter ()
-lineM m     = indent >> m >> newline
-indentedM m = incIndent >> m >> decIndent
+-- |Write a code writer with indentation and an new line at the end.
+lined :: CodeWriter () -> CodeWriter ()
+lined m = indent >> m >> newline
 
-{-# INLINE line #-}
+indented :: CodeWriter () -> CodeWriter ()
+indented m = incIndent >> m >> decIndent
+
 line :: String -> CodeWriter ()
-line = lineM . string
+line = lined . string
 
-{-# INLINE surround #-}
 surround :: Char -> Char -> Bool -> CodeWriter () -> CodeWriter ()
 surround a b True inner  = char a >> inner >> char b
 surround _ _ False inner = inner
 
 writeCode :: CodeWriter () -> Builder
-writeCode = thrd . (`runCodeWriter` "")
+writeCode m = snd $ execState m (noindent, mempty)
 
 writeCode1 :: CodeWriter () -> String
 writeCode1 = BS.unpack . toLazyByteString . writeCode

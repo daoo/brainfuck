@@ -20,7 +20,7 @@ newId :: DotState Id
 newId = modify (+1) >> get
 
 writeNode :: String -> CodeWriter () -> Id -> DotState ()
-writeNode outline label n = lift $ lineM $ do
+writeNode outline label n = lift $ lined $ do
   int n
   string " [label=\""
   label
@@ -29,7 +29,7 @@ writeNode outline label n = lift $ lineM $ do
   string "];"
 
 writeEdge :: Id -> Id -> DotState ()
-writeEdge from to = lift $ lineM $ do
+writeEdge from to = lift $ lined $ do
   int from
   string " -> "
   int to
@@ -41,7 +41,7 @@ writeExpr e = writeNode ellipse (string (show e))
 writeDot :: Tarpit -> CodeWriter ()
 writeDot code = do
   line "digraph code {"
-  indentedM $ (`evalStateT` 0) $ do
+  indented $ (`evalStateT` 0) $ do
     n <- newId
     writeNode box (string "Root") n
     go n code

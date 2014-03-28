@@ -13,13 +13,13 @@ writeHaskell code = do
   line ""
   line "main :: IO ()"
   line "main = runMemory 30001 $ do"
-  indentedM $ go code
+  indented $ go code
 
   where
     go = \case
       Nop                  -> return ()
-      Instruction fun next -> lineM (function fun) >> go next
-      Flow ctrl inner next -> control ctrl >> indentedM (go inner) >> go next
+      Instruction fun next -> lined (function fun) >> go next
+      Flow ctrl inner next -> control ctrl >> indented (go inner) >> go next
 
     control = \case
       If e    -> block "when" e
@@ -33,7 +33,7 @@ writeHaskell code = do
 
     safeint d = surround '(' ')' (d < 0) (int d)
 
-    block str e = lineM $ do
+    block str e = lined $ do
       string str
       string " ("
       string $ show e

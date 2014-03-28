@@ -24,7 +24,7 @@ writeC99 code = do
   line "#include <stdio.h>"
   line ""
   line "int main() {"
-  indentedM $ do
+  indented $ do
     unless (putConstOnly code) $ do
       line "unsigned char mem[30001];"
       line "unsigned char* ptr = mem;"
@@ -37,7 +37,7 @@ writeC99 code = do
     go :: Tarpit -> CodeWriter ()
     go = \case
       Nop                  -> return ()
-      Instruction fun next -> lineM (function fun >> char ';') >> go next
+      Instruction fun next -> lined (function fun >> char ';') >> go next
       Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
@@ -45,12 +45,12 @@ writeC99 code = do
       If e    -> block "if" e
 
     block word e ys = do
-      lineM $ do
+      lined $ do
         string word
         string " ("
         writeExpr e
         string ") {"
-      indentedM $ go ys
+      indented $ go ys
       line "}"
 
     function = \case
