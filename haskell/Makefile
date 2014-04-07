@@ -1,7 +1,6 @@
-disable_all=--disable-library-profiling --disable-executable-profiling --disable-tests --disable-benchmarks
 
 build:
-	@cabal build --ghc-options="-Wall -O -rtsopts -fno-ignore-asserts"
+	@cabal build --ghc-options="-Wall -O -fno-ignore-asserts"
 
 prof:
 	@cabal configure --enable-library-profiling --enable-executable-profiling
@@ -9,13 +8,8 @@ prof:
 
 release:
 	@cabal clean
-	@cabal configure $(disable_all)
+	@cabal configure
 	@cabal build --ghc-options="-Wall -O2 -fignore-asserts"
-
-init:
-	@cabal sandbox init
-	@cabal install --only-dependencies --enable-library-profiling --enable-tests
-	@cabal configure $(disable_all)
 
 test:
 	@cabal configure --enable-tests
@@ -23,8 +17,7 @@ test:
 	./dist/build/tests/tests
 
 clean:
-	@cabal clean --save-configure
-	@cabal configure $(disable_all)
+	@cabal clean
 
 lint:
 	@hlint src tests
