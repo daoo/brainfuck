@@ -51,12 +51,13 @@ putConstOnly = \case
   _                                    -> False
 
 -- |Analyze a loop for a copy/multiply structure
--- A copy loop is a loop that follow these criteria:
+--
+-- A copy loop is a loop that follow the following criteria:
+--
 --   * Contains no shifts, puts or gets.
 --   * The loop memory position is decremented by 1. If it's decremented by some
 --     other value we can not determine if it reaches zero or overflows.
---   * Increment or decrement any other memory cell by any integer.
--- If the supplied instruction isn't a Loop, we will return Nothing.
+--   * Increments or decrements any other memory cell by any integer.
 copyLoop :: Int -> Tarpit -> Maybe Tarpit
 copyLoop d1 = go
   where
@@ -72,9 +73,13 @@ copyLoop d1 = go
 
     mult d2 c = Var c d1 (Const 0) .+ Var 1 d2 (Const 0)
 
--- |Check if a while loop could be an if statement
--- This happens when the loop condition is simple (ptr[x]), for all integer x,
--- and when there is an instruction ptr[x] = 0 in the loop body.
+-- |Check if a while loop could be an if statement.
+--
+-- When the loop is conditioned over a variable and that variable is assigned
+-- the value zero in the loop body we know that the loop will only be executed
+-- once. Thus we can convert it to an if statement and the zero assignment can
+-- be moved out to after the if statement (as long as no values in the loop
+-- body relies on the value of the loop condition).
 whileOnce :: Int -> Tarpit -> Maybe Tarpit
 whileOnce d xs = if find False xs
   then Just $ filt xs

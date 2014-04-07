@@ -5,105 +5,73 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Data.Monoid
-import qualified Data.IntMap.Strict as M
 
-flowReduction :: Tarpit -> Tarpit
-flowReduction = \case
-  Flow _ Nop next -> flowReduction next
+type Reduction = Tarpit -> Maybe Tarpit
 
-  Flow (While (Const 0)) _     next -> flowReduction next
-  Flow (If    (Const 0)) _     next -> flowReduction next
-  Flow (While (Const _)) inner _    -> Flow (While (Const 1)) (flowReduction inner) Nop
-  Flow (If    (Const _)) inner next -> flowReduction $ inner `mappend` next
-
-  Nop                  -> Nop
-  Instruction fun next -> Instruction fun (flowReduction next)
-  Flow ctrl inner next -> Flow ctrl (flowReduction inner) (flowReduction next)
-
-whileToIf :: Tarpit -> Tarpit
-whileToIf = \case
-  Flow ctrl@(While e@(Var 1 d (Const 0))) inner next -> case whileOnce d (whileToIf inner) of
-
-    Just inner' -> Flow (If e) inner' (Instruction (Assign d $ Const 0) (whileToIf next))
-    Nothing     -> Flow ctrl (whileToIf inner) (whileToIf next)
-
-  Nop                  -> Nop
-  Instruction fun next -> Instruction fun (whileToIf next)
-  Flow ctrl inner next -> Flow ctrl (whileToIf inner) (whileToIf next)
-
-copyLoopReduction :: Tarpit -> Tarpit
-copyLoopReduction = \case
-  Flow ctrl@(While (Var 1 d (Const 0))) inner next -> case copyLoop d inner of
-
-    Just inner'' -> inner'' `mappend` copyLoopReduction next
-    Nothing      -> Flow ctrl (copyLoopReduction inner) (copyLoopReduction next)
-
-  Nop                  -> Nop
-  Instruction fun next -> Instruction fun (copyLoopReduction next)
-  Flow ctrl inner next -> Flow ctrl (copyLoopReduction inner) (copyLoopReduction next)
-
-shiftReduction :: Tarpit -> Tarpit
-shiftReduction = go 0 0
-  where
-    go !s !t = \case
-      Nop -> if t /= 0 then Instruction (Shift t) Nop else Nop
-
-      Instruction fun next -> case fun of
-
-        GetChar d  -> Instruction (GetChar $ d + s)                $ go s t next
-        PutChar e  -> Instruction (PutChar $ shiftExpr s e)        $ go s t next
-        Assign d e -> Instruction (Assign (d + s) $ shiftExpr s e) $ go s t next
-        Shift s'   -> go (s + s') (t + s') next
-
-      Flow ctrl inner next -> case ctrl of
-        If e    -> Flow (If $ shiftExpr s e)    (go s 0 inner) (go s t next)
-        While e -> Flow (While $ shiftExpr s e) (go s 0 inner) (go s t next)
-
-movePut :: Tarpit -> Tarpit
-movePut = \case
+reduce :: Reduction -> Tarpit -> Tarpit
+reduce f a = case a of
   Nop -> Nop
 
-  Instruction fun@(Assign d e1) next -> case movePut next of
-    Instruction (PutChar e2) next' ->
+  Instruction fun next -> let a' = Instruction fun (reduce f next) in
+    case f a' of
+      Nothing  -> a'
+      Just a'' -> reduce f a''
+
+  Flow ctrl inner next -> let a' = Flow ctrl (reduce f inner) (reduce f next) in
+    case f a' of
+      Nothing  -> a'
+      Just a'' -> reduce f a''
+
+-- |Combine two reductions.
+--
+-- Tries both, or either, or none.
+pipe :: Reduction -> Reduction -> Reduction
+pipe f g a = case f a of
+  Nothing -> g a
+  Just a' -> case g a' of
+    Nothing  -> Just a'
+    Just a'' -> Just a''
+
+-- |Reduce flow control statements.
+--
+-- Reduces never-running and infinite loops.
+flowReduction :: Tarpit -> Maybe Tarpit
+flowReduction = \case
+  Flow (While (Const 0)) _     next -> return $ next
+  Flow (If    (Const 0)) _     next -> return $ next
+  Flow (While (Const _)) inner _    -> return $ Flow (While (Const 1)) inner Nop
+  Flow (If    (Const _)) inner next -> return $ inner `mappend` next
+
+  _ -> Nothing
+
+-- |Reduce while loops to if statements (see 'whileOnce').
+whileReduction :: Tarpit -> Maybe Tarpit
+whileReduction = \case
+  Flow (While e@(Var 1 d (Const 0))) inner next ->
+    fmap (f e d next) (whileOnce d inner)
+
+  _ -> Nothing
+
+  where
+    f e d next inner' = Flow (If e) inner' (Instruction (Assign d $ Const 0) next)
+
+-- |Reduce copy loops (see 'copyLoop').
+copyLoopReduction :: Tarpit -> Maybe Tarpit
+copyLoopReduction = \case
+  Flow (While (Var 1 d (Const 0))) inner next ->
+    fmap (\inner' -> inner' <> next) (copyLoop d inner)
+
+  _ -> Nothing
+
+-- |Move put instructions to after assignments by inlining the assignment.
+--
+-- Allows expressions in put instructions to be fully evaluated.
+putReduction :: Tarpit -> Maybe Tarpit
+putReduction = \case
+  Instruction fun@(Assign d e1)
+    (Instruction (PutChar e2) next) -> Just $
       Instruction
         (PutChar $ insertExpr d e1 e2)
-        (movePut $ Instruction fun next')
+        (Instruction fun next)
 
-    next' -> Instruction fun next'
-
-  Instruction fun next -> Instruction fun (movePut next)
-  Flow ctrl inner next -> Flow ctrl (movePut inner) (movePut next)
-
-inlineConstants :: Tarpit -> Tarpit
-inlineConstants = go M.empty
-  where
-    go m = \case
-      Nop -> Nop
-
-      Instruction fun next -> case fun of
-
-        GetChar d          -> Instruction fun                  $ go (M.delete d m) next
-        PutChar e          -> Instruction (PutChar $ expr e m) $ go m next
-        Assign d (Const c) -> Instruction fun                  $ go (M.insert d c m) next
-        Shift s            -> Instruction fun                  $ go (shift s m) next
-
-        Assign d e -> case expr e m of
-
-          e'@(Const c) -> Instruction (Assign d e') $ go (M.insert d c m) next
-          e'           -> Instruction (Assign d e') $ go (M.delete d m) next
-
-      Flow ctrl inner next -> case ctrl of
-
-        If e -> case expr e m of
-
-          Const 0 -> go m next
-          Const _ -> go m $ inner `mappend` next
-          e'      -> Flow (If e') (go m inner) (go M.empty next)
-
-        While e -> case expr e m of
-
-          Const 0 -> go m next
-          _       -> Flow (While e) (go M.empty inner) (go M.empty next)
-
-    expr  = M.foldrWithKey' insertConst
-    shift = M.mapKeysMonotonic . subtract
+  _ -> Nothing

@@ -11,16 +11,14 @@ loopUnrolling = unrollEntierly
 fullOptimization :: Tarpit -> Tarpit
 fullOptimization = removeFromEnd
                  . optimizeAssign
-                 . movePut
-                 . flowReduction
+                 . reduce (putReduction `pipe` flowReduction)
                  . inlineConstants
                  . inlineZeros
-                 . whileToIf
-                 . copyLoopReduction
-                 . shiftReduction
+                 . reduce (whileReduction `pipe` copyLoopReduction)
+                 . inlineShifts
 
 simpleOptimizations :: Tarpit -> Tarpit
 simpleOptimizations = inlineZeros
-                    . flowReduction
-                    . shiftReduction
+                    . reduce flowReduction
+                    . inlineShifts
                     . inlineZeros
