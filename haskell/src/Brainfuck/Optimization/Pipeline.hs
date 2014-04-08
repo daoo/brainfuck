@@ -13,7 +13,7 @@ fullOptimization = removeFromEnd
                  . optimizeAssign
                  . inlineConstants
                  . inlineZeros
-                 . reduce (putReduction `pipe` flowReduction `pipe` whileReduction `pipe` copyLoopReduction)
+                 . reduce (putReduction # flowReduction # whileReduction # copyLoopReduction)
                  . inlineShifts
 
 simpleOptimizations :: Tarpit -> Tarpit

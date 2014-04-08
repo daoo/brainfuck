@@ -4,33 +4,30 @@ module Brainfuck.Optimization.Tarpit where
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
+import Control.Applicative hiding (Const)
 import Data.Monoid
 
 type Reduction = Tarpit -> Maybe Tarpit
 
 reduce :: Reduction -> Tarpit -> Tarpit
-reduce f a = case a of
-  Nop -> Nop
+reduce f = \case
+  Nop                  -> Nop
+  Instruction fun next -> helper (Instruction fun (reduce f next))
+  Flow ctrl inner next -> helper (Flow ctrl (reduce f inner) (reduce f next))
 
-  Instruction fun next -> let a' = Instruction fun (reduce f next) in
-    case f a' of
-      Nothing  -> a'
-      Just a'' -> reduce f a''
-
-  Flow ctrl inner next -> let a' = Flow ctrl (reduce f inner) (reduce f next) in
-    case f a' of
-      Nothing  -> a'
-      Just a'' -> reduce f a''
+  where
+    helper a = case f a of
+      Nothing -> a
+      Just a' -> reduce f a'
 
 -- |Combine two reductions.
 --
--- Tries both, or either, or none.
-pipe :: Reduction -> Reduction -> Reduction
-pipe f g a = case f a of
-  Nothing -> g a
-  Just a' -> case g a' of
-    Nothing  -> Just a'
-    Just a'' -> Just a''
+-- Tries both, either, or none. The following properties holds:
+--
+-- prop> pure # pure == id
+-- prop> const empty # const empty == id
+(#) :: Reduction -> Reduction -> Reduction
+(#) f g a = (f a >>= g) <|> f a <|> g a
 
 -- |Reduce flow control statements.
 --
