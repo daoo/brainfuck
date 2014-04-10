@@ -5,7 +5,7 @@ import Brainfuck.Data.Expr
 import Control.Monad (unless)
 import Prelude hiding (read)
 
-class (Monad vm) => VirtualMachine vm where
+class (Functor vm, Monad vm) => VirtualMachine vm where
   shift :: Int -> vm ()
   read :: Int -> vm Int
   write :: Int -> Int -> vm ()
@@ -15,10 +15,7 @@ class (Monad vm) => VirtualMachine vm where
 
 {-# INLINE eval #-}
 eval :: VirtualMachine vm => Expr Int Int -> vm Int
-eval = go 0
-  where
-    go !acc (Const c)    = return $ acc + c
-    go !acc (Var n d xs) = read d >>= \x -> go (acc + x * n) xs
+eval = foldExprM' (\acc n d -> (\x -> acc + n*x) `fmap` read d) (+) 0
 
 {-# INLINE set #-}
 set :: VirtualMachine vm => Int -> Expr Int Int -> vm ()
