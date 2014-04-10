@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, BangPatterns #-}
+{-# LANGUAGE LambdaCase #-}
 module Brainfuck.Optimization.Tarpit where
 
 import Brainfuck.Data.Expr

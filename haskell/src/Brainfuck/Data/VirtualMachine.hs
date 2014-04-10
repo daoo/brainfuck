@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 module Brainfuck.Data.VirtualMachine where
 
 import Brainfuck.Data.Expr
@@ -15,7 +14,7 @@ class (Functor vm, Monad vm) => VirtualMachine vm where
 
 {-# INLINE eval #-}
 eval :: VirtualMachine vm => Expr Int Int -> vm Int
-eval = foldExprM' (\acc n d -> (\x -> acc + n*x) `fmap` read d) (+) 0
+eval = foldExprM' (\acc n d -> ((acc+) . (n*)) `fmap` read d) (+) 0
 
 {-# INLINE set #-}
 set :: VirtualMachine vm => Int -> Expr Int Int -> vm ()
