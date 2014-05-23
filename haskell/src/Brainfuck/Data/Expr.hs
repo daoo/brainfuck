@@ -1,6 +1,14 @@
 {-# LANGUAGE BangPatterns, GADTs, FlexibleInstances #-}
 module Brainfuck.Data.Expr
   ( Expr(..)
+
+  , econst
+  , evar
+  , isZero
+  , isConst
+  , isConst'
+  , isVarConst
+
   , findVar
   , filterVars
   , foldVarsR
@@ -27,6 +35,31 @@ import Test.QuickCheck
 data Expr n v where
   Var   :: !n -> !v -> Expr n v -> Expr n v
   Const :: !n -> Expr n v
+
+econst :: n -> Expr n v
+econst = Const
+
+evar :: Num n => v -> Expr n v
+evar v = Var 1 v (Const 0)
+
+{-# INLINE isZero #-}
+isZero :: (Num n, Eq n) => Expr n v -> Bool
+isZero (Const 0) = True
+isZero _         = False
+
+{-# INLINE isConst #-}
+isConst :: Expr n v -> Bool
+isConst (Const _) = True
+isConst _         = False
+
+{-# INLINE isConst' #-}
+isConst' :: Eq n => n -> Expr n v -> Bool
+isConst' a (Const b) = a == b
+isConst' _ _         = False
+
+isVarConst :: (Num n, Eq n, Eq v) => v -> n -> Expr n v -> Bool
+isVarConst v c (Var 1 v' (Const c')) = v == v' && c == c'
+isVarConst _ _ _                     = False
 
 instance (Show n, Show v) => Show (Expr n v) where
   show (Const c)   = show c

@@ -4,6 +4,8 @@ module Brainfuck.Data.Tarpit
   , Control (..)
   , Tarpit (..)
   , IntExpr
+  , (&=)
+  , (&=!)
   ) where
 
 import Brainfuck.Data.Expr
@@ -36,3 +38,9 @@ instance Monoid Tarpit where
     Nop                  -> b
     Instruction fun next -> Instruction fun (mappend next b)
     Flow ctrl inner next -> Flow ctrl inner (mappend next b)
+
+(&=) :: Int -> Int -> Function
+d &= c = Assign d (econst c)
+
+(&=!) :: Int -> IntExpr -> Function
+(&=!) = Assign

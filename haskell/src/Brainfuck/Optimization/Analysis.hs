@@ -46,9 +46,9 @@ memorySize = \case
 -- |Check if some tarpit consists soley of PutChar (Const _) instructions
 putConstOnly :: Tarpit -> Bool
 putConstOnly = \case
-  Nop                                  -> True
-  Instruction (PutChar (Const _)) next -> putConstOnly next
-  _                                    -> False
+  Nop                          -> True
+  Instruction (PutChar e) next -> isConst e && putConstOnly next
+  _                            -> False
 
 -- |Analyze a loop for a copy/multiply structure
 --
@@ -62,7 +62,7 @@ copyLoop :: Int -> Tarpit -> Maybe Tarpit
 copyLoop d1 = go
   where
     go = \case
-      Nop -> Just $ Instruction (Assign d1 $ Const 0) Nop
+      Nop -> Just $ Instruction (d1 &= 0) Nop
 
       Instruction (Assign d2 (Var 1 d3 (Const c))) next
         | d1 == d2 && d2 == d3 && c == (-1) -> go next
@@ -71,7 +71,7 @@ copyLoop d1 = go
 
       _ -> Nothing
 
-    mult d2 c = Var c d1 (Const 0) .+ Var 1 d2 (Const 0)
+    mult d2 c = (c .* evar d1) .+ evar d2
 
 -- |Check if a while loop could be an if statement.
 --
@@ -105,7 +105,7 @@ whileOnce d xs = if find False xs
 
       Instruction fun next -> case fun of
 
-        Assign d' (Const 0) | d == d' -> filt next
-        _                             -> Instruction fun $ filt next
+        Assign d' e | isZero e && d == d' -> filt next
+        _                                 -> Instruction fun $ filt next
 
       Flow ctrl inner next -> Flow ctrl inner $ filt next

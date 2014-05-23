@@ -34,10 +34,13 @@ reduce f = \case
 -- Reduces never-running and infinite loops.
 flowReduction :: Tarpit -> Maybe Tarpit
 flowReduction = \case
-  Flow (While (Const 0)) _     next -> return $ next
-  Flow (If    (Const 0)) _     next -> return $ next
-  Flow (While (Const _)) inner _    -> return $ Flow (While (Const 1)) inner Nop
-  Flow (If    (Const _)) inner next -> return $ inner `mappend` next
+  Flow (While e) inner next
+    | isZero  e -> return next
+    | isConst e -> return (Flow (While (econst 1)) inner Nop)
+
+  Flow (If e) inner next
+    | isZero  e -> return next
+    | isConst e -> return (inner <> next)
 
   _ -> Nothing
 

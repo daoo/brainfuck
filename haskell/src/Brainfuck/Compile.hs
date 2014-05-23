@@ -8,7 +8,7 @@ import Brainfuck.Data.Tarpit as Tarpit
 compile :: Brainfuck -> Tarpit
 compile = \case
   BF.Nop            -> Tarpit.Nop
-  Repeat inner next -> Flow (While (Var 1 0 (Const 0))) (compile inner) (compile next)
+  Repeat inner next -> Flow (While (evar 0)) (compile inner) (compile next)
   Token t next      -> Instruction (token t) (compile next)
   where
     token = \case
