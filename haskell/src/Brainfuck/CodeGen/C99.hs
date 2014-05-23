@@ -13,11 +13,6 @@ import Text.CodeWriter
 runtime :: String
 runtime = "#include <stdio.h>\n"
 
-memory :: String
-memory =
-  "unsigned char mem[30001];\n\
-  \unsigned char* ptr = mem;\n"
-
 writeExpr :: IntExpr -> CodeWriter ()
 writeExpr = \case
   Const c           -> int c
@@ -31,18 +26,23 @@ writeC99 :: Tarpit -> CodeWriter ()
 writeC99 code = do
   string runtime
   newline
-  line "int main() {"
+  line "int main()"
+  line "{"
   indented $ do
-    unless (putConstOnly code) $ string memory
-    go code
+    unless (putConstOnly code) $ do
+      line "unsigned char mem[30001];"
+      line "unsigned char* ptr = mem;"
+    writeStms code
     line "return 0;"
   line "}"
+
+writeStms :: Tarpit -> CodeWriter ()
+writeStms = \case
+  Nop                  -> return ()
+  Instruction fun next -> lined (function fun >> char ';') >> writeStms next
+  Flow ctrl inner next -> control ctrl inner >> writeStms next
+
   where
-    go :: Tarpit -> CodeWriter ()
-    go = \case
-      Nop                  -> return ()
-      Instruction fun next -> lined (function fun >> char ';') >> go next
-      Flow ctrl inner next -> control ctrl inner >> go next
 
     control = \case
       While e -> block "while" e
@@ -54,7 +54,7 @@ writeC99 code = do
         string " ("
         writeExpr e
         string ") {"
-      indented $ go ys
+      indented $ writeStms ys
       line "}"
 
     function = \case
