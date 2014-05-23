@@ -13,6 +13,8 @@ module Text.CodeWriter
   , int
   , line
   , string
+
+  , newline
   ) where
 
 import Control.Arrow
@@ -41,6 +43,12 @@ dec = findent (subtract 1)
 
 type CodeWriter = State (Indent, Builder)
 
+writeCode :: CodeWriter () -> Builder
+writeCode m = snd $ execState m (noindent, mempty)
+
+writeCode1 :: CodeWriter () -> String
+writeCode1 = BS.unpack . toLazyByteString . writeCode
+
 getIndent :: CodeWriter Builder
 getIndent = gets (snd . fst)
 
@@ -59,9 +67,6 @@ char = tell . char8
 
 int :: Int -> CodeWriter ()
 int = tell . intDec
-
-newline :: CodeWriter ()
-newline = char '\n'
 
 string :: String -> CodeWriter ()
 string = tell . string8
@@ -83,8 +88,5 @@ surround :: Char -> Char -> Bool -> CodeWriter () -> CodeWriter ()
 surround a b True inner  = char a >> inner >> char b
 surround _ _ False inner = inner
 
-writeCode :: CodeWriter () -> Builder
-writeCode m = snd $ execState m (noindent, mempty)
-
-writeCode1 :: CodeWriter () -> String
-writeCode1 = BS.unpack . toLazyByteString . writeCode
+newline :: CodeWriter ()
+newline = char '\n'

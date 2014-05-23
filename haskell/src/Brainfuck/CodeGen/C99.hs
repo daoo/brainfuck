@@ -10,6 +10,14 @@ import Control.Monad
 import Data.Char
 import Text.CodeWriter
 
+runtime :: String
+runtime = "#include <stdio.h>\n"
+
+memory :: String
+memory =
+  "unsigned char mem[30001];\n\
+  \unsigned char* ptr = mem;\n"
+
 writeExpr :: IntExpr -> CodeWriter ()
 writeExpr = \case
   Const c           -> int c
@@ -21,16 +29,12 @@ writeExpr = \case
 
 writeC99 :: Tarpit -> CodeWriter ()
 writeC99 code = do
-  line "#include <stdio.h>"
-  line ""
+  string runtime
+  newline
   line "int main() {"
   indented $ do
-    unless (putConstOnly code) $ do
-      line "unsigned char mem[30001];"
-      line "unsigned char* ptr = mem;"
-
+    unless (putConstOnly code) $ string memory
     go code
-
     line "return 0;"
   line "}"
   where
