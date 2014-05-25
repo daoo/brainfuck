@@ -7,7 +7,12 @@ module Text.CodeWriter
   , incIndent
   , lined
   , indented
+
   , surround
+  , parentheses
+
+  , separate
+  , commaSeparate
 
   , char
   , int
@@ -15,6 +20,7 @@ module Text.CodeWriter
   , string
 
   , newline
+  , space
   ) where
 
 import Control.Arrow
@@ -75,8 +81,12 @@ indent :: CodeWriter ()
 indent = getIndent >>= tell
 
 -- |Write a code writer with indentation and an new line at the end.
-lined :: CodeWriter () -> CodeWriter ()
-lined m = indent >> m >> newline
+lined :: CodeWriter a -> CodeWriter a
+lined m = do
+  indent
+  a <- m
+  newline
+  return a
 
 indented :: CodeWriter () -> CodeWriter ()
 indented m = incIndent >> m >> decIndent
@@ -88,5 +98,17 @@ surround :: Char -> Char -> Bool -> CodeWriter () -> CodeWriter ()
 surround a b True inner  = char a >> inner >> char b
 surround _ _ False inner = inner
 
-newline :: CodeWriter ()
+separate :: CodeWriter () -> [CodeWriter ()] -> CodeWriter ()
+separate _   []           = return ()
+separate _   [a]          = a
+separate sep (a:as@(_:_)) = a >> sep >> separate sep as
+
+commaSeparate :: [CodeWriter ()] -> CodeWriter ()
+commaSeparate = separate (string ", ")
+
+newline, space :: CodeWriter ()
 newline = char '\n'
+space   = char ' '
+
+parentheses :: CodeWriter () -> CodeWriter ()
+parentheses = surround '(' ')' True

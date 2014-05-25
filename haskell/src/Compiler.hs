@@ -4,6 +4,7 @@ import Brainfuck.CodeGen.C99
 import Brainfuck.CodeGen.Dot
 import Brainfuck.CodeGen.Haskell
 import Brainfuck.CodeGen.Indented
+import Brainfuck.CodeGen.LLVM
 import Brainfuck.Compile
 import Brainfuck.Optimization.Pipeline
 import Brainfuck.Parse
@@ -16,7 +17,7 @@ import Text.CodeWriter
 import qualified Data.ByteString.Char8 as BS
 
 data Action = Compile | Help deriving (Show, Read)
-data Target = Indented | C99 | Haskell | Dot deriving (Show, Read)
+data Target = Indented | C99 | LLVM | Haskell | Dot deriving (Show, Read)
 
 data Options = Options
   { optAction :: Action
@@ -38,7 +39,7 @@ printHelp = putStrLn (usageInfo header options)
 
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "{Indented|C99|Haskell|Dot}") "target language"
+  [ Option "t" ["target"] (ReqArg (\arg opt -> opt { optTarget = read arg }) "{Indented|C99|LLVM|Haskell|Dot}") "target language"
   , Option "O" ["optimize"] (ReqArg (\arg opt -> opt { optOptimize = read arg }) "{0|1|2|3}") "optimizations"
   , Option "h" ["help"] (NoArg (\opt -> opt { optAction = Help})) "show help"
   ]
@@ -64,6 +65,7 @@ main = do
         case optTarget opts of
           Indented -> writeIndented
           C99      -> writeC99
+          LLVM     -> writeLLVM
           Haskell  -> writeHaskell
           Dot      -> writeDot
 

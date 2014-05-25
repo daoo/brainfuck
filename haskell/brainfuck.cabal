@@ -15,6 +15,9 @@ library
     Brainfuck.CodeGen.Dot
     Brainfuck.CodeGen.Haskell
     Brainfuck.CodeGen.Indented
+    Brainfuck.CodeGen.LLVM
+    Brainfuck.CodeGen.LLVM.Internal
+    Brainfuck.CodeGen.LLVM.Writer
     Brainfuck.Compile
     Brainfuck.Data.Brainfuck
     Brainfuck.Data.Expr

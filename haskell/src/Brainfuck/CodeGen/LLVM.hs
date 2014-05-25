@@ -1,26 +1,20 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.CodeGen.LLVM (writeLLVM) where
 
+import Brainfuck.CodeGen.LLVM.Internal
+import Brainfuck.CodeGen.LLVM.Writer
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Control.Monad
-import Data.Char
 import Text.CodeWriter
 
 runtime :: String
 runtime =
-  "@declare void @putchar(i8)\n\
-  \@declare i8 @getchar()\n\
+  "declare void @putchar(i8)\n\
+  \declare i8 @getchar()\
   \\n\
-  \%Tmem = type [i8 x 30001]\n"
-
-memory :: String
-memory =
-  "%mem = alloca %Tmem\n\
-  \%ptr = alloca %i8*\n\
-  \%i0 = getelementptr %Tmem* %mem, 0, 0\n\
-  \store %i8* %i0, %i8** %ptr\n"
+  \@mem = internal global [30001 x i8] zeroinitializer\n"
 
 writeLLVM :: Tarpit -> CodeWriter ()
 writeLLVM code = do
@@ -29,30 +23,33 @@ writeLLVM code = do
   line "define i32 @main()"
   line "{"
   indented $ do
-    unless (putConstOnly code) $ string memory
-    writeInstrs code
+    unless (putConstOnly code) $ do
+      line "%ptr = alloca i8*"
+      line "%i0 = getelementptr [30001 x i8]* @mem, i32 0, i32 0"
+      line "store i8* %i0, i8** %ptr"
+    runLLVM $ writeInstrs code
     line "ret i32 0"
   line "}"
 
-writeInstrs :: Tarpit -> CodeWriter ()
+writeInstrs :: Tarpit -> LLVMWriter ()
 writeInstrs = \case
   Nop                  -> return ()
   Instruction fun next -> function fun >> writeInstrs next
   Flow ctrl inner next -> control ctrl inner >> writeInstrs next
 
   where
-    ptr = VLocal (TPtr (TPtr TCell)) (Local "ptr")
     getchar = Global "getchar"
     putchar = Global "putchar"
 
     function = \case
       Shift s -> do
-        p <- writeGetElemPtr ptr [VLit s]
-        writeStore p ptr
+        t1 <- writeLoad ptr
+        t2 <- writeGetElemPtr (TPtr TCell) t1 [VLit s]
+        writeStore (VLocal t2) ptr
 
       GetChar d -> do
-        v <- writeCall getchar []
-        writeToPtr "%t1"
+        v <- writeCall TCell getchar []
+        writeStorePtr d (VLocal v)
 
       PutChar e -> do
         v <- writeExpr e
@@ -60,40 +57,72 @@ writeInstrs = \case
 
       Assign d e -> do
         v <- writeExpr e
-        p <- writeGetElemPtr
-        writeStore v p
+        writeStorePtr d v
 
     control ctrl inner = case ctrl of
       If e -> do
+        true <- newLabel
+        next <- newLabel
         v <- writeExpr e
-        writeBranchIf v true next
-        writeLabel true
-        writeStms inner
+        t <- writeCmpNeq v (VLit 0)
+        writeBranchIf (VLocal t) true next
+        writeLabelLine true
+        writeInstrs inner
         writeBranch next
-        writeLabel next
+        writeLabelLine next
 
       While e -> do
+        cond <- newLabel
+        loop <- newLabel
+        next <- newLabel
         writeBranch cond
-        writeLabel cond
+
+        writeLabelLine cond
         v <- writeExpr e
-        writeBranchIf v loop next
-        writeLabel loop
-        writeStms inner
+        t <- writeCmpNeq v (VLit 0)
+        writeBranchIf (VLocal t) loop next
+
+        writeLabelLine loop
+        writeInstrs inner
         writeBranch cond
-        writeLabel next
 
-data Type = TMem | TCell | TPtr Type | TVoid
+        writeLabelLine next
 
-data Value
-  = VGlobal Type Global
-  | VLocal Type Local
-  | VLit Int
+writeExpr :: IntExpr -> LLVMWriter Value
+writeExpr (Const n) = return $ VLit n
 
-newtype Global = Global String
-newtype Local  = Local String
+writeExpr (Var 1 d (Const 0)) = VLocal `fmap` writeReadPtr d
 
-writeVoidCall :: Global -> [Value] -> CodeWriter ()
-writeVoidCall f args = do
-  string "call void "
-  writeGlobal f
-  parentheses (commaSeparate (map writeValue args))
+writeExpr (Var 1 d e) = do
+  t1 <- writeReadPtr d
+  t2 <- writeExpr e
+  VLocal `fmap` writeAdd (VLocal t1) t2
+
+writeExpr (Var n d e) = do
+  t1 <- writeReadPtr d
+  t2 <- writeMul (VLit n) (VLocal t1)
+  t3 <- writeExpr e
+  VLocal `fmap` writeAdd (VLocal t2) t3
+
+tptr :: Type
+tptr = TPtr (TPtr TCell)
+
+ptr :: Local
+ptr = Local tptr "ptr"
+
+writePtr :: Int -> LLVMWriter Local
+writePtr 0 = writeLoad ptr
+writePtr d = do
+  t1 <- writeLoad ptr
+  t2 <- writeGetElemPtr (TPtr TCell) t1 [VLit d]
+  return t2
+
+writeReadPtr :: Int -> LLVMWriter Local
+writeReadPtr d = do
+  p <- writePtr d
+  writeLoad p
+
+writeStorePtr :: Int -> Value -> LLVMWriter ()
+writeStorePtr d v = do
+  p <- writePtr d
+  writeStore v p
