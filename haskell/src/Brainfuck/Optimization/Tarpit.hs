@@ -59,7 +59,7 @@ whileReduction = \case
 copyLoopReduction :: Tarpit -> Maybe Tarpit
 copyLoopReduction = \case
   Flow (While (Var 1 d (Const 0))) inner next ->
-    fmap (\inner' -> inner' <> next) (copyLoop d inner)
+    fmap (<> next) (copyLoop d inner)
 
   _ -> Nothing
 

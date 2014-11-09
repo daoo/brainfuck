@@ -37,19 +37,16 @@ library
     Text.CodeWriter
   build-depends: base, mtl, array, containers, bytestring>=0.10.4.0, QuickCheck
   hs-source-dirs: src
-  ghc-options: -Wall -fsimpl-tick-factor=200
   default-language: Haskell2010
 
 executable bf
   main-is: src/Interpreter.hs
   build-depends: base, brainfuck, bytestring>=0.10.4.0
-  ghc-options: -Wall
   default-language: Haskell2010
 
 executable bfc
   main-is: src/Compiler.hs
   build-depends: base, brainfuck, bytestring>=0.10.4.0
-  ghc-options: -Wall
   default-language: Haskell2010
 
 test-suite brainfuck-tests
@@ -58,5 +55,4 @@ test-suite brainfuck-tests
   main-is: MainTestSuite.hs
   build-depends: base, brainfuck, QuickCheck, test-framework,
     test-framework-quickcheck2, bytestring>=0.10.4.0
-  ghc-options: -Wall -fno-warn-orphans
   default-language: Haskell2010
