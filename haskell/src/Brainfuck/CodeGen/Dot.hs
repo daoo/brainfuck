@@ -35,7 +35,7 @@ writeEdge from to = lift $ lined $ do
   int to
   string ";"
 
-writeExpr :: (Show n, Show v) => Expr n v -> Id -> DotState ()
+writeExpr :: Expr -> Id -> DotState ()
 writeExpr e = writeNode ellipse (string (show e))
 
 writeDot :: Tarpit -> CodeWriter ()

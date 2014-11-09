@@ -32,45 +32,45 @@ import Test.QuickCheck
 -- |An expression is a sum of multiples of variables and an constant.
 -- Represented as a sorted list with the constant stored in the terminator
 -- which allows for linear time addition of two expressions.
-data Expr n v where
-  Var   :: !n -> !v -> Expr n v -> Expr n v
-  Const :: !n -> Expr n v
+data Expr where
+  Var   :: !Int -> !Int -> Expr -> Expr
+  Const :: !Int -> Expr
 
-econst :: n -> Expr n v
+econst :: Int -> Expr
 econst = Const
 
-evar :: Num n => v -> Expr n v
+evar :: Int -> Expr
 evar v = Var 1 v (Const 0)
 
 {-# INLINE isZero #-}
-isZero :: (Num n, Eq n) => Expr n v -> Bool
+isZero :: Expr -> Bool
 isZero (Const 0) = True
 isZero _         = False
 
 {-# INLINE isConst #-}
-isConst :: Expr n v -> Bool
+isConst :: Expr -> Bool
 isConst (Const _) = True
 isConst _         = False
 
 {-# INLINE isConst' #-}
-isConst' :: Eq n => n -> Expr n v -> Bool
+isConst' :: Int -> Expr -> Bool
 isConst' a (Const b) = a == b
 isConst' _ _         = False
 
-isVarConst :: (Num n, Eq n, Eq v) => v -> n -> Expr n v -> Bool
+isVarConst :: Int -> Int -> Expr -> Bool
 isVarConst v c (Var 1 v' (Const c')) = v == v' && c == c'
 isVarConst _ _ _                     = False
 
-instance (Show n, Show v) => Show (Expr n v) where
+instance Show Expr where
   show (Const c)   = show c
   show (Var n v e) = shows n $ showString "*" $ shows v $ showString " + " $ show e
 
-instance (Eq n, Eq v) => Eq (Expr n v) where
+instance Eq Expr where
   Const c1     == Const c2     = c1 == c2
   Var n1 d1 xs == Var n2 d2 ys = n1 == n2 && d1 == d2 && xs == ys
   _            == _            = False
 
-instance Arbitrary (Expr Int Int) where
+instance Arbitrary Expr where
   arbitrary = sized (go 0)
     where
       go _ 0 = Const <$> arbitrary
@@ -83,11 +83,10 @@ instance Arbitrary (Expr Int Int) where
   shrink (Var n v e) = e : map (\n' -> Var n' v e) (shrink n) ++
                            map (\v' -> Var n v' e) (shrink v)
 
-{-# SPECIALIZE findVar :: Int -> Expr Int Int -> Maybe Int #-}
 -- |Find a variable and return its multiple.
 --
 -- Ignores the constant.
-findVar :: Eq v => v -> Expr n v -> Maybe n
+findVar :: Int -> Expr -> Maybe Int
 findVar _ (Const _)                 = Nothing
 findVar v (Var n v' xs) | v == v'   = Just n
                         | otherwise = findVar v xs
@@ -95,7 +94,7 @@ findVar v (Var n v' xs) | v == v'   = Just n
 -- |Filter the variables of an expression.
 --
 -- Leaves the constant unchanged.
-filterVars :: ((n, v) -> Bool) -> Expr n v -> Expr n v
+filterVars :: ((Int, Int) -> Bool) -> Expr -> Expr
 filterVars _ e@(Const _)              = e
 filterVars f (Var n v xs) | f (n, v)  = Var n v (filterVars f xs)
                           | otherwise = filterVars f xs
@@ -104,34 +103,33 @@ filterVars f (Var n v xs) | f (n, v)  = Var n v (filterVars f xs)
 --
 -- The function @f@ is required to be monotonic as the resulting expression is
 -- not resorted. Time complexity O(n).
-mapExpr :: ((n, v) -> (m, u)) -> (n -> m) -> Expr n v -> Expr m u
+mapExpr :: ((Int, Int) -> (Int, Int)) -> (Int -> Int) -> Expr -> Expr
 mapExpr _ g (Const c)    = Const (g c)
 mapExpr f g (Var n v xs) = uncurry Var (f (n, v)) $ mapExpr f g xs
 
 -- |Right fold variables in an expression.
 --
 -- Ignores the constant.
-foldVarsR :: (n -> v -> a -> a) -> a -> Expr n v -> a
+foldVarsR :: (Int -> Int -> a -> a) -> a -> Expr -> a
 foldVarsR _ acc (Const _)    = acc
 foldVarsR f acc (Var n v xs) = f n v $ foldVarsR f acc xs
 
 -- |Strict left fold variables in an expression.
 --
 -- Ignores the constant.
-foldVarsL' :: (a -> n -> v -> a) -> a -> Expr n v -> a
+foldVarsL' :: (a -> Int -> Int -> a) -> a -> Expr -> a
 foldVarsL' _ !acc (Const _)    = acc
 foldVarsL' f !acc (Var n v xs) = foldVarsL' f (f acc n v) xs
 
 -- |Strict fold with a monadic variable lookup function and a different
 -- function for the constant.
-foldExprM' :: Monad m => (acc -> n -> v -> m acc) -> (acc -> n -> acc) -> acc -> Expr n v -> m acc
+foldExprM' :: Monad m => (acc -> Int -> Int -> m acc) -> (acc -> Int -> acc) -> acc -> Expr -> m acc
 foldExprM' _ g !acc (Const c)    = return $ g acc c
 foldExprM' f g !acc (Var n v xs) = f acc n v >>= \acc' -> foldExprM' f g acc' xs
 
 infixl 5 .+
 infixl 6 .*
 
-{-# SPECIALIZE (.+) :: Expr Int Int -> Expr Int Int -> Expr Int Int #-}
 -- |Addition of two expressions.
 --
 -- Time complexity is O(n + m) and the laws for additon holds:
@@ -140,7 +138,7 @@ infixl 6 .*
 -- prop> a .+ (b .+ c) = (a .+ b) .+ c
 -- prop> a .+ 0 = a
 -- prop> 0 .+ a = a
-(.+) :: (Eq n, Num n, Ord v) => Expr n v -> Expr n v -> Expr n v
+(.+) :: Expr -> Expr -> Expr
 (.+) (Const c1)       (Const c2)       = Const (c1 + c2)
 (.+) (Var n1 d1 x')   c2@(Const _)     = Var n1 d1 (x' .+ c2)
 (.+) c1@(Const _)     (Var n2 d2 y')   = Var n2 d2 (c1 .+ y')
@@ -153,40 +151,35 @@ infixl 6 .*
     app 0 _ xs = xs
     app n v xs = Var n v xs
 
-{-# SPECIALIZE (.*) :: Int -> Expr Int Int -> Expr Int Int #-}
 -- |Multiply an expression with a constant.
 --
 -- Time complexity O(n).
-(.*) :: Num n => n -> Expr n v -> Expr n v
+(.*) :: Int -> Expr -> Expr
 (.*) n = mapExpr (first (*n)) (*n)
 
-{-# SPECIALIZE shiftExpr :: Int -> Expr Int Int -> Expr Int Int #-}
 -- |Shift all variables in an expression
 -- Time complexity O(n)
-shiftExpr :: Num v => v -> Expr n v -> Expr n v
+shiftExpr :: Int -> Expr -> Expr
 shiftExpr s = mapExpr (second (+s)) id
 
-{-# SPECIALIZE evalExpr :: (Int -> Int) -> Expr Int Int -> Int #-}
 -- |Evaluate an expression using a function for resolving variables
 -- Time complexity O(n) if f is constant time
-evalExpr :: Num n => (v -> n) -> Expr n v -> n
+evalExpr :: (Int -> Int) -> Expr -> Int
 evalExpr f = go 0
   where
     go !acc (Const c)    = acc + c
     go !acc (Var n v xs) = go (acc + n * f v) xs
 
-{-# SPECIALIZE insertExpr :: Int -> Expr Int Int -> Expr Int Int -> Expr Int Int #-}
 -- |Insert the value of a variable into an expression.
 -- Time complexity O(n + m)
-insertExpr :: (Eq n, Num n, Ord v) => v -> Expr n v -> Expr n v -> Expr n v
+insertExpr :: Int -> Expr -> Expr -> Expr
 insertExpr v a b = case findVar v b of
   Nothing -> b
   Just n  -> (n .* a) .+ filterVars ((/= v) . snd) b
 
-{-# SPECIALIZE insertConst :: Int -> Int -> Expr Int Int -> Expr Int Int #-}
 -- |Special case of 'insertExpr' when the value is a constant
 -- Time complexity O(n)
-insertConst :: (Num n, Eq v) => v -> n -> Expr n v -> Expr n v
+insertConst :: Int -> Int -> Expr -> Expr
 insertConst v c = go
   where
     go (Const c')                = Const c'

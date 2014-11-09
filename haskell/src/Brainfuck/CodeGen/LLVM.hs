@@ -88,7 +88,7 @@ writeInstrs = \case
 
         writeLabelLine next
 
-writeExpr :: IntExpr -> LLVMWriter Value
+writeExpr :: Expr -> LLVMWriter Value
 writeExpr (Const n) = return $ VLit n
 
 writeExpr (Var 1 d (Const 0)) = VLocal `fmap` writeReadPtr d

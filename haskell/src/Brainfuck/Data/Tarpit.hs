@@ -3,7 +3,6 @@ module Brainfuck.Data.Tarpit
   ( Function (..)
   , Control (..)
   , Tarpit (..)
-  , IntExpr
   , (&=)
   , (&=!)
   ) where
@@ -11,18 +10,16 @@ module Brainfuck.Data.Tarpit
 import Brainfuck.Data.Expr
 import Data.Monoid
 
-type IntExpr = Expr Int Int
-
 data Function where
-  Assign  :: Int -> IntExpr -> Function
+  Assign  :: Int -> Expr -> Function
   Shift   :: Int -> Function
-  PutChar :: IntExpr -> Function
+  PutChar :: Expr -> Function
   GetChar :: Int -> Function
   deriving Show
 
 data Control where
-  If    :: IntExpr -> Control
-  While :: IntExpr -> Control
+  If    :: Expr -> Control
+  While :: Expr -> Control
   deriving Show
 
 data Tarpit where
@@ -42,5 +39,5 @@ instance Monoid Tarpit where
 (&=) :: Int -> Int -> Function
 d &= c = Assign d (econst c)
 
-(&=!) :: Int -> IntExpr -> Function
+(&=!) :: Int -> Expr -> Function
 (&=!) = Assign

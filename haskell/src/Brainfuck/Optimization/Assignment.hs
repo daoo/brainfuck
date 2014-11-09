@@ -23,7 +23,7 @@ optimizeAssign = go M.empty
       Flow ctrl inner next -> makeOptimal m $ Flow ctrl (go M.empty inner) (go M.empty next)
 
 -- |Inline only on each variable, instead of on the whole expression every time
-rebuild :: (Eq n, Num n) => M.IntMap (Expr n Int) -> Expr n Int -> Expr n Int
+rebuild :: M.IntMap Expr -> Expr -> Expr
 rebuild m = go
   where
     -- TODO: Could maybe improve this by traversing both structures at the same time
@@ -32,14 +32,14 @@ rebuild m = go
       Just e  -> n .* e .+ go xs
       Nothing -> Var n d (go xs)
 
-type AssignOp n v = (v, Expr n v)
+type AssignOp = (Int, Expr)
 
 -- |Calculate the optimal representation of some Assign ILs
 -- TODO: Handle cyclical dependencies
-makeOptimal :: M.IntMap IntExpr -> Tarpit -> Tarpit
+makeOptimal :: M.IntMap Expr -> Tarpit -> Tarpit
 makeOptimal ops next = mergeOps next $ topSort $ M.assocs ops
 
-mergeOps :: Tarpit -> [AssignOp Int Int] -> Tarpit
+mergeOps :: Tarpit -> [AssignOp] -> Tarpit
 mergeOps = foldr (Instruction . uncurry Assign)
 
 -- Initial Code:
@@ -69,7 +69,7 @@ mergeOps = foldr (Instruction . uncurry Assign)
 -- 1: Var 1
 -- 2: Var 1
 
-topSort :: Ord v => [AssignOp n v] -> [AssignOp n v]
+topSort :: [AssignOp] -> [AssignOp]
 topSort xs = let (graph, vertex, _) = G.graphFromEdges $ map mkvert xs
               in map (retrieve . vertex) $ G.topSort graph
   where

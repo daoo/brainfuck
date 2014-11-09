@@ -13,7 +13,7 @@ import Text.CodeWriter
 runtime :: String
 runtime = "#include <stdio.h>\n"
 
-writeExpr :: IntExpr -> CodeWriter ()
+writeExpr :: Expr -> CodeWriter ()
 writeExpr = \case
   Const c           -> int c
   Var n d (Const 0) -> mult n d

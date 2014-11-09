@@ -13,7 +13,7 @@ import Control.Applicative hiding (Const)
 import Data.Maybe
 
 -- |Check if an expression reads a certain variable
-exprDepends :: Eq v => v -> Expr n v -> Bool
+exprDepends :: Int -> Expr -> Bool
 exprDepends = (isJust .) . findVar
 
 -- |Heuristically decide how much memory a program uses.

@@ -152,7 +152,7 @@ unrollEntierly = go M.empty
 
     shift = M.mapKeysMonotonic . subtract
 
-valuesFromMap :: Num n => M.IntMap n -> Expr n Int -> n
+valuesFromMap :: M.IntMap Int -> Expr -> Int
 valuesFromMap m = go 0
   where
     go !acc = \case
