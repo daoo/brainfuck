@@ -1,7 +1,6 @@
 module Brainfuck.Parse (parseBrainfuck) where
 
 import Brainfuck.Data.Brainfuck
-import Control.Applicative
 import qualified Data.ByteString.Char8 as BS
 
 parseBrainfuck :: BS.ByteString -> Brainfuck

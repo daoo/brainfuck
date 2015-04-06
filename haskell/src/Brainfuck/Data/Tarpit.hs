@@ -8,7 +8,6 @@ module Brainfuck.Data.Tarpit
   ) where
 
 import Brainfuck.Data.Expr
-import Data.Monoid
 
 data Function where
   Assign  :: Int -> Expr -> Function

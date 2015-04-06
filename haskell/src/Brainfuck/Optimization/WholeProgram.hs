@@ -9,7 +9,6 @@ module Brainfuck.Optimization.WholeProgram
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import Data.Monoid
 import qualified Data.IntMap as M
 import qualified Data.IntSet as S
 

@@ -11,7 +11,6 @@ module Data.ListZipper
   , cut
   ) where
 
-import Control.Applicative
 import Test.QuickCheck
 
 -- |List zipper data structure.

@@ -26,7 +26,6 @@ module Brainfuck.Data.Expr
   ) where
 
 import Control.Arrow (first, second)
-import Control.Applicative ((<$>))
 import Test.QuickCheck
 
 -- |An expression is a sum of multiples of variables and an constant.

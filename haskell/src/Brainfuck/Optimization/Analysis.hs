@@ -9,7 +9,6 @@ module Brainfuck.Optimization.Analysis
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import Control.Applicative hiding (Const)
 import Data.Maybe
 
 -- |Check if an expression reads a certain variable

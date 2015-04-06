@@ -4,7 +4,6 @@ module Brainfuck.Data.Brainfuck
   , Brainfuck(..)
   ) where
 
-import Control.Applicative
 import Test.QuickCheck
 
 data Token = Plus | Minus | ShiftRight | ShiftLeft | Input | Output
