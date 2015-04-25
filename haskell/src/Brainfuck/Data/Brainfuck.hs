@@ -27,17 +27,17 @@ instance Arbitrary Brainfuck where
 
 instance Show Token where
   show = \case
-    Plus       -> "+"
-    Minus      -> "-"
-    ShiftLeft  -> "<"
-    ShiftRight -> ">"
-    Input      -> ","
-    Output     -> "."
+    Plus       -> ['+']
+    Minus      -> ['-']
+    ShiftLeft  -> ['<']
+    ShiftRight -> ['>']
+    Input      -> [',']
+    Output     -> ['.']
 
 instance Show Brainfuck where
   show = \case
     Token t next      -> shows t $ show next
     Repeat inner next -> showChar '[' $ shows inner $ showChar ']' $ show next
-    Nop               -> ""
+    Nop               -> []
 
   showList = flip (foldr shows)

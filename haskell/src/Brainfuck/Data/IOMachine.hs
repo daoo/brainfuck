@@ -32,6 +32,7 @@ data Memory = Memory
 
 type IOMachine = S.StateT Memory IO
 
+{-# INLINE iomod #-}
 iomod :: (Memory -> IO a) -> IOMachine a
 iomod f = S.get >>= \m -> S.lift $ f m
 
