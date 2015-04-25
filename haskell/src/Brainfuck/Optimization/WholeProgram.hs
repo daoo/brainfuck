@@ -9,6 +9,7 @@ module Brainfuck.Optimization.WholeProgram
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
+import Data.Monoid
 import qualified Data.IntMap as M
 import qualified Data.IntSet as S
 
@@ -62,7 +63,7 @@ inlineConstants = go M.empty
         If e -> case expr e m of
 
           Const 0 -> go m next
-          Const _ -> go m $ inner `mappend` next
+          Const _ -> go m $ inner <> next
           e'      -> Flow (If e') (go m inner) (go M.empty next)
 
         While e -> case expr e m of
@@ -94,7 +95,7 @@ inlineZeros = go S.empty
       Flow (If e) inner next -> case remove s e of
 
         Const 0 -> go s next
-        Const _ -> go s $ inner `mappend` next
+        Const _ -> go s $ inner <> next
         e'      -> Flow (If e') (go s inner) next
 
       Flow (While e) inner next -> case remove s e of
@@ -143,11 +144,11 @@ unrollEntierly = go M.empty
 
       Flow (If e) inner next -> go m $ if valuesFromMap m e == 0
         then next
-        else inner `mappend` next
+        else inner <> next
 
       Flow (While e) inner next -> go m $ if valuesFromMap m e == 0
         then next
-        else inner `mappend` Flow (While e) inner next
+        else inner <> Flow (While e) inner next
 
     shift = M.mapKeysMonotonic . subtract
 
