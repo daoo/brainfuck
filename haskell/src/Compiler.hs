@@ -14,7 +14,7 @@ import System.Environment
 import System.Exit
 import System.IO
 import Text.CodeWriter
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString as B
 
 data Action = Compile | Help deriving (Show, Read)
 data Target = Indented | C99 | LLVM | Haskell | Dot deriving (Show, Read)
@@ -74,4 +74,4 @@ main = do
     Compile -> codeFrom file >>= hPutBuilder stdout . writeCode . codegen . optimize
 
   where
-    codeFrom = fmap (compile . parseBrainfuck) . BS.readFile
+    codeFrom = fmap (compile . parseBrainfuck) . B.readFile

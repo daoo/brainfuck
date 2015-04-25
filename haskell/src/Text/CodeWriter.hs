@@ -1,7 +1,6 @@
 module Text.CodeWriter
   ( CodeWriter()
   , writeCode
-  , writeCode1
 
   , decIndent
   , incIndent
@@ -27,7 +26,6 @@ import Control.Arrow
 import Control.Monad.State
 import Data.ByteString.Builder
 import Data.Monoid
-import qualified Data.ByteString.Lazy.Char8 as BS
 
 -- |Indentation with a cached builder.
 type Indent = (Int, Builder)
@@ -51,9 +49,6 @@ type CodeWriter = State (Indent, Builder)
 
 writeCode :: CodeWriter () -> Builder
 writeCode m = snd $ execState m (noindent, mempty)
-
-writeCode1 :: CodeWriter () -> String
-writeCode1 = BS.unpack . toLazyByteString . writeCode
 
 getIndent :: CodeWriter Builder
 getIndent = gets (snd . fst)

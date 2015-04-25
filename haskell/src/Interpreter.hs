@@ -8,7 +8,7 @@ import System.Console.GetOpt
 import System.Environment
 import System.Exit
 import System.IO
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString as B
 
 data Action = Interpret | Help deriving (Show, Read)
 
@@ -59,4 +59,4 @@ main = do
       putStr $ exec1 inp $ optimize code
 
   where
-    codeFrom = fmap (compile . parseBrainfuck) . BS.readFile
+    codeFrom = fmap (compile . parseBrainfuck) . B.readFile

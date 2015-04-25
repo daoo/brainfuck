@@ -1,52 +1,53 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Programs where
 
 import Brainfuck.Compile
 import Brainfuck.Data.Tarpit
 import Brainfuck.Parse
-import qualified Data.ByteString.Char8 as BS
+import Data.ByteString (ByteString)
 
-parseCompile :: BS.ByteString -> Tarpit
+parseCompile :: ByteString -> Tarpit
 parseCompile = compile . parseBrainfuck
 
 -- Prints "Hello World!\n"
-bfHello :: BS.ByteString
-bfHello = BS.pack
+bfHello :: ByteString
+bfHello =
   "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>."
 
 -- Prints "brainfuck\n"
-bfPrintBrainFuck :: BS.ByteString
-bfPrintBrainFuck = BS.pack
+bfPrintBrainFuck :: ByteString
+bfPrintBrainFuck =
   ">++++[>++++++<-]>-[[<+++++>>+<-]>-]<<[<]>>>>--.<<<-.>>>-.<.<.>---.<<+++.>>>++.<<---.[>]<<."
 
-bfRot13 :: BS.ByteString
-bfRot13 = BS.pack
+bfRot13 :: ByteString
+bfRot13 =
   "-,+[-[>>++++[>++++++++<-]<+<-[>+>+>-[>>>]<[[>+<-]>>+>]<<<<<-]]>>>[-]+>--[-[<->+++[-]]]<[++++++++++++<[>-[>+>>]>[+[<+>-]>+>>]<<<<<-]>>[<+>-]>[-[-<<[-]>>]<<[<<->>-]>>]<<[<<+>>-]]<[-]<.[-]<-,+]"
 
-bfReverse :: BS.ByteString
-bfReverse = BS.pack
+bfReverse :: ByteString
+bfReverse =
   ">,[>,]<[.<]"
 
 -- Outputs in unary (with bangs (!))
-bfASCIIValues :: BS.ByteString
-bfASCIIValues = BS.pack
+bfASCIIValues :: ByteString
+bfASCIIValues =
   "++++[>++++++++<-],[[>+.-<-]>.<,]"
 
 -- Prints the squars (as ASCII numbers)
-bfSquares :: BS.ByteString
-bfSquares = BS.pack
+bfSquares :: ByteString
+bfSquares =
   "++++[>+++++<-]>[<+++++>-]+<+[>[>+>+<<-]++>>[<<+>>-]>>>[-]++>[-]+>>>+[[-]++++++>>>]<<<[[<++++++++<++>>-]+<.<[>----<-]<]<<[>>>>>[>>>[-]+++++++++<[>-<-]+++++++++>[-[<->-]+[<<<]]<[>+<-]>]<<-]<<-]"
 
 -- Goes to the 30000th cell
-bf30000 :: BS.ByteString
-bf30000 = BS.pack
+bf30000 :: ByteString
+bf30000 =
   "++++[>++++++<-]>[>+++++>+++++++<<-]>>++++<[[>[[>>+<<-]<]>>>-]>-[>+>+<<-]>]+++++[>+++++++<<++>-]>.<<."
 
 -- Prints the fibonacci sequence
-bfFib :: BS.ByteString
-bfFib = BS.pack
+bfFib :: ByteString
+bfFib =
   ">++++++++++>+>+[[+++++[>++++++++<-]>.<++++++[>--------<-]+<<<]>.>>[[-]<[>+<-]>>[<<+>+>-]<[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>+<-[>[-]>+>+<<<-[>+<-]]]]]]]]]]]+>>>]<<<]"
 
 -- Prints "\n\EOT"
-bfIO :: BS.ByteString
-bfIO = BS.pack
+bfIO :: ByteString
+bfIO =
   ">,>+++++++++,>+++++++++++[<++++++<++++++<+>>>-]<<.>.<<-.>.>.<<."
