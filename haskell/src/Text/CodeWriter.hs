@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Text.CodeWriter
   ( CodeWriter()
   , writeCode
@@ -25,6 +26,7 @@ module Text.CodeWriter
 
 import Control.Arrow
 import Control.Monad.State
+import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder)
 import Data.ByteString.Short (ShortByteString)
 import Data.Monoid
@@ -72,8 +74,8 @@ char = tell . B.char8
 int :: Int -> CodeWriter ()
 int = tell . B.intDec
 
-string :: String -> CodeWriter ()
-string = tell . B.string8
+string :: ByteString -> CodeWriter ()
+string = tell . B.byteString
 
 shortByteString :: ShortByteString -> CodeWriter ()
 shortByteString = tell . B.shortByteString
@@ -92,7 +94,7 @@ lined m = do
 indented :: CodeWriter () -> CodeWriter ()
 indented m = incIndent >> m >> decIndent
 
-line :: String -> CodeWriter ()
+line :: ByteString -> CodeWriter ()
 line = lined . string
 
 surround :: Char -> Char -> Bool -> CodeWriter () -> CodeWriter ()
@@ -105,7 +107,7 @@ separate _   [a]          = a
 separate sep (a:as@(_:_)) = a >> sep >> separate sep as
 
 commaSeparate :: [CodeWriter ()] -> CodeWriter ()
-commaSeparate = separate (string ", ")
+commaSeparate = separate (shortByteString ", ")
 
 newline, space :: CodeWriter ()
 newline = char '\n'

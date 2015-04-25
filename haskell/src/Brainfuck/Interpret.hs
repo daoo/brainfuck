@@ -10,14 +10,20 @@ module Brainfuck.Interpret
 
 import Brainfuck.Data.Tarpit
 import Brainfuck.Data.ZipperMachine
-import Data.Char
+import Data.ByteString (ByteString)
 import Data.Foldable
+import qualified Data.ByteString as B
+
+(.:) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+f .: g = \x y -> f (g x y)
+
+infixr 9 .:
 
 exec :: Input -> Tarpit -> Output
-exec inp = moutput . run inp
+exec = moutput .: run
 
-exec1 :: String -> Tarpit -> String
-exec1 inp = map (chr . fromIntegral) . toList . exec (map (fromIntegral . ord) inp)
+exec1 :: ByteString -> Tarpit -> ByteString
+exec1 inp = (B.pack . map fromIntegral) . toList . exec ((map fromIntegral . B.unpack) inp)
 
 run :: Input -> Tarpit -> MachineState
 run inp code = runMemory inp (go code)

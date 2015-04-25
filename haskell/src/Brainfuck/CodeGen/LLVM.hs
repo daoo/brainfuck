@@ -7,9 +7,10 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Control.Monad
+import Data.ByteString (ByteString)
 import Text.CodeWriter
 
-runtime :: String
+runtime :: ByteString
 runtime =
   "declare void @putchar(i8)\n\
   \declare i8 @getchar()\

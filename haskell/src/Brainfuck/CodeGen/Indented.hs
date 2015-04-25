@@ -4,13 +4,14 @@ module Brainfuck.CodeGen.Indented
   ) where
 
 import Brainfuck.Data.Tarpit
+import Data.ByteString.Char8 (pack)
 import Text.CodeWriter
 
 writeIndented :: Tarpit -> CodeWriter ()
 writeIndented = \case
   Nop                  -> return ()
-  Instruction fun next -> line (show fun) >> writeIndented next
-  Flow ctrl inner next -> block (show ctrl) inner >> writeIndented next
+  Instruction fun next -> line (pack $ show fun) >> writeIndented next
+  Flow ctrl inner next -> block (pack $ show ctrl) inner >> writeIndented next
   where
     block str inner = do
       line str

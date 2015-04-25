@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings #-}
 module Brainfuck.CodeGen.LLVM.Writer
   ( LLVMWriter
   , runLLVM
@@ -58,7 +58,7 @@ newLocal t = build <$> newUnique
     build x = Local t (toShortByteString $ B.word8 (ord8 't') <> B.intDec x)
 
 writeLabel :: Label -> CodeWriter ()
-writeLabel (Label s) = string "label %" >> shortByteString s
+writeLabel (Label s) = shortByteString "label %" >> shortByteString s
 
 writeLabelLine :: Label -> LLVMWriter ()
 writeLabelLine (Label s) = lift $ lined $ shortByteString s >> char ':'
@@ -155,13 +155,13 @@ writeAdd    = writeOp "add" TCell
 writeMul    = writeOp "mul" TCell
 writeCmpNeq = writeOp "icmp ne" TBit
 
-writeOp :: String -> Type -> Value -> Value -> LLVMWriter Local
+writeOp :: ShortByteString -> Type -> Value -> Value -> LLVMWriter Local
 writeOp op t a b = assert (valueType a == TCell && valueType b == TCell) $ do
   tmp <- newLocal t
   lift $ lined $ do
     writeUntypedLocal tmp
     string " = "
-    string op
+    shortByteString op
     string " "
     writeTypedValue a
     string ", "

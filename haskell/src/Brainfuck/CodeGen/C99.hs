@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings #-}
 module Brainfuck.CodeGen.C99
   ( writeC99
   ) where
@@ -7,10 +7,11 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
 import Control.Monad
+import Data.ByteString (ByteString)
 import Data.Char
 import Text.CodeWriter
 
-runtime :: String
+runtime :: ByteString
 runtime = "#include <stdio.h>\n"
 
 writeExpr :: Expr -> CodeWriter ()
@@ -64,7 +65,7 @@ writeStms = \case
       Assign d (Var 1 d' (Const c)) | d == d' -> ptr d .+= int c
       Assign d e                              -> ptr d .= writeExpr e
 
-      PutChar (Const c) -> putchar $ string $ show (chr c)
+      PutChar (Const c) -> putchar $ writeChar c
       PutChar e         -> putchar $ writeExpr e
 
     putchar a = string "putchar(" >> a >> char ')'
@@ -72,3 +73,15 @@ writeStms = \case
 
     a .=  b = a >> string " = " >> b
     a .+= b = a >> string " += " >> b
+
+    writeChar = surround '\'' '\'' True . \case
+      0x07 -> char '\\' >> char 'a'
+      0x08 -> char '\\' >> char 'b'
+      0x0C -> char '\\' >> char 'f'
+      0x0A -> char '\\' >> char 'n'
+      0x0D -> char '\\' >> char 'r'
+      0x09 -> char '\\' >> char 't'
+      0x0B -> char '\\' >> char 'v'
+      0x5C -> char '\\' >> char '\\'
+      0x27 -> char '\\' >> char '\''
+      c    -> char (chr c)

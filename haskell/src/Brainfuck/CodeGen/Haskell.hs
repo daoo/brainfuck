@@ -1,9 +1,10 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings #-}
 module Brainfuck.CodeGen.Haskell
   ( writeHaskell
   ) where
 
 import Brainfuck.Data.Tarpit
+import Data.ByteString.Char8 (pack)
 import Text.CodeWriter
 
 writeHaskell :: Tarpit -> CodeWriter ()
@@ -26,8 +27,8 @@ writeHaskell code = do
       While e -> block "while" e
 
     function = \case
-      Assign d e -> string "set "   >> safeint d       >> string " $ " >> string (show e)
-      PutChar e  -> string "put $ " >> string (show e)
+      Assign d e -> string "set "   >> safeint d       >> string " $ " >> string (pack $ show e)
+      PutChar e  -> string "put $ " >> string (pack $ show e)
       GetChar d  -> string "get "   >> safeint d
       Shift d    -> string "shift " >> safeint d
 
@@ -36,5 +37,5 @@ writeHaskell code = do
     block str e = lined $ do
       string str
       string " ("
-      string $ show e
+      string $ pack $ show e
       string ") $ do"

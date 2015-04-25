@@ -53,10 +53,7 @@ main = do
 
   case optAction opts of
     Help      -> printHelp
-    Interpret -> do
-      code <- codeFrom file
-      inp <- getContents
-      putStr $ exec1 inp $ optimize code
+    Interpret -> exec1 <$> B.getContents <*> (optimize <$> codeFrom file) >>= B.putStr
 
   where
     codeFrom = fmap (compile . parseBrainfuck) . B.readFile

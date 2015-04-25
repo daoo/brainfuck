@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings #-}
 module Brainfuck.CodeGen.Dot
   ( writeDot
   ) where
@@ -6,12 +6,14 @@ module Brainfuck.CodeGen.Dot
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Control.Monad.State.Strict
+import Data.ByteString hiding (pack)
+import Data.ByteString.Char8 (pack)
 import Text.CodeWriter
 
 type Id         = Int
 type DotState a = StateT Id CodeWriter a
 
-box, ellipse, diamond :: String
+box, ellipse, diamond :: ByteString
 box     = "shape=\"box\""
 ellipse = "shape=\"ellipse\""
 diamond = "shape=\"diamond\""
@@ -19,7 +21,7 @@ diamond = "shape=\"diamond\""
 newId :: DotState Id
 newId = modify (+1) >> get
 
-writeNode :: String -> CodeWriter () -> Id -> DotState ()
+writeNode :: ByteString -> CodeWriter () -> Id -> DotState ()
 writeNode outline label n = lift $ lined $ do
   int n
   string " [label=\""
@@ -36,7 +38,7 @@ writeEdge from to = lift $ lined $ do
   string ";"
 
 writeExpr :: Expr -> Id -> DotState ()
-writeExpr e = writeNode ellipse (string (show e))
+writeExpr e = writeNode ellipse (string (pack (show e)))
 
 writeDot :: Tarpit -> CodeWriter ()
 writeDot code = do
