@@ -19,23 +19,26 @@ compile = \case
       Output     -> PutChar $ Var 1 0 (Const 0)
       Input      -> GetChar 0
 
-decompile :: Tarpit -> Brainfuck
+decompile :: Tarpit -> Maybe Brainfuck
 decompile = \case
-  Tarpit.Nop -> BF.Nop
+  Tarpit.Nop ->
+    Just BF.Nop
 
-  Instruction fun next -> tokenize fun (decompile next)
+  Instruction fun next ->
+    tokenize fun <*> decompile next
 
-  Flow (While (Var 1 0 (Const 0))) inner next -> Repeat (decompile inner) (decompile next)
+  Flow (While (Var 1 0 (Const 0))) inner next ->
+    Repeat <$> decompile inner <*> decompile next
 
-  _ -> undefined
+  _ -> Nothing
 
   where
     tokenize = \case
-      Assign 0 (Var 1 0 (Const 1))    -> Token Plus
-      Assign 0 (Var 1 0 (Const (-1))) -> Token Minus
-      Shift 1                         -> Token ShiftRight
-      Shift (-1)                      -> Token ShiftLeft
-      PutChar (Var 1 0 (Const 0))     -> Token Output
-      GetChar 0                       -> Token Input
+      Assign 0 (Var 1 0 (Const 1))    -> Just (Token Plus)
+      Assign 0 (Var 1 0 (Const (-1))) -> Just (Token Minus)
+      Shift 1                         -> Just (Token ShiftRight)
+      Shift (-1)                      -> Just (Token ShiftLeft)
+      PutChar (Var 1 0 (Const 0))     -> Just (Token Output)
+      GetChar 0                       -> Just (Token Input)
 
-      _ -> undefined
+      _ -> Nothing
