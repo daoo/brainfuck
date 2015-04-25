@@ -1,6 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 module Brainfuck.CodeGen.LLVM.Internal where
 
+import Data.ByteString.Short
+
 data Type = TBit | TCell | TMem | TPtr Type | TVoid
   deriving Eq
 
@@ -19,8 +21,8 @@ valueType = \case
   VLit   _ -> TCell
   VVoid    -> TVoid
 
-newtype Label = Label String
+newtype Label = Label ShortByteString
 
-newtype Global = Global String
+newtype Global = Global ShortByteString
 
-data Local = Local { localType :: Type, localName :: String }
+data Local = Local { localType :: Type, localName :: ShortByteString }

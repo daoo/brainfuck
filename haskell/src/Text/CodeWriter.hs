@@ -17,6 +17,7 @@ module Text.CodeWriter
   , int
   , line
   , string
+  , shortByteString
 
   , newline
   , space
@@ -24,8 +25,10 @@ module Text.CodeWriter
 
 import Control.Arrow
 import Control.Monad.State
-import Data.ByteString.Builder
+import Data.ByteString.Builder (Builder)
+import Data.ByteString.Short (ShortByteString)
 import Data.Monoid
+import qualified Data.ByteString.Builder as B
 
 -- |Indentation with a cached builder.
 type Indent = (Int, Builder)
@@ -34,7 +37,7 @@ noindent :: Indent
 noindent = (0, mempty)
 
 indentStep :: Builder
-indentStep = char8 ' ' <> char8 ' '
+indentStep = B.char8 ' ' <> B.char8 ' '
 
 findent :: (Int -> Int) -> Indent -> Indent
 findent f (i, _) = let i' = f i in (i', indents i')
@@ -64,13 +67,16 @@ incIndent = modIndent inc
 decIndent = modIndent dec
 
 char :: Char -> CodeWriter ()
-char = tell . char8
+char = tell . B.char8
 
 int :: Int -> CodeWriter ()
-int = tell . intDec
+int = tell . B.intDec
 
 string :: String -> CodeWriter ()
-string = tell . string8
+string = tell . B.string8
+
+shortByteString :: ShortByteString -> CodeWriter ()
+shortByteString = tell . B.shortByteString
 
 indent :: CodeWriter ()
 indent = getIndent >>= tell

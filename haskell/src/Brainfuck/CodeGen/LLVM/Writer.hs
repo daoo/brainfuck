@@ -20,7 +20,21 @@ module Brainfuck.CodeGen.LLVM.Writer
 import Brainfuck.CodeGen.LLVM.Internal
 import Control.Exception
 import Control.Monad.State
+import Data.ByteString.Builder (Builder)
+import Data.ByteString.Short (ShortByteString)
+import Data.Char
+import Data.Monoid
+import Data.Word
 import Text.CodeWriter
+import qualified Data.ByteString.Builder as B
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Short as BS
+
+ord8 :: Char -> Word8
+ord8 = fromIntegral . ord
+
+toShortByteString :: Builder -> ShortByteString
+toShortByteString = BS.toShort . BL.toStrict . B.toLazyByteString
 
 type LLVMWriter = StateT Int CodeWriter
 
@@ -34,22 +48,26 @@ newUnique = do
   return x
 
 newLabel :: LLVMWriter Label
-newLabel = newUnique >>= \x -> return (Label $ 'l' : show x)
+newLabel = build <$> newUnique
+  where
+    build x = Label (toShortByteString $ B.word8 (ord8 'l') <> B.intDec x)
 
 newLocal :: Type -> LLVMWriter Local
-newLocal t = newUnique >>= \x -> return (Local t ('t' : show x))
+newLocal t = build <$> newUnique
+  where
+    build x = Local t (toShortByteString $ B.word8 (ord8 't') <> B.intDec x)
 
 writeLabel :: Label -> CodeWriter ()
-writeLabel (Label s) = string "label %" >> string s
+writeLabel (Label s) = string "label %" >> shortByteString s
 
 writeLabelLine :: Label -> LLVMWriter ()
-writeLabelLine (Label s) = lift $ lined $ string s >> char ':'
+writeLabelLine (Label s) = lift $ lined $ shortByteString s >> char ':'
 
 writeGlobal :: Global -> CodeWriter ()
-writeGlobal (Global s) = char '@' >> string s
+writeGlobal (Global s) = char '@' >> shortByteString s
 
 writeUntypedLocal :: Local -> CodeWriter ()
-writeUntypedLocal l = char '%' >> string (localName l)
+writeUntypedLocal l = char '%' >> shortByteString (localName l)
 
 writeTypedLocal :: Local -> CodeWriter ()
 writeTypedLocal l = writeType (localType l) >> space >> writeUntypedLocal l

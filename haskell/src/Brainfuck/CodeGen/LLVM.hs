@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings #-}
 module Brainfuck.CodeGen.LLVM (writeLLVM) where
 
 import Brainfuck.CodeGen.LLVM.Internal
