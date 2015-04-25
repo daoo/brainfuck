@@ -3,8 +3,8 @@ module Brainfuck.CodeGen.Haskell
   ( writeHaskell
   ) where
 
+import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import Data.ByteString.Char8 (pack)
 import Text.CodeWriter
 
 writeHaskell :: Tarpit -> CodeWriter ()
@@ -27,15 +27,24 @@ writeHaskell code = do
       While e -> block "while" e
 
     function = \case
-      Assign d e -> string "set "   >> safeint d       >> string " $ " >> string (pack $ show e)
-      PutChar e  -> string "put $ " >> string (pack $ show e)
+      Assign d e -> string "set "   >> safeint d >> string " $ " >> expr e
+      PutChar e  -> string "put $ " >> expr e
       GetChar d  -> string "get "   >> safeint d
       Shift d    -> string "shift " >> safeint d
-
-    safeint d = surround '(' ')' (d < 0) (int d)
 
     block str e = lined $ do
       string str
       string " ("
-      string $ pack $ show e
+      expr e
       string ") $ do"
+
+    expr (Const c)   = string "Const " >> safeint c
+    expr (Var n v e) = do
+      string "Var "
+      safeint n
+      char ' '
+      safeint v
+      char ' '
+      surround '(' ')' True (expr e)
+
+    safeint d = surround '(' ')' (d < 0) (int d)

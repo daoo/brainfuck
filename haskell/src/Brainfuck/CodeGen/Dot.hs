@@ -7,7 +7,6 @@ import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Control.Monad.State.Strict
 import Data.ByteString hiding (pack)
-import Data.ByteString.Char8 (pack)
 import Text.CodeWriter
 
 type Id         = Int
@@ -38,7 +37,16 @@ writeEdge from to = lift $ lined $ do
   string ";"
 
 writeExpr :: Expr -> Id -> DotState ()
-writeExpr e = writeNode ellipse (string (pack (show e)))
+writeExpr e = writeNode ellipse (expr e)
+  where
+    expr (Const c)           = safeint c
+    expr (Var n v (Const 0)) = mult n v
+    expr (Var n v xs)        = mult n v >> string " + " >> expr xs
+
+    mult 1 d = char '#' >> int d
+    mult n d = int n >> string " * #" >> int d
+
+    safeint d = surround '(' ')' (d < 0) (int d)
 
 writeDot :: Tarpit -> CodeWriter ()
 writeDot code = do
@@ -60,10 +68,10 @@ writeDot code = do
       Instruction fun next -> do
         n' <- newId
         case fun of
-          Assign  d e -> expr      box (string "Assign "  >> int d) n' e
-          Shift   i   -> writeNode box (string "Shift "   >> int i) n'
-          PutChar e   -> expr      box (string "PutChar"          ) n' e
-          GetChar d   -> writeNode box (string "GetChar " >> int d) n'
+          Assign  d e -> expr      box (string "Assign #"  >> int d) n' e
+          Shift   i   -> writeNode box (string "Shift "    >> int i) n'
+          PutChar e   -> expr      box (string "PutChar"           ) n' e
+          GetChar d   -> writeNode box (string "GetChar #" >> int d) n'
 
         writeEdge n n'
         go n' next
