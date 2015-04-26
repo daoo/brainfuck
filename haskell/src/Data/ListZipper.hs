@@ -2,13 +2,17 @@
 module Data.ListZipper
   ( ListZipper(..)
   , size
+
   , moveLeft
   , moveRight
   , move
+
   , peek
   , apply
   , applyAt
+
   , cut
+  , toList
   ) where
 
 import Test.QuickCheck
@@ -27,6 +31,9 @@ data ListZipper a = ListZipper
   , right :: [a]
   } deriving (Show, Eq)
 
+toList :: ListZipper a -> [a]
+toList (ListZipper l f r) = reverse l ++ [f] ++ r
+
 instance Arbitrary a => Arbitrary (ListZipper a) where
   arbitrary = ListZipper <$> arbitrary <*> arbitrary <*> arbitrary
 
@@ -35,38 +42,47 @@ instance Arbitrary a => Arbitrary (ListZipper a) where
 
 -- |Return the length of the list zipper.
 -- That is the length of the left and the right plus 1 (for the focus).
+--
+-- prop> size z == length (toList z)
 size :: ListZipper a -> Int
 size (ListZipper xs _ zs) = length xs + 1 + length zs
 
--- |Move list zipper to the left.
--- Does nothing if the left is empty.
+-- |Move list zipper to the left. Does nothing if the left is empty.
+--
+-- prop> toList (moveLeft z) == toList z
 moveLeft :: ListZipper a -> ListZipper a
 moveLeft (ListZipper (x:xs) y zs)  = ListZipper xs x (y:zs)
 moveLeft ls                        = ls
 
--- |Move list zipper to the right.
--- Does nothing if the right is empty.
+-- |Move list zipper to the right. Does nothing if the right is empty.
+--
+-- prop> toList (moveRight z) == toList z
 moveRight :: ListZipper a -> ListZipper a
 moveRight (ListZipper xs y (z:zs)) = ListZipper (y:xs) z zs
 moveRight ls                       = ls
 
--- |Move list zipper n steps.
--- Negative number means to the left, positive number means to the right, zero
--- means no moves.
+-- |Move list zipper n steps. Negative number means to the left, positive
+-- number means to the right, zero means no moves.
+--
+-- prop> toList (move n z) == toList z
 move :: Int -> ListZipper a -> ListZipper a
 move !n lz = case compare n 0 of
   EQ -> lz
-  LT -> move (n + 1) (moveLeft lz)
-  GT -> move (n - 1) (moveRight lz)
+  LT -> move (n+1) (moveLeft lz)
+  GT -> move (n-1) (moveRight lz)
 
 -- |Fetch an item from the zipper by index.
+--
+-- prop> peek 0 (ListZipper l f r) == (f :: Int)
 peek :: Int -> ListZipper a -> a
 peek !n lz = case compare n 0 of
   EQ -> focus lz
   LT -> left lz !! (abs n - 1)
-  GT -> right lz !! (n - 1)
+  GT -> right lz !! (n-1)
 
--- |Apply a function tho the focus of the zipper.
+-- |Apply a function to the focus of the zipper.
+--
+-- prop> apply id z == z
 apply :: (a -> a) -> ListZipper a -> ListZipper a
 apply f (ListZipper xs y zs) = ListZipper xs (f y) zs
 
@@ -83,5 +99,7 @@ applyAt f n (ListZipper xs y zs) = case compare n 0 of
     go !i (a:as) = a : go (i-1) as
 
 -- |Take from left and right and add the focus.
+--
+-- prop> cut 0 (ListZipper l f r) == [f]
 cut :: Int -> ListZipper a -> [a]
 cut i (ListZipper xs y zs) = take i xs ++ [y] ++ take i zs

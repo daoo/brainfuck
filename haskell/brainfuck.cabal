@@ -48,10 +48,3 @@ executable bfc
   main-is: src/Compiler.hs
   build-depends: base, brainfuck, bytestring
   default-language: Haskell2010
-
-test-suite brainfuck-tests
-  type: exitcode-stdio-1.0
-  hs-source-dirs: tests
-  main-is: MainTestSuite.hs
-  build-depends: base, brainfuck, QuickCheck, tasty, tasty-quickcheck, bytestring
-  default-language: Haskell2010

@@ -1,7 +1,6 @@
 {-# LANGUAGE LambdaCase, BangPatterns #-}
 module Brainfuck.Optimization.Analysis
-  ( exprDepends
-  , memorySize
+  ( memorySize
   , putConstOnly
   , copyLoop
   , whileOnce
@@ -9,11 +8,6 @@ module Brainfuck.Optimization.Analysis
 
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
-import Data.Maybe
-
--- |Check if an expression reads a certain variable
-exprDepends :: Int -> Expr -> Bool
-exprDepends = (isJust .) . findVar
 
 -- |Heuristically decide how much memory a program uses.
 memorySize :: Tarpit -> (Int, Int)
@@ -33,7 +27,7 @@ memorySize = \case
       If e    -> expr e
       While e -> expr e
 
-    expr = foldVarsL' (\x _ y -> x <+> g y) (0, 0)
+    expr = foldlExpr' (\acc _ x -> acc <+> g x) const (0, 0)
 
     g d = case compare d 0 of
       LT -> (d, 0)
@@ -42,12 +36,13 @@ memorySize = \case
 
     (a, b) <+> (c, d) = (a + c, b + d)
 
--- |Check if some tarpit consists soley of PutChar (Const _) instructions
+-- |Check if a program consists soley of putchar instructions with constant
+-- expressions.
 putConstOnly :: Tarpit -> Bool
 putConstOnly = \case
-  Nop                          -> True
-  Instruction (PutChar e) next -> isConst e && putConstOnly next
-  _                            -> False
+  Nop                                     -> True
+  Instruction (PutChar (Constant _)) next -> putConstOnly next
+  _                                       -> False
 
 -- |Analyze a loop for a copy/multiply structure
 --
@@ -63,14 +58,14 @@ copyLoop d1 = go
     go = \case
       Nop -> Just $ Instruction (d1 &= 0) Nop
 
-      Instruction (Assign d2 (Var 1 d3 (Const c))) next
+      Instruction (Assign d2 (Add d3 c)) next
         | d1 == d2 && d2 == d3 && c == (-1) -> go next
         | d1 /= d2 && d2 == d3              -> Instruction (Assign d2 $ mult d2 c) <$> go next
         | otherwise                         -> Nothing
 
       _ -> Nothing
 
-    mult d2 c = (c .* evar d1) .+ evar d2
+    mult d2 c = (c .* Variable1 d1) .+ Variable1 d2
 
 -- |Check if a while loop could be an if statement.
 --
@@ -88,9 +83,9 @@ whileOnce d xs = if find False xs
       Nop -> b
 
       Instruction fun next -> case fun of
-        Assign d' (Const 0) | d == d' -> find True next
-        Assign d' _         | d == d' -> find False next
-        GetChar d'          | d == d' -> find False next
+        Assign d' Zero | d == d' -> find True next
+        Assign d' _    | d == d' -> find False next
+        GetChar d'     | d == d' -> find False next
 
         Shift _ -> False
 
@@ -104,7 +99,7 @@ whileOnce d xs = if find False xs
 
       Instruction fun next -> case fun of
 
-        Assign d' e | isZero e && d == d' -> filt next
-        _                                 -> Instruction fun $ filt next
+        Assign d' Zero | d == d' -> filt next
+        _                        -> Instruction fun $ filt next
 
       Flow ctrl inner next -> Flow ctrl inner $ filt next

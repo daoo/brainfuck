@@ -38,13 +38,15 @@ writeHaskell code = do
       expr e
       string ") $ do"
 
-    expr (Const c)   = string "Const " >> safeint c
-    expr (Var n v e) = do
+    expr = buildExpr plus variable constant
+
+    plus a b   = a >> char ' ' >> parentheses b
+    constant n = string "Const " >> safeint n
+
+    variable n v = do
       string "Var "
       safeint n
       char ' '
       safeint v
-      char ' '
-      parentheses (expr e)
 
     safeint d = surround (d < 0) '(' ')' (int d)

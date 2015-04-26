@@ -31,47 +31,48 @@ inlineShifts = go 0 0
       Instruction fun next -> case fun of
 
         GetChar d  -> Instruction (GetChar $ d + s)                $ go s t next
-        PutChar e  -> Instruction (PutChar $ shiftExpr s e)        $ go s t next
-        Assign d e -> Instruction (Assign (d + s) $ shiftExpr s e) $ go s t next
+        PutChar e  -> Instruction (PutChar $ shiftExpr e s)        $ go s t next
+        Assign d e -> Instruction (Assign (d + s) $ shiftExpr e s) $ go s t next
         Shift s'   -> go (s + s') (t + s') next
 
       Flow ctrl inner next -> case ctrl of
-        If e    -> Flow (If $ shiftExpr s e)    (go s 0 inner) (go s t next)
-        While e -> Flow (While $ shiftExpr s e) (go s 0 inner) (go s t next)
+        If e    -> Flow (If $ shiftExpr e s)    (go s 0 inner) (go s t next)
+        While e -> Flow (While $ shiftExpr e s) (go s 0 inner) (go s t next)
 
 -- |Reduce expressions by inlining known constants in the begining.
 inlineConstants :: Tarpit -> Tarpit
 inlineConstants = go M.empty
   where
+    go :: M.IntMap Int -> Tarpit -> Tarpit
     go m = \case
       Nop -> Nop
 
       Instruction fun next -> case fun of
 
-        GetChar d          -> Instruction fun                  $ go (M.delete d m) next
-        PutChar e          -> Instruction (PutChar $ expr e m) $ go m next
-        Assign d (Const c) -> Instruction fun                  $ go (M.insert d c m) next
-        Shift s            -> Instruction fun                  $ go (shift s m) next
+        GetChar d             -> Instruction fun                  $ go (M.delete d m) next
+        PutChar e             -> Instruction (PutChar $ expr e m) $ go m next
+        Assign d (Constant c) -> Instruction fun                  $ go (M.insert d c m) next
+        Shift s               -> Instruction fun                  $ go (shift s m) next
 
         Assign d e -> case expr e m of
 
-          e'@(Const c) -> Instruction (Assign d e') $ go (M.insert d c m) next
-          e'           -> Instruction (Assign d e') $ go (M.delete d m) next
+          e'@(Constant c) -> Instruction (Assign d e') $ go (M.insert d c m) next
+          e'              -> Instruction (Assign d e') $ go (M.delete d m)   next
 
       Flow ctrl inner next -> case ctrl of
 
         If e -> case expr e m of
 
-          Const 0 -> go m next
-          Const _ -> go m $ inner <> next
-          e'      -> Flow (If e') (go m inner) (go M.empty next)
+          Constant 0 -> go m next
+          Constant _ -> go m $ inner <> next
+          e'         -> Flow (If e') (go m inner) (go M.empty next)
 
         While e -> case expr e m of
 
-          Const 0 -> go m next
-          _       -> Flow (While e) (go M.empty inner) (go M.empty next)
+          Constant 0 -> go m next
+          _          -> Flow (While e) (go M.empty inner) (go M.empty next)
 
-    expr  = M.foldrWithKey' insertConst
+    expr  = M.foldrWithKey' ((flip insertConst .) . (,))
     shift = M.mapKeysMonotonic . subtract
 
 -- |Inline initial zeroes.
@@ -94,15 +95,15 @@ inlineZeros = go S.empty
 
       Flow (If e) inner next -> case remove s e of
 
-        Const 0 -> go s next
-        Const _ -> go s $ inner <> next
-        e'      -> Flow (If e') (go s inner) next
+        Constant 0 -> go s next
+        Constant _ -> go s $ inner <> next
+        e'         -> Flow (If e') (go s inner) next
 
       Flow (While e) inner next -> case remove s e of
 
-        Const 0 -> go s next
-        Const _ -> Flow (While $ Const 1) inner Nop
-        _       -> Flow (While e) inner next
+        Constant 0 -> go s next
+        Constant _ -> Flow (While (Constant 1)) inner Nop
+        _          -> Flow (While e) inner next
 
     remove s = filterVars ((`S.member` s) . snd)
     shift    = S.map . subtract
@@ -137,27 +138,19 @@ unrollEntierly = go M.empty
 
       Instruction fun next -> case fun of
 
-        Assign d e -> go (M.insert d (valuesFromMap m e) m) next
+        Assign d e -> go (M.insert d (eval m e) m) next
         Shift s    -> go (shift s m) next
-        PutChar e  -> Instruction (PutChar $ Const $ valuesFromMap m e) (go m next)
+        PutChar e  -> Instruction (PutChar $ Constant (eval m e)) (go m next)
         GetChar _  -> Instruction fun next
 
-      Flow (If e) inner next -> go m $ if valuesFromMap m e == 0
+      Flow (If e) inner next -> go m $ if eval m e == 0
         then next
         else inner <> next
 
-      Flow (While e) inner next -> go m $ if valuesFromMap m e == 0
+      Flow (While e) inner next -> go m $ if eval m e == 0
         then next
         else inner <> Flow (While e) inner next
 
     shift = M.mapKeysMonotonic . subtract
 
-valuesFromMap :: M.IntMap Int -> Expr -> Int
-valuesFromMap m = go 0
-  where
-    go !acc = \case
-      Const c    -> acc + c
-      Var n d xs -> case M.lookup d m of
-
-        Just c  -> go (acc + n * c) xs
-        Nothing -> go acc xs
+    eval m = evalExpr (m M.!)

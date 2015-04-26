@@ -90,20 +90,21 @@ writeInstrs = \case
         writeLabelLine next
 
 writeExpr :: Expr -> LLVMWriter Value
-writeExpr (Const n) = return $ VLit n
+writeExpr = deconsExpr variable constant
+  where
+    constant n = return $ VLit n
 
-writeExpr (Var 1 d (Const 0)) = VLocal `fmap` writeReadPtr d
+    variable 1 x Zero = VLocal `fmap` writeReadPtr x
+    variable 1 x e    = do
+      t1 <- writeReadPtr x
+      t2 <- writeExpr e
+      VLocal `fmap` writeAdd (VLocal t1) t2
 
-writeExpr (Var 1 d e) = do
-  t1 <- writeReadPtr d
-  t2 <- writeExpr e
-  VLocal `fmap` writeAdd (VLocal t1) t2
-
-writeExpr (Var n d e) = do
-  t1 <- writeReadPtr d
-  t2 <- writeMul (VLit n) (VLocal t1)
-  t3 <- writeExpr e
-  VLocal `fmap` writeAdd (VLocal t2) t3
+    variable a x e = do
+      t1 <- writeReadPtr x
+      t2 <- writeMul (VLit a) (VLocal t1)
+      t3 <- writeExpr e
+      VLocal `fmap` writeAdd (VLocal t2) t3
 
 tptr :: Type
 tptr = TPtr (TPtr TCell)

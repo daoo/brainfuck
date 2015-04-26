@@ -37,14 +37,12 @@ writeEdge from to = lift $ lined $ do
   string ";"
 
 writeExpr :: Expr -> Id -> DotState ()
-writeExpr e = writeNode ellipse (expr e)
+writeExpr = writeNode ellipse . buildExpr plus variable safeint
   where
-    expr (Const c)           = safeint c
-    expr (Var n v (Const 0)) = mult n v
-    expr (Var n v xs)        = mult n v >> string " + " >> expr xs
+    plus a b = a >> string " + " >> b
 
-    mult 1 d = char '#' >> int d
-    mult n d = int n >> string " * #" >> int d
+    variable 1 x = char '#' >> int x
+    variable a x = int a >> string " * #" >> int x
 
     safeint d = surround (d < 0) '(' ')' (int d)
 

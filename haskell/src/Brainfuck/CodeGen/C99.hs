@@ -15,13 +15,12 @@ runtime :: ByteString
 runtime = "#include <stdio.h>\n"
 
 writeExpr :: Expr -> CodeWriter ()
-writeExpr = \case
-  Const c           -> int c
-  Var n d (Const 0) -> mult n d
-  Var n d xs        -> mult n d >> string " + " >> writeExpr xs
+writeExpr = buildExpr plus variable int
   where
-    mult 1 d = string "ptr[" >> int d >> char ']'
-    mult n d = int n >> string " * ptr[" >> int d >> char ']'
+    plus a b = a >> string " + " >> b
+
+    variable 1 x = string "ptr[" >> int x >> char ']'
+    variable a x = int a >> string " * ptr[" >> int x >> char ']'
 
 writeC99 :: Tarpit -> CodeWriter ()
 writeC99 code = do
@@ -59,14 +58,14 @@ writeStms = \case
       line "}"
 
     function = \case
-      Shift s    -> string "ptr" .+= int s
-      GetChar d  -> ptr d .= string "getchar()"
+      Shift s   -> string "ptr" .+= int s
+      GetChar d -> ptr d .= string "getchar()"
 
-      Assign d (Var 1 d' (Const c)) | d == d' -> ptr d .+= int c
-      Assign d e                              -> ptr d .= writeExpr e
+      Assign d (Add d' c) | d == d' -> ptr d .+= int c
+      Assign d e                   -> ptr d .= writeExpr e
 
-      PutChar (Const c) -> putchar $ writeChar c
-      PutChar e         -> putchar $ writeExpr e
+      PutChar (Constant c) -> putchar $ writeChar c
+      PutChar e            -> putchar $ writeExpr e
 
     putchar a = string "putchar(" >> a >> char ')'
     ptr d = string "ptr[" >> int d >> char ']'

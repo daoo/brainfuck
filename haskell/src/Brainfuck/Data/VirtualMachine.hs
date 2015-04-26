@@ -14,7 +14,10 @@ class (Functor vm, Monad vm) => VirtualMachine vm where
 
 {-# INLINE eval #-}
 eval :: VirtualMachine vm => Expr -> vm Int
-eval = foldExprM' (\acc n d -> ((acc+) . (n*)) `fmap` read d) (+) 0
+eval = foldExprM'
+  (\acc a x -> (\n -> acc + a*n) <$> read x)
+  (\acc n   -> return (acc+n))
+  0
 
 {-# INLINE set #-}
 set :: VirtualMachine vm => Int -> Expr -> vm ()

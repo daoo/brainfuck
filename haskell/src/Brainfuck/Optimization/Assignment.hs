@@ -8,36 +8,26 @@ import Brainfuck.Data.Tarpit
 import qualified Data.Graph as G
 import qualified Data.IntMap as M
 
--- |Finds sequenses of assignments and calculates the optimal representation
+-- |Finds sequenses of assignments and calculates the optimal representation.
 -- In this case optimal with respect to the number of assignment operations.
--- Thus we do not care about the size of the expressions.
+-- That means we do not care about the size of the expressions.
 optimizeAssign :: Tarpit -> Tarpit
 optimizeAssign = go M.empty
   where
     go m = \case
       Nop -> makeOptimal m Nop
 
-      Instruction (Assign d e) next -> go (M.insert d (rebuild m e) m) next
+      Instruction (Assign d e) next -> go (M.insert d (insertExprs e m) m) next
 
       Instruction fun next -> makeOptimal m $ Instruction fun (go M.empty next)
       Flow ctrl inner next -> makeOptimal m $ Flow ctrl (go M.empty inner) (go M.empty next)
 
--- |Inline only on each variable, instead of on the whole expression every time
-rebuild :: M.IntMap Expr -> Expr -> Expr
-rebuild m = go
-  where
-    -- TODO: Could maybe improve this by traversing both structures at the same time
-    go (Const c)    = Const c
-    go (Var n d xs) = case M.lookup d m of
-      Just e  -> n .* e .+ go xs
-      Nothing -> Var n d (go xs)
-
 type AssignOp = (Int, Expr)
 
--- |Calculate the optimal representation of some Assign ILs
--- TODO: Handle cyclical dependencies
+-- |Calculate the optimal representation of some Assign ILs.
 makeOptimal :: M.IntMap Expr -> Tarpit -> Tarpit
 makeOptimal ops next = mergeOps next $ topSort $ M.assocs ops
+-- TODO: Handle cyclical dependencies
 
 mergeOps :: Tarpit -> [AssignOp] -> Tarpit
 mergeOps = foldr (Instruction . uncurry Assign)
@@ -74,6 +64,6 @@ topSort xs = let (graph, vertex, _) = G.graphFromEdges $ map mkvert xs
               in map (retrieve . vertex) $ G.topSort graph
   where
     mkvert (d, e) = (e, d, mkedges e)
-    mkedges = foldVarsR (\_ d -> (:) d) []
+    mkedges = foldrExpr (const (:)) (const [])
 
     retrieve (x, k, _) = (k, x)

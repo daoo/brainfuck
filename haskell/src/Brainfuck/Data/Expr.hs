@@ -1,18 +1,24 @@
-{-# LANGUAGE BangPatterns, GADTs, FlexibleInstances #-}
+-- |This module provides the most efficient definition of an expression that is
+-- a sum of multiples of variables and a constant. The constant is in this
+-- module denoted with `n`, an variable is denoted by `x` and the multiples are
+-- denoted by `a`.
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
 module Brainfuck.Data.Expr
   ( Expr(..)
-
-  , econst
-  , evar
-  , isZero
-  , isConst
-  , isConst'
-  , isVarConst
+  , pattern Zero
+  , pattern Constant
+  , pattern Variable1
+  , pattern Add
 
   , findVar
+  , hasVariable
   , filterVars
-  , foldVarsR
-  , foldVarsL'
+  , foldrExpr
+  , foldlExpr'
   , foldExprM'
 
   , (.+)
@@ -22,165 +28,246 @@ module Brainfuck.Data.Expr
   , evalExpr
 
   , insertExpr
+  , insertExprs
   , insertConst
+
+  , buildExpr
+  , deconsExpr
   ) where
 
-import Control.Arrow (first, second)
+import Control.Applicative
 import Test.QuickCheck
+import qualified Data.IntMap.Strict as M
+
+-- $setup
+-- >>> import Data.Maybe (isJust)
 
 -- |An expression is a sum of multiples of variables and an constant.
 -- Represented as a sorted list with the constant stored in the terminator
 -- which allows for linear time addition of two expressions.
 data Expr where
-  Var   :: !Int -> !Int -> Expr -> Expr
-  Const :: !Int -> Expr
+  V :: !Int -> !Int -> Expr -> Expr
+  C :: !Int -> Expr
+  deriving Show
 
-econst :: Int -> Expr
-econst = Const
+-- |Check the invariant for an expression.
+--
+-- >>> invariant (C 0)
+-- True
+-- >>> invariant (V 1 0 (C 1))
+-- True
+-- >>> invariant (V 0 0 (C 0))
+-- False
+-- >>> invariant (V 1 1 (V 1 1 (C 1)))
+-- False
+-- >>> invariant (V 1 1 (V 0 0 (C 1)))
+-- False
+-- >>> invariant (V 1 1 (V 1 0 (C 1)))
+-- True
+invariant :: Expr -> Bool
+invariant (C _)                  = True
+invariant (V a _ (C _))          = a /= 0
+invariant (V a1 x1 e@(V _ x2 _)) = a1 /= 0 && x1 > x2 && invariant e
 
-evar :: Int -> Expr
-evar v = Var 1 v (Const 0)
-
-{-# INLINE isZero #-}
-isZero :: Expr -> Bool
-isZero (Const 0) = True
-isZero _         = False
-
-{-# INLINE isConst #-}
-isConst :: Expr -> Bool
-isConst (Const _) = True
-isConst _         = False
-
-{-# INLINE isConst' #-}
-isConst' :: Int -> Expr -> Bool
-isConst' a (Const b) = a == b
-isConst' _ _         = False
-
-isVarConst :: Int -> Int -> Expr -> Bool
-isVarConst v c (Var 1 v' (Const c')) = v == v' && c == c'
-isVarConst _ _ _                     = False
-
-instance Show Expr where
-  show (Const c)   = show c
-  show (Var n v e) = shows n $ showString "*" $ shows v $ showString " + " $ show e
+-- |Patterns for invariant-fulfilling expressions.
+-- prop> invariant Zero
+-- prop> invariant (Constant n)
+-- prop> invariant (Variable1 x)
+-- prop> invariant (Add x n)
+pattern Zero         = C 0
+pattern Constant n   = C n
+pattern Variable1 x  = V 1 x (C 0)
+pattern Add x n      = V 1 x (C n)
 
 instance Eq Expr where
-  Const c1     == Const c2     = c1 == c2
-  Var n1 d1 xs == Var n2 d2 ys = n1 == n2 && d1 == d2 && xs == ys
-  _            == _            = False
+  C n1       == C n2       = n1 == n2
+  V n1 d1 xs == V n2 d2 ys = n1 == n2 && d1 == d2 && xs == ys
+  _          == _          = False
 
+-- |Arbitrary expressions which fullfills the invariant.
+--
+-- prop> invariant e
+-- prop> all invariant (shrink e)
 instance Arbitrary Expr where
-  arbitrary = sized (go 0)
+  arbitrary = sized go
     where
-      go _ 0 = Const <$> arbitrary
-      go i s = do
-        n <- arbitrary
-        v <- suchThat arbitrary (>=i)
-        Var n v <$> go v (s `div` 2)
+      go :: Int -> Gen Expr
+      go 0 = C <$> arbitrary
+      go i = do
+        n <- suchThat arbitrary (/=0)
+        v <- suchThat arbitrary (liftA2 (&&) (>=0) (<i))
+        V n v <$> go v
 
-  shrink (Const c)   = map Const $ shrink c
-  shrink (Var n v e) = e : map (\n' -> Var n' v e) (shrink n) ++
-                           map (\v' -> Var n v' e) (shrink v)
+  shrink (C c)     = map C $ shrink c
+  shrink (V _ _ e) = e : shrink e
 
 -- |Find a variable and return its multiple.
 --
--- Ignores the constant.
-findVar :: Int -> Expr -> Maybe Int
-findVar _ (Const _)                 = Nothing
-findVar v (Var n v' xs) | v == v'   = Just n
-                        | otherwise = findVar v xs
+-- >>> let expr = V 5 5 $ V 4 4 $ V 2 2 $ V 1 1 $ C 0
+-- >>> invariant expr
+-- True
+-- >>> findVar expr 1
+-- Just 1
+-- >>> findVar expr 0
+-- Nothing
+-- >>> findVar expr 6
+-- Nothing
+findVar :: Expr -> Int -> Maybe Int
+findVar (C _)     _  = Nothing
+findVar (V a x e) x' = case compare x x' of
+  LT -> Nothing
+  EQ -> Just a
+  GT -> findVar e x'
+
+-- |Check if a certain expression has an variable.
+--
+-- prop> hasVariable e x == isJust (findVar e x)
+hasVariable :: Expr -> Int -> Bool
+hasVariable (C _)     _  = False
+hasVariable (V _ x e) x' = x == x' || e `hasVariable` x'
 
 -- |Filter the variables of an expression.
 --
 -- Leaves the constant unchanged.
 filterVars :: ((Int, Int) -> Bool) -> Expr -> Expr
-filterVars _ e@(Const _)              = e
-filterVars f (Var n v xs) | f (n, v)  = Var n v (filterVars f xs)
-                          | otherwise = filterVars f xs
+filterVars _ e@(C _)               = e
+filterVars f (V a x e) | f (a, x)  = V a x (filterVars f e)
+                       | otherwise = filterVars f e
 
--- |Map the variables and the constant of an expression.
+-- |The category theory derived fold for expressions.
 --
--- The function @f@ is required to be monotonic as the resulting expression is
--- not resorted. Time complexity O(n).
-mapExpr :: ((Int, Int) -> (Int, Int)) -> (Int -> Int) -> Expr -> Expr
-mapExpr _ g (Const c)    = Const (g c)
-mapExpr f g (Var n v xs) = uncurry Var (f (n, v)) $ mapExpr f g xs
+-- prop> foldrExpr V C e == e
+foldrExpr :: (Int -> Int -> a -> a) -> (Int -> a) -> Expr -> a
+foldrExpr _ g (C n)     = g n
+foldrExpr f g (V a x e) = f a x (foldrExpr f g e)
 
--- |Right fold variables in an expression.
---
--- Ignores the constant.
-foldVarsR :: (Int -> Int -> a -> a) -> a -> Expr -> a
-foldVarsR _ acc (Const _)    = acc
-foldVarsR f acc (Var n v xs) = f n v $ foldVarsR f acc xs
+foldlExpr' :: (acc -> Int -> Int -> acc)
+           -> (acc -> Int -> acc)
+           -> acc
+           -> Expr
+           -> acc
+foldlExpr' _ g !acc (C c)     = g acc c
+foldlExpr' f g !acc (V a x e) = foldlExpr' f g (f acc a x) e
 
--- |Strict left fold variables in an expression.
---
--- Ignores the constant.
-foldVarsL' :: (a -> Int -> Int -> a) -> a -> Expr -> a
-foldVarsL' _ !acc (Const _)    = acc
-foldVarsL' f !acc (Var n v xs) = foldVarsL' f (f acc n v) xs
-
--- |Strict fold with a monadic variable lookup function and a different
--- function for the constant.
-foldExprM' :: Monad m => (acc -> Int -> Int -> m acc) -> (acc -> Int -> acc) -> acc -> Expr -> m acc
-foldExprM' _ g !acc (Const c)    = return $ g acc c
-foldExprM' f g !acc (Var n v xs) = f acc n v >>= \acc' -> foldExprM' f g acc' xs
+-- |Strict monadic fold.
+foldExprM' :: Monad m => (acc -> Int -> Int -> m acc) -> (acc -> Int -> m acc) -> acc -> Expr -> m acc
+foldExprM' _ g !acc (C c)     = g acc c
+foldExprM' f g !acc (V a x e) = f acc a x >>= \acc' -> foldExprM' f g acc' e
 
 infixl 5 .+
 infixl 6 .*
 
 -- |Addition of two expressions.
 --
--- Time complexity is O(n + m) and the laws for additon holds:
+-- Time complexity is O(n + m) and the laws for additon holds.
 --
--- prop> a .+ b = b .+ a
--- prop> a .+ (b .+ c) = (a .+ b) .+ c
--- prop> a .+ 0 = a
--- prop> 0 .+ a = a
+-- prop> a .+ b == b .+ a
+-- prop> a .+ (b .+ c) == (a .+ b) .+ c
+-- prop> a .+ Zero == a
+-- prop> Zero .+ a == a
+-- prop> invariant (a .+ b)
+-- prop> evalExpr id (a .+ b) == evalExpr id a + evalExpr id b
 (.+) :: Expr -> Expr -> Expr
-(.+) (Const c1)       (Const c2)       = Const (c1 + c2)
-(.+) (Var n1 d1 x')   c2@(Const _)     = Var n1 d1 (x' .+ c2)
-(.+) c1@(Const _)     (Var n2 d2 y')   = Var n2 d2 (c1 .+ y')
-(.+) x@(Var n1 d1 x') y@(Var n2 d2 y') = case compare d1 d2 of
-  LT -> Var n1 d1        $ x' .+ y
-  EQ -> app (n1 + n2) d1 $ x' .+ y'
-  GT -> Var n2 d2        $ x  .+ y'
+(.+) (C n1)       (C n2)       = C (n1 + n2)
+(.+) (V a1 x1 e1) (C n2)       = V a1 x1 (e1 .+ C n2)
+(.+) (C n1)       (V a2 x2 e2) = V a2 x2 (C n1 .+ e2)
+(.+) (V a1 x1 e1) (V a2 x2 e2) = case compare x1 x2 of
+  LT -> V a2 x2        $ V a1 x1 e1 .+ e2
+  EQ -> f (a1 + a2) x1 $ e1 .+ e2
+  GT -> V a1 x1        $ e1 .+ V a2 x2 e2
 
   where
-    app 0 _ xs = xs
-    app n v xs = Var n v xs
+    f 0 _ e = e
+    f a x e = V a x e
 
 -- |Multiply an expression with a constant.
 --
 -- Time complexity O(n).
+--
+-- prop> 0 .* e == Zero
+-- prop> 1 .* e == e
+-- prop> a .* Zero == Zero
+-- prop> a .* Constant 1 == Constant a
+-- prop> a .* (b .* e) == (a*b) .* e
+-- prop> invariant (a .* e)
+-- prop> evalExpr id (a .* e) == a * evalExpr id e
 (.*) :: Int -> Expr -> Expr
-(.*) n = mapExpr (first (*n)) (*n)
+n .* C m     = C (n*m)
+n .* V a x e = f (n*a) x (n .* e)
+  where
+    f 0  _  e' = e'
+    f a' x' e' = V a' x' e'
 
--- |Shift all variables in an expression
+-- |Special case of '(.+)' where the added expression is a constant.
+--
+-- prop> invariant (addConstant e n)
+-- prop> evalExpr id (e `addConstant` n) == evalExpr id e + n
+addConstant :: Expr -> Int -> Expr
+addConstant (C n) m     = C (n+m)
+addConstant (V a x e) m = V a x (addConstant e m)
+
+-- |Shift all variables in an expression.
+--
 -- Time complexity O(n)
-shiftExpr :: Int -> Expr -> Expr
-shiftExpr s = mapExpr (second (+s)) id
+--
+-- prop> shiftExpr e 0 == e
+-- prop> invariant (shiftExpr e n)
+shiftExpr :: Expr -> Int -> Expr
+shiftExpr (C n)      _ = C n
+shiftExpr (V a x e) !s = V a (x+s) (shiftExpr e s)
 
--- |Evaluate an expression using a function for resolving variables
--- Time complexity O(n) if f is constant time
+-- |Evaluate an expression using a function for resolving variables.
+--
+-- Time complexity O(n) if f is constant time.
 evalExpr :: (Int -> Int) -> Expr -> Int
 evalExpr f = go 0
   where
-    go !acc (Const c)    = acc + c
-    go !acc (Var n v xs) = go (acc + n * f v) xs
+    go !acc (C c)     = acc + c
+    go !acc (V n v e) = go (acc + n * f v) e
 
--- |Insert the value of a variable into an expression.
--- Time complexity O(n + m)
-insertExpr :: Int -> Expr -> Expr -> Expr
-insertExpr v a b = case findVar v b of
-  Nothing -> b
-  Just n  -> (n .* a) .+ filterVars ((/= v) . snd) b
+-- |Set the value of an variable in an expression to the value of another
+-- expression. That is, if the variable exists in the first expression, the
+-- second expression is multiplied with the multiple of the variable and then
+-- summed with the first expression. If the variable does not exist, the first
+-- expression is returned unmodified.
+--
+-- >>> insertExpr (V 1 2 (V 1 1 (C 0))) (1, V 1 3 (C 1))
+-- V 1 3 (V 1 2 (C 1))
+--
+-- prop> invariant (insertExpr e1 (x, e2))
+insertExpr :: Expr -> (Int, Expr) -> Expr
+insertExpr (C n)        _                    = C n
+insertExpr (V a1 x1 e1) (x2, e2) | x1 == x2  = (a1 .* e2) .+ e1
+                                 | otherwise = V a1 x1 Zero .+ insertExpr e1 (x2, e2)
 
--- |Special case of 'insertExpr' when the value is a constant
--- Time complexity O(n)
-insertConst :: Int -> Int -> Expr -> Expr
-insertConst v c = go
-  where
-    go (Const c')                = Const c'
-    go (Var n v' xs) | v == v'   = mapExpr id (+ (n * c)) xs
-                     | otherwise = Var n v' $ go xs
+-- |Special case of 'insertExpr' when the expression inserted is a constant.
+--
+-- Time complexity O(n).
+--
+-- prop> insertConst e (x, n) == insertExpr e (x, C n)
+-- prop> invariant (insertConst e (x, n))
+insertConst :: Expr -> (Int, Int) -> Expr
+insertConst (C n)      _                  = C n
+insertConst (V a x' e) (x, n) | x == x'   = e `addConstant` (a * n)
+                              | otherwise = V a x' (insertConst e (x, n))
+
+-- |Insert the expression from supplied map for each variable.
+--
+-- prop> insertExprs e mempty == e
+-- prop> invariant (insertExprs e (M.fromList m))
+insertExprs :: Expr -> M.IntMap Expr -> Expr
+insertExprs = M.foldlWithKey' (\e1 x e2 -> insertExpr e1 (x, e2))
+
+-- TODO: Improve by traversing both structures at the same time.
+
+buildExpr :: (a -> a -> a) -> (Int -> Int -> a) -> (Int -> a) -> Expr -> a
+buildExpr f g h = \case
+  C n         -> h n
+  V a x (C 0) -> g a x
+  V a x e     -> g a x `f` buildExpr f g h e
+
+{-# INLINE deconsExpr #-}
+deconsExpr :: (Int -> Int -> Expr -> a) -> (Int -> a) -> Expr -> a
+deconsExpr f g = \case
+  C n     -> g n
+  V a x e -> f a x e

@@ -26,31 +26,29 @@ reduce f = \case
 -- Reduces never-running and infinite loops.
 flowReduction :: Tarpit -> Tarpit
 flowReduction = reduce $ \case
-  Flow (While e) inner next
-    | isZero  e -> return next
-    | isConst e -> return (Flow (While (econst 1)) inner Nop)
+  Flow (While (Constant 0)) _     next -> pure next
+  Flow (While (Constant _)) inner _    -> pure (Flow (While (Constant 1)) inner Nop)
 
-  Flow (If e) inner next
-    | isZero  e -> return next
-    | isConst e -> return (inner <> next)
+  Flow (If (Constant 0)) _     next -> pure next
+  Flow (If (Constant _)) inner next -> pure (inner <> next)
 
   _ -> Nothing
 
 -- |Reduce while loops to if statements (see 'whileOnce').
 whileReduction :: Tarpit -> Tarpit
 whileReduction = reduce $ \case
-  Flow (While e@(Var 1 d (Const 0))) inner next ->
+  Flow (While e@(Variable1 d)) inner next ->
     fmap (f e d next) (whileOnce d inner)
 
   _ -> Nothing
 
   where
-    f e d next inner' = Flow (If e) inner' (Instruction (Assign d $ Const 0) next)
+    f e d next inner' = Flow (If e) inner' (Instruction (Assign d $ Constant 0) next)
 
 -- |Reduce copy loops (see 'copyLoop').
 copyLoopReduction :: Tarpit -> Tarpit
 copyLoopReduction = reduce $ \case
-  Flow (While (Var 1 d (Const 0))) inner next ->
+  Flow (While (Variable1 d)) inner next ->
     fmap (<> next) (copyLoop d inner)
 
   _ -> Nothing
@@ -61,9 +59,9 @@ copyLoopReduction = reduce $ \case
 putReduction :: Tarpit -> Tarpit
 putReduction = reduce $ \case
   Instruction fun@(Assign d e1)
-    (Instruction (PutChar e2) next) -> Just $
+    (Instruction (PutChar e2) next) -> pure $
       Instruction
-        (PutChar $ insertExpr d e1 e2)
+        (PutChar $ insertExpr e2 (d, e1))
         (Instruction fun next)
 
   _ -> Nothing

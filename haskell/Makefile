@@ -9,4 +9,4 @@ clean:
 	@cabal clean
 
 lint:
-	@hlint src tests
+	@hlint src

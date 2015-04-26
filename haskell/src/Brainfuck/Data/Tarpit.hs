@@ -36,7 +36,7 @@ instance Monoid Tarpit where
     Flow ctrl inner next -> Flow ctrl inner (mappend next b)
 
 (&=) :: Int -> Int -> Function
-d &= c = Assign d (econst c)
+d &= c = Assign d (Constant c)
 
 (&=!) :: Int -> Expr -> Function
 (&=!) = Assign
