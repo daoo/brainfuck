@@ -97,9 +97,9 @@ indented m = incIndent >> m >> decIndent
 line :: ByteString -> CodeWriter ()
 line = lined . string
 
-surround :: Char -> Char -> Bool -> CodeWriter () -> CodeWriter ()
-surround a b True inner  = char a >> inner >> char b
-surround _ _ False inner = inner
+surround :: Bool -> Char -> Char -> CodeWriter () -> CodeWriter ()
+surround True  a b inner = char a >> inner >> char b
+surround False _ _ inner = inner
 
 separate :: CodeWriter () -> [CodeWriter ()] -> CodeWriter ()
 separate _   []           = return ()
@@ -114,4 +114,4 @@ newline = char '\n'
 space   = char ' '
 
 parentheses :: CodeWriter () -> CodeWriter ()
-parentheses = surround '(' ')' True
+parentheses = surround True '(' ')'

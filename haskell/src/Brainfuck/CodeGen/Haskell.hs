@@ -45,6 +45,6 @@ writeHaskell code = do
       char ' '
       safeint v
       char ' '
-      surround '(' ')' True (expr e)
+      parentheses (expr e)
 
-    safeint d = surround '(' ')' (d < 0) (int d)
+    safeint d = surround (d < 0) '(' ')' (int d)

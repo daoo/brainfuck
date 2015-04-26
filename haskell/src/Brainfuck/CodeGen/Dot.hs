@@ -46,7 +46,7 @@ writeExpr e = writeNode ellipse (expr e)
     mult 1 d = char '#' >> int d
     mult n d = int n >> string " * #" >> int d
 
-    safeint d = surround '(' ')' (d < 0) (int d)
+    safeint d = surround (d < 0) '(' ')' (int d)
 
 writeDot :: Tarpit -> CodeWriter ()
 writeDot code = do

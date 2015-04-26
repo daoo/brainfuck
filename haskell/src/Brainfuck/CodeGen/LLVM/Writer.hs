@@ -22,16 +22,12 @@ import Control.Exception
 import Control.Monad.State
 import Data.ByteString.Builder (Builder)
 import Data.ByteString.Short (ShortByteString)
-import Data.Char
 import Data.Monoid
 import Data.Word
 import Text.CodeWriter
 import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Short as BS
-
-ord8 :: Char -> Word8
-ord8 = fromIntegral . ord
 
 toShortByteString :: Builder -> ShortByteString
 toShortByteString = BS.toShort . BL.toStrict . B.toLazyByteString
@@ -50,12 +46,12 @@ newUnique = do
 newLabel :: LLVMWriter Label
 newLabel = build <$> newUnique
   where
-    build x = Label (toShortByteString $ B.word8 (ord8 'l') <> B.intDec x)
+    build x = Label (toShortByteString $ B.char8 'l' <> B.intDec x)
 
 newLocal :: Type -> LLVMWriter Local
 newLocal t = build <$> newUnique
   where
-    build x = Local t (toShortByteString $ B.word8 (ord8 't') <> B.intDec x)
+    build x = Local t (toShortByteString $ B.char8 't' <> B.intDec x)
 
 writeLabel :: Label -> CodeWriter ()
 writeLabel (Label s) = shortByteString "label %" >> shortByteString s

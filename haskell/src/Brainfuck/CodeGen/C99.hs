@@ -74,7 +74,7 @@ writeStms = \case
     a .=  b = a >> string " = " >> b
     a .+= b = a >> string " += " >> b
 
-    writeChar = surround '\'' '\'' True . \case
+    writeChar = surround True '\'' '\'' . \case
       0x07 -> char '\\' >> char 'a'
       0x08 -> char '\\' >> char 'b'
       0x0C -> char '\\' >> char 'f'
