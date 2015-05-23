@@ -27,7 +27,7 @@ memorySize = \case
       If e    -> expr e
       While e -> expr e
 
-    expr = foldlExpr' (\acc _ x -> acc <+> g x) const (0, 0)
+    expr = foldExprAcc' (\acc _ x -> acc <+> g x) const (0, 0)
 
     g d = case compare d 0 of
       LT -> (d, 0)

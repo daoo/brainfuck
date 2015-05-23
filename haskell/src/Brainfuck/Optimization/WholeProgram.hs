@@ -105,7 +105,7 @@ inlineZeros = go S.empty
         Constant _ -> Flow (While (Constant 1)) inner Nop
         _          -> Flow (While e) inner next
 
-    remove s = filterVars ((`S.member` s) . snd)
+    remove s = filterVars (`S.member` s)
     shift    = S.map . subtract
 
 -- |Remove instructions from the end that does not perform any side effects.

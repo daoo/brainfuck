@@ -8,7 +8,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 module Brainfuck.Data.Expr
-  ( Expr(..)
+  ( Expr
   , pattern Zero
   , pattern Constant
   , pattern Variable1
@@ -17,8 +17,8 @@ module Brainfuck.Data.Expr
   , findVar
   , hasVariable
   , filterVars
-  , foldrExpr
-  , foldlExpr'
+  , foldExpr
+  , foldExprAcc'
   , foldExprM'
 
   , (.+)
@@ -128,26 +128,28 @@ hasVariable (V _ x e) x' = x == x' || e `hasVariable` x'
 
 -- |Filter the variables of an expression.
 --
--- Leaves the constant unchanged.
-filterVars :: ((Int, Int) -> Bool) -> Expr -> Expr
+-- prop> filterVars (const True) e == e
+-- prop> case (filterVars (const False) e) of { Constant _ -> True; _ -> False }
+filterVars :: (Int -> Bool) -> Expr -> Expr
 filterVars _ e@(C _)               = e
-filterVars f (V a x e) | f (a, x)  = V a x (filterVars f e)
+filterVars f (V a x e) | f x       = V a x (filterVars f e)
                        | otherwise = filterVars f e
 
--- |The category theory derived fold for expressions.
+-- |The category theoretical derived fold for expressions.
 --
--- prop> foldrExpr V C e == e
-foldrExpr :: (Int -> Int -> a -> a) -> (Int -> a) -> Expr -> a
-foldrExpr _ g (C n)     = g n
-foldrExpr f g (V a x e) = f a x (foldrExpr f g e)
+-- prop> foldExpr V C e == e
+foldExpr :: (Int -> Int -> a -> a) -> (Int -> a) -> Expr -> a
+foldExpr _ g (C n)     = g n
+foldExpr f g (V a x e) = f a x (foldExpr f g e)
 
-foldlExpr' :: (acc -> Int -> Int -> acc)
-           -> (acc -> Int -> acc)
-           -> acc
-           -> Expr
-           -> acc
-foldlExpr' _ g !acc (C c)     = g acc c
-foldlExpr' f g !acc (V a x e) = foldlExpr' f g (f acc a x) e
+-- |Strict accumulating fold.
+foldExprAcc' :: (acc -> Int -> Int -> acc)
+             -> (acc -> Int -> acc)
+             -> acc
+             -> Expr
+             -> acc
+foldExprAcc' _ g !acc (C c)     = g acc c
+foldExprAcc' f g !acc (V a x e) = foldExprAcc' f g (f acc a x) e
 
 -- |Strict monadic fold.
 foldExprM' :: Monad m => (acc -> Int -> Int -> m acc) -> (acc -> Int -> m acc) -> acc -> Expr -> m acc
@@ -257,8 +259,6 @@ insertConst (V a x' e) (x, n) | x == x'   = e `addConstant` (a * n)
 -- prop> invariant (insertExprs e (M.fromList m))
 insertExprs :: Expr -> M.IntMap Expr -> Expr
 insertExprs = M.foldlWithKey' (\e1 x e2 -> insertExpr e1 (x, e2))
-
--- TODO: Improve by traversing both structures at the same time.
 
 buildExpr :: (a -> a -> a) -> (Int -> Int -> a) -> (Int -> a) -> Expr -> a
 buildExpr f g h = \case

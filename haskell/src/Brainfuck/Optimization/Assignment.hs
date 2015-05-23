@@ -64,6 +64,6 @@ topSort xs = let (graph, vertex, _) = G.graphFromEdges $ map mkvert xs
               in map (retrieve . vertex) $ G.topSort graph
   where
     mkvert (d, e) = (e, d, mkedges e)
-    mkedges = foldrExpr (const (:)) (const [])
+    mkedges = foldExpr (const (:)) (const [])
 
     retrieve (x, k, _) = (k, x)
