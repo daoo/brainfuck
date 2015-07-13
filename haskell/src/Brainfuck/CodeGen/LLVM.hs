@@ -116,8 +116,7 @@ writePtr :: Int -> LLVMWriter Local
 writePtr 0 = writeLoad ptr
 writePtr d = do
   t1 <- writeLoad ptr
-  t2 <- writeGetElemPtr (TPtr TCell) t1 [VLit d]
-  return t2
+  writeGetElemPtr (TPtr TCell) t1 [VLit d]
 
 writeReadPtr :: Int -> LLVMWriter Local
 writeReadPtr d = do
