@@ -32,7 +32,6 @@ library
     Brainfuck.Optimization.Tarpit
     Brainfuck.Optimization.WholeProgram
     Brainfuck.Parse
-    Brainfuck.Utility
     Data.ListZipper
     Text.CodeWriter
   build-depends: base, mtl, array, containers, bytestring, QuickCheck
