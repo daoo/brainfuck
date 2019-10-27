@@ -9,7 +9,6 @@ module Brainfuck.Optimization.Tarpit
 import Brainfuck.Data.Expr
 import Brainfuck.Data.Tarpit
 import Brainfuck.Optimization.Analysis
-import Data.Monoid
 
 {-# INLINE reduce #-}
 reduce :: (Tarpit -> Maybe Tarpit) -> Tarpit -> Tarpit

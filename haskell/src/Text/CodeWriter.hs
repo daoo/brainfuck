@@ -29,7 +29,6 @@ import Control.Monad.State
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder)
 import Data.ByteString.Short (ShortByteString)
-import Data.Monoid
 import qualified Data.ByteString.Builder as B
 
 -- |Indentation with a cached builder.

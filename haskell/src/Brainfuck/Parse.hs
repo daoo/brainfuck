@@ -4,6 +4,7 @@ module Brainfuck.Parse (parseBrainfuck) where
 import Brainfuck.Data.Brainfuck
 import Data.Bifunctor
 import Data.ByteString (ByteString, uncons, empty)
+import Data.Word (Word8)
 
 parseBrainfuck :: ByteString -> Brainfuck
 parseBrainfuck = fst . go
@@ -24,6 +25,8 @@ parseBrainfuck = fst . go
 
         _ -> go xs
 
+pattern TPlus, TMinus, TShiftRight, TShiftLeft, TOutput,
+        TInput, TRepeatStart, TRepeatEnd :: Word8
 pattern TPlus        = 43
 pattern TMinus       = 45
 pattern TShiftRight  = 62

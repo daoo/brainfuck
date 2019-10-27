@@ -1,5 +1,7 @@
 *.prof
+.ghc.environment.*
 .cabal-sandbox/
 cabal.sandbox.config
 dist/
+dist-newstyle/
 tags

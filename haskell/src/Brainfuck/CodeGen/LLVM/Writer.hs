@@ -22,7 +22,6 @@ import Control.Exception
 import Control.Monad.State
 import Data.ByteString.Builder (Builder)
 import Data.ByteString.Short (ShortByteString)
-import Data.Monoid
 import Text.CodeWriter
 import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Lazy as BL

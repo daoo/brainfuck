@@ -4,7 +4,6 @@
 -- denoted by `a`.
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 module Brainfuck.Data.Expr
@@ -52,32 +51,42 @@ data Expr where
 
 -- |Check the invariant for an expression.
 --
--- >>> invariant (C 0)
+-- >>> _invariant (C 0)
 -- True
--- >>> invariant (V 1 0 (C 1))
+-- >>> _invariant (V 1 0 (C 1))
 -- True
--- >>> invariant (V 0 0 (C 0))
+-- >>> _invariant (V 0 0 (C 0))
 -- False
--- >>> invariant (V 1 1 (V 1 1 (C 1)))
+-- >>> _invariant (V 1 1 (V 1 1 (C 1)))
 -- False
--- >>> invariant (V 1 1 (V 0 0 (C 1)))
+-- >>> _invariant (V 1 1 (V 0 0 (C 1)))
 -- False
--- >>> invariant (V 1 1 (V 1 0 (C 1)))
+-- >>> _invariant (V 1 1 (V 1 0 (C 1)))
 -- True
-invariant :: Expr -> Bool
-invariant (C _)                  = True
-invariant (V a _ (C _))          = a /= 0
-invariant (V a1 x1 e@(V _ x2 _)) = a1 /= 0 && x1 > x2 && invariant e
+_invariant :: Expr -> Bool
+_invariant (C _)                  = True
+_invariant (V a _ (C _))          = a /= 0
+_invariant (V a1 x1 e@(V _ x2 _)) = a1 /= 0 && x1 > x2 && _invariant e
 
--- |Patterns for invariant-fulfilling expressions.
--- prop> invariant Zero
--- prop> invariant (Constant n)
--- prop> invariant (Variable1 x)
--- prop> invariant (Add x n)
-pattern Zero         = C 0
-pattern Constant n   = C n
-pattern Variable1 x  = V 1 x (C 0)
-pattern Add x n      = V 1 x (C n)
+-- |Pattern for the zero expression.
+-- prop> _invariant Zero
+pattern Zero :: Expr
+pattern Zero = C 0
+
+-- |Pattern for an integer constant expression.
+-- prop> _invariant (Constant n)
+pattern Constant :: Int -> Expr
+pattern Constant n = C n
+
+-- |Pattern for a variable expression.
+-- prop> _invariant (Variable1 x)
+pattern Variable1 :: Int -> Expr
+pattern Variable1 x = V 1 x (C 0)
+
+-- |Pattern for an variable and constant addition expression.
+-- prop> _invariant (Add x n)
+pattern Add :: Int -> Int -> Expr
+pattern Add x n = V 1 x (C n)
 
 instance Eq Expr where
   C n1       == C n2       = n1 == n2
@@ -86,8 +95,8 @@ instance Eq Expr where
 
 -- |Arbitrary expressions which fullfills the invariant.
 --
--- prop> invariant e
--- prop> all invariant (shrink e)
+-- prop> _invariant e
+-- prop> all _invariant (shrink e)
 instance Arbitrary Expr where
   arbitrary = sized go
     where
@@ -104,7 +113,7 @@ instance Arbitrary Expr where
 -- |Find a variable and return its multiple.
 --
 -- >>> let expr = V 5 5 $ V 4 4 $ V 2 2 $ V 1 1 $ C 0
--- >>> invariant expr
+-- >>> _invariant expr
 -- True
 -- >>> findVar expr 1
 -- Just 1
@@ -167,7 +176,7 @@ infixl 6 .*
 -- prop> a .+ (b .+ c) == (a .+ b) .+ c
 -- prop> a .+ Zero == a
 -- prop> Zero .+ a == a
--- prop> invariant (a .+ b)
+-- prop> _invariant (a .+ b)
 -- prop> evalExpr id (a .+ b) == evalExpr id a + evalExpr id b
 (.+) :: Expr -> Expr -> Expr
 (.+) (C n1)       (C n2)       = C (n1 + n2)
@@ -191,7 +200,7 @@ infixl 6 .*
 -- prop> a .* Zero == Zero
 -- prop> a .* Constant 1 == Constant a
 -- prop> a .* (b .* e) == (a*b) .* e
--- prop> invariant (a .* e)
+-- prop> _invariant (a .* e)
 -- prop> evalExpr id (a .* e) == a * evalExpr id e
 (.*) :: Int -> Expr -> Expr
 n .* C m     = C (n*m)
@@ -202,7 +211,7 @@ n .* V a x e = f (n*a) x (n .* e)
 
 -- |Special case of '(.+)' where the added expression is a constant.
 --
--- prop> invariant (addConstant e n)
+-- prop> _invariant (addConstant e n)
 -- prop> evalExpr id (e `addConstant` n) == evalExpr id e + n
 addConstant :: Expr -> Int -> Expr
 addConstant (C n) m     = C (n+m)
@@ -213,7 +222,7 @@ addConstant (V a x e) m = V a x (addConstant e m)
 -- Time complexity O(n)
 --
 -- prop> shiftExpr e 0 == e
--- prop> invariant (shiftExpr e n)
+-- prop> _invariant (shiftExpr e n)
 shiftExpr :: Expr -> Int -> Expr
 shiftExpr (C n)      _ = C n
 shiftExpr (V a x e) !s = V a (x+s) (shiftExpr e s)
@@ -236,7 +245,7 @@ evalExpr f = go 0
 -- >>> insertExpr (V 1 2 (V 1 1 (C 0))) (1, V 1 3 (C 1))
 -- V 1 3 (V 1 2 (C 1))
 --
--- prop> invariant (insertExpr e1 (x, e2))
+-- prop> _invariant (insertExpr e1 (x, e2))
 insertExpr :: Expr -> (Int, Expr) -> Expr
 insertExpr (C n)        _                    = C n
 insertExpr (V a1 x1 e1) (x2, e2) | x1 == x2  = (a1 .* e2) .+ e1
@@ -247,7 +256,7 @@ insertExpr (V a1 x1 e1) (x2, e2) | x1 == x2  = (a1 .* e2) .+ e1
 -- Time complexity O(n).
 --
 -- prop> insertConst e (x, n) == insertExpr e (x, C n)
--- prop> invariant (insertConst e (x, n))
+-- prop> _invariant (insertConst e (x, n))
 insertConst :: Expr -> (Int, Int) -> Expr
 insertConst (C n)      _                  = C n
 insertConst (V a x' e) (x, n) | x == x'   = e `addConstant` (a * n)
@@ -256,7 +265,7 @@ insertConst (V a x' e) (x, n) | x == x'   = e `addConstant` (a * n)
 -- |Insert the expression from supplied map for each variable.
 --
 -- prop> insertExprs e mempty == e
--- prop> invariant (insertExprs e (M.fromList m))
+-- prop> _invariant (insertExprs e (M.fromList m))
 insertExprs :: Expr -> M.IntMap Expr -> Expr
 insertExprs = M.foldlWithKey' (\e1 x e2 -> insertExpr e1 (x, e2))
 

@@ -27,13 +27,14 @@ data Tarpit where
   Nop         :: Tarpit
   deriving Show
 
-instance Monoid Tarpit where
-  mempty = Nop
-
-  mappend a b = case a of
+instance Semigroup Tarpit where
+  a <> b = case a of
     Nop                  -> b
     Instruction fun next -> Instruction fun (mappend next b)
     Flow ctrl inner next -> Flow ctrl inner (mappend next b)
+
+instance Monoid Tarpit where
+  mempty = Nop
 
 (&=) :: Int -> Int -> Function
 d &= c = Assign d (Constant c)
