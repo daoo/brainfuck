@@ -6,7 +6,7 @@ import Brainfuck.Optimization.Tarpit
 import Brainfuck.Optimization.WholeProgram
 
 loopUnrolling :: Tarpit -> Tarpit
-loopUnrolling = unrollEntierly
+loopUnrolling = unrollEntierly . fullOptimization
 
 fullOptimization :: Tarpit -> Tarpit
 fullOptimization = removeFromEnd

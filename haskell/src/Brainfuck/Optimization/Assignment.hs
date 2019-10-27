@@ -55,7 +55,7 @@ mergeOps = foldr (Instruction . uncurry Assign)
 -- Assign 0 (Var 1)
 -- Assign 1 (Var 2)
 --
--- 0; Var 1
+-- 0: Var 1
 -- 1: Var 1
 -- 2: Var 1
 

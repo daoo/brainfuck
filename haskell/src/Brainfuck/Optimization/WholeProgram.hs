@@ -126,30 +126,30 @@ removeFromEnd = \case
 
 -- |Loop unrolling optimization.
 --
--- Fully unrolls the entire program, only works for terminating programs that
--- don't depend on input. This is a special case of actual code execution. The
--- difference being that this does not concern itself with GetChar.
+-- Fully unrolls the entire program up to a unroll limit. Ignores GetChar and
+-- thus only works proprely for programs not depending on input.
 unrollEntierly :: Tarpit -> Tarpit
-unrollEntierly = go M.empty
+unrollEntierly = go 1000000 M.empty
   where
-    go !m = \case
+    go  0  _ e = e
+    go !n !m e = case e of
       Nop -> Nop
 
       Instruction fun next -> case fun of
 
-        Assign d e -> go (M.insert d (eval m e) m) next
-        Shift s    -> go (shift s m) next
-        PutChar e  -> Instruction (PutChar $ Constant (eval m e)) (go m next)
+        Assign d e -> go n (M.insert d (eval m e) m) next
+        Shift s    -> go n (shift s m) next
+        PutChar e  -> Instruction (PutChar $ Constant (eval m e)) (go n m next)
         GetChar _  -> Instruction fun next
 
-      Flow (If e) inner next -> go m $ if eval m e == 0
+      Flow (If e) inner next -> go n m $ if eval m e == 0
         then next
         else inner <> next
 
-      Flow (While e) inner next -> go m $ if eval m e == 0
+      Flow (While e) inner next -> go (n - 1) m $ if eval m e == 0
         then next
         else inner <> Flow (While e) inner next
 
     shift = M.mapKeysMonotonic . subtract
 
-    eval m = evalExpr (m M.!)
+    eval m = evalExpr (\k -> M.findWithDefault 0 k m)

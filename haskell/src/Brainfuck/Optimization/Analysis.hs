@@ -44,7 +44,7 @@ putConstOnly = \case
   Instruction (PutChar (Constant _)) next -> putConstOnly next
   _                                       -> False
 
--- |Analyze a loop for a copy/multiply structure
+-- |Analyze a loop for a copy/multiply structure.
 --
 -- A copy loop is a loop that follow the following criteria:
 --
